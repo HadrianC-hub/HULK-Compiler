@@ -218,4 +218,131 @@ statement:
         | for_expr              { $$ = $1; std::cout << "for_expr " << std::endl; }
     ;
 
+        elem_expr:
+              expression ADD expression {
+                $$ = new BinaryOpNode("+", $1, $3, yylloc.first_line);
+                
+            }
+            | expression SUB expression {
+                $$ = new BinaryOpNode("-", $1, $3, yylloc.first_line);
+                
+            }
+            | expression MUL expression {
+                $$ = new BinaryOpNode("*", $1, $3, yylloc.first_line);
+                
+            }
+            | expression DIV expression {
+                $$ = new BinaryOpNode("/", $1, $3, yylloc.first_line);
+                
+            }
+            | expression MOD expression {
+                
+                $$ = new BinaryOpNode("%", $1, $3, yylloc.first_line);
+                
+            }
+            | expression POW expression {
+                $$ = new BinaryOpNode("^", $1, $3, yylloc.first_line);
+                
+            }
 
+            | SUB expression {
+                $$ = new UnaryOpNode("-", $2, yylloc.first_line);
+                
+            }
+
+            | '(' expression ')' {
+                $$ = $2;
+            }
+
+            | SIN '(' expression ')' {
+                std::vector<ASTNode*> args = vectorize($3, nullptr, 1);
+                $$ = new BuiltInFunctionNode("sin", args, yylloc.first_line);
+               
+            }
+            | COS '(' expression ')' {
+                std::vector<ASTNode*> args = vectorize($3, nullptr, 1);
+                $$ = new BuiltInFunctionNode("cos", args, yylloc.first_line);
+                
+            }
+            | MIN '(' expression ',' expression ')' {
+                std::vector<ASTNode*> args = vectorize($3, $5, 2);
+                $$ = new BuiltInFunctionNode("min", args, yylloc.first_line);
+                
+            }
+            | MAX '(' expression ',' expression ')' {
+                std::vector<ASTNode*> args = vectorize($3, $5, 2);
+                $$ = new BuiltInFunctionNode("max", args, yylloc.first_line);
+                
+            }
+            | SQRT '(' expression ')' {
+                std::vector<ASTNode*> args = vectorize($3, nullptr, 1);
+                $$ = new BuiltInFunctionNode("sqrt", args, yylloc.first_line);
+                
+            }
+            | LOG '(' expression ',' expression ')' {
+                std::vector<ASTNode*> args = vectorize($3, $5, 2);
+                $$ = new BuiltInFunctionNode("log", args, yylloc.first_line);
+                
+            }
+            | EXP '(' expression ')' {
+                std::vector<ASTNode*> args = vectorize($3, nullptr, 1);
+                $$ = new BuiltInFunctionNode("exp", args, yylloc.first_line);
+                
+            }
+
+            | RANDOM '(' ')' {
+                std::vector<ASTNode*> args = vectorize(nullptr, nullptr, 0);
+                $$ = new BuiltInFunctionNode("rand", args, yylloc.first_line);
+            }
+            | E     { $$ = new IdentifierNode("e", yylloc.first_line); }
+            | PI    { $$ = new IdentifierNode("pi", yylloc.first_line); }
+
+            | expression CONCAT expression {
+                $$ = new BinaryOpNode("@", $1, $3, yylloc.first_line);
+               
+            }
+            | expression CONCAT_SPACE expression {
+                $$ = new BinaryOpNode("@@", $1, $3, yylloc.first_line);
+               
+            }
+
+            | expression LT expression {
+                
+                $$ = new BinaryOpNode("<", $1, $3, yylloc.first_line);
+                
+            }
+            | expression GT expression {
+                $$ = new BinaryOpNode(">", $1, $3, yylloc.first_line);
+                
+            }
+            | expression LE expression {
+                $$ = new BinaryOpNode("<=", $1, $3, yylloc.first_line);
+               
+            }
+            | expression GE expression {
+                $$ = new BinaryOpNode(">=", $1, $3, yylloc.first_line);
+                
+            }
+
+            | expression EQ expression {
+                $$ = new BinaryOpNode("==", $1, $3, yylloc.first_line);
+               
+            }
+            | expression NE expression {
+                $$ = new BinaryOpNode("!=", $1, $3, yylloc.first_line);
+               
+            }
+
+            | expression AND expression {
+                $$ = new BinaryOpNode("&", $1, $3, yylloc.first_line);
+                
+            }
+            | expression OR expression {
+                $$ = new BinaryOpNode("|", $1, $3, yylloc.first_line);
+                
+            }
+            | NOT expression {
+                $$ = new UnaryOpNode("!", $2, yylloc.first_line);
+               
+            }
+        ;
