@@ -1,3 +1,61 @@
+%{
+
+#include <stdio.h>
+#include "../ast/AST.hpp"
+
+extern int yylex();
+void yyerror(const char *msg);
+
+// Definir estructura para ubicación
+typedef struct YYLTYPE {
+    int first_line;
+    int first_column;
+    int last_line;
+    int last_column;
+} YYLTYPE;
+#define YYLTYPE_IS_DECLARED 1
+
+std::vector<ASTNode*> root;
+
+#define PI_VAL 3.14159265358979323846
+#define TRACE(EXPR) std::cout << "elem_expr: " << *EXPR << std::endl;
+
+std::vector<ASTNode*> vectorize(ASTNode* arg1, ASTNode* arg2, int n) {
+    
+    std::vector<ASTNode*> args = std::vector<ASTNode*>();
+    
+    if ((n == 1) || (n == 2)) { args.push_back(arg1); }
+    if (n == 2) { args.push_back(arg2); }
+
+    return args;
+}
+
+%}
+
+%code requires {
+    #include <string>
+    #include <iostream>
+    #include <cmath>
+    #include <vector>
+    #include "../ast/AST.hpp"
+}
+
+// Habilitar seguimiento de ubicaciones
+%locations
+
+// Definir la unión de tipos semánticos
+%union {
+    double num;  // Tipo para números (enteros y decimales)
+    std::string* str; 
+    bool boolean;
+    ASTNode* node;
+    std::vector<ASTNode*>* list;
+    std::vector<IfBranch>* if_branch;
+    std::vector<Parameter>* param;
+    std::vector<LetDeclaration>* let_decl;
+    std::vector<AttributeDeclaration>* attr_decl;
+    std::vector<MethodDeclaration>* method_decl;
+}
 
 // --------------------------------------/* Definición de Tokens */------------------------------------------- //
 
@@ -107,3 +165,57 @@
 %left CONCAT CONCAT_SPACE
 
 %%
+
+program:
+    /* vacío */
+    | program statement             { root.push_back($2); }
+    | program error ';'             { yyerrok; }
+;
+
+statement:
+    expression ';'                  { $$ = $1; }
+    | PRINT '(' expression ')' ';'  { 
+                                        std::vector<ASTNode*> args = vectorize($3, nullptr, 1);
+                                        $$ = new BuiltInFunctionNode("print", args, yylloc.first_line);
+                                    }
+    | type_decl                     { $$ = $1; }
+    | block_expr                    { $$ = $1; }
+    | block_expr ';'                { $$ = $1; }
+    | FUNC ID '(' params ')' LAMBDA body
+                                    {
+                                        $$ = new FunctionDeclarationNode(*$2, $4, $7, true, yylloc.first_line);
+                                        std::cout << "Definición función inline: " << *$2 << std::endl;
+                                        
+                                    }
+    | FUNC ID '(' params ')' block_expr
+                                    {
+                                        $$ = new FunctionDeclarationNode(*$2, $4, $6, false, yylloc.first_line);
+                                        std::cout << "Definición función bloque: " << *$2 << std::endl;
+                                        
+                                    }
+    | let_expr                      { $$ = $1; std::cout << "let_expr " << std::endl; }
+    | while_expr                    { $$ = $1; std::cout << "while_expr " << std::endl; }
+    | for_expr                      { $$ = $1; std::cout << "for_expr " << std::endl; }
+;
+
+    expression:
+          NUMBER                { $$ = new LiteralNode(std::to_string($1), "Number", yylloc.first_line); }
+        | STRING                { $$ = new LiteralNode(*$1, "String", yylloc.first_line);  }
+        | BOOL                  { $$ = new LiteralNode($1 ? "true" : "false", "Boolean", yylloc.first_line); }
+        | NULL_VAL              { $$ = new LiteralNode("null", "Null", yylloc.first_line); }
+        | ID                    { $$ = new IdentifierNode(*$1, yylloc.first_line); }
+        | SELF '.' ID           { $$ = new SelfCallNode(*$3, yylloc.first_line); }
+        | new_instance          { $$ = $1; }
+        | elem_expr             { $$ = $1; }
+        | block_expr            { $$ = $1; }
+        | func_call_expr        { $$ = $1; }
+        | method_call           { $$ = $1; }
+        | base_call             { $$ = $1; }
+        | assign_expr           { $$ = $1; }
+        | let_expr              { $$ = $1; std::cout << "let_expr " << std::endl; }
+        | if_expr               { $$ = $1; std::cout << "if_expr " << std::endl; }
+        | while_expr            { $$ = $1; std::cout << "while_expr " << std::endl; }
+        | for_expr              { $$ = $1; std::cout << "for_expr " << std::endl; }
+    ;
+
+
