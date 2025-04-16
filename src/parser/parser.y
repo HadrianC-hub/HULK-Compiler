@@ -346,3 +346,43 @@ statement:
                
             }
         ;
+
+        block_expr:
+            '{' block_body '}'  {
+                                    $$ = new BlockNode(*$2, yylloc.first_line); // Placeholder
+                                   
+                                }
+        ;
+
+        block_body:
+            /* empty */                     { $$ = new std::vector<ASTNode*>(); }
+            | statement                     { $$ = new std::vector<ASTNode*>(); $$->push_back($1); }
+            | block_body statement          { $1->push_back($2); $$ = $1; }
+        ;
+
+        params:
+            /* empty */         { $$ = new std::vector<Parameter>(); }
+            | ID                { 
+                                    Parameter p;
+                                    p.name = *$1;
+                                    $$ = new std::vector<Parameter>(); 
+                                    $$->push_back(p); 
+                                   
+                                }
+            | params ',' ID     { 
+                                    Parameter p;
+                                    p.name = *$3;
+                                    $1->push_back(p); 
+                                    $$ = $1; 
+                                }
+        ;
+
+        func_call_expr:
+            ID '(' args ')'     { $$ = new FunctionCallNode(*$1, *$3, yylloc.first_line); }
+        ;
+
+        args: 
+            /* empty */                 { $$ = new std::vector<ASTNode*>(); }
+            | expression                { $$ = new std::vector<ASTNode*>(); $$->push_back($1); }
+            | args ',' expression       { $1->push_back($3); $$ = $1; }
+        ;
