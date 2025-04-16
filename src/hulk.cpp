@@ -1,6 +1,15 @@
 #include <cstdio>
 #include <iostream>
 #include <vector>
+#include "ast/
+#include "utils/
+#include "semantic/
+#include "codegen/
+
+
+extern int yyparse();               // Bison
+extern FILE *yyin;                  // Archivo fuente
+extern std::vector<ASTNode *> root; // Nodo raíz del AST generado por el parser
 
 int main(int argc, char **argv)
 {
@@ -20,6 +29,17 @@ int main(int argc, char **argv)
         perror("perror");
         return 1;
     }
-    
+
+    yyin = input_file;  //
+
+    if (yyparse() != 0)
+    { // Realizar el análisis sintáctico
+        std::cerr << "Error: Falló el análisis sintáctico." << std::endl;
+        fclose(input_file);
+        return 1;
+    }
+    fclose(input_file);
+
+
     return 0;
 }
