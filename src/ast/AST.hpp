@@ -43,3 +43,32 @@ class UnaryOpNode : public ASTNode {
         std::string type() const override { return _type; }
     };
 
+class BuiltInFunctionNode : public ASTNode {
+public:
+    std::string name;
+    std::vector<ASTNode*> args;
+    int _line;
+    std::string _type;
+
+    BuiltInFunctionNode(const std::string& name, const std::vector<ASTNode*>& args, int line)
+        : name(name), args(args), _line(line), _type("") {}
+
+    int line() const override { return _line; }
+    std::string type() const override { return _type; }
+};
+
+
+class FunctionCallNode : public ASTNode {
+public:
+    std::string funcName;
+    std::vector<ASTNode*> args;
+    int _line;
+    std::string _type;
+
+    FunctionCallNode(std::string name, std::vector<ASTNode*> args, int ln)
+        : funcName(name), args(args), _line(ln), _type("") {}
+
+    int line() const override { return _line; }
+    std::string type() const override { return _type; }
+};
+
