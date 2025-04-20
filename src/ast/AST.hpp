@@ -1,4 +1,5 @@
 #pragma once
+#include "ASTVisitor.hpp"
 #include <vector>
 #include <optional>
 #include <string>
@@ -8,6 +9,7 @@
 class ASTNode {
 public:
     virtual ~ASTNode() = default;
+    virtual void accept(ASTVisitor& visitor) = 0;
     virtual int line() const = 0;
     virtual std::string type() const = 0;
 };
@@ -27,6 +29,9 @@ public:
     BinaryOpNode(std::string op, ASTNode* l, ASTNode* r, int ln)
         : op(op), left(l), right(r), _line(ln), _type("") {}
 
+    void accept(ASTVisitor& visitor) override {
+        visitor.visit(*this);
+    }
 
     int line() const override { return _line; }
     std::string type() const override { return _type; }
@@ -41,7 +46,10 @@ class UnaryOpNode : public ASTNode {
     
         UnaryOpNode(const std::string& op, ASTNode* operand, int line)
             : op(op), operand(operand), _line(line), _type("") {}
-
+    
+        void accept(ASTVisitor& visitor) override {
+            visitor.visit(*this);
+        }
     
         int line() const override { return _line; }
         std::string type() const override { return _type; }
@@ -57,6 +65,9 @@ public:
     BuiltInFunctionNode(const std::string& name, const std::vector<ASTNode*>& args, int line)
         : name(name), args(args), _line(line), _type("") {}
 
+    void accept(ASTVisitor& visitor) override {
+        visitor.visit(*this);
+    }
 
     int line() const override { return _line; }
     std::string type() const override { return _type; }
@@ -74,6 +85,9 @@ public:
     FunctionCallNode(std::string name, std::vector<ASTNode*> args, int ln)
         : funcName(name), args(args), _line(ln), _type("") {}
 
+    void accept(ASTVisitor& visitor) override {
+        visitor.visit(*this);
+    }
 
     int line() const override { return _line; }
     std::string type() const override { return _type; }
@@ -90,6 +104,10 @@ public:
     LiteralNode(std::string val, std::string type, int ln)
         : value(val), _type(type), _line(ln) {}
 
+    void accept(ASTVisitor& visitor) override {
+        visitor.visit(*this);
+    }
+
     int line() const override { return _line; }
     std::string type() const override { return _type; }
 };
@@ -105,6 +123,9 @@ public:
     BlockNode(std::vector<ASTNode*> exprs, int ln)
         : expressions(exprs), _line(ln), _type("") {}
 
+    void accept(ASTVisitor& visitor) override {
+        visitor.visit(*this);
+    }
 
     int line() const override { return _line; }
     std::string type() const override { return _type; }
@@ -124,6 +145,9 @@ public:
     VariableDeclarationNode(std::string name, std::string type, ASTNode* init, bool isMut, int ln)
         : name(name), declaredType(type), initializer(init), isMutable(isMut), _line(ln), _type("") {}
 
+    void accept(ASTVisitor& visitor) override {
+        visitor.visit(*this);
+    }
 
     int line() const override { return _line; }
     std::string type() const override { return _type; }
@@ -140,6 +164,9 @@ public:
     IdentifierNode(std::string name, int ln)
         : name(name), _line(ln), _type("") {}
 
+    void accept(ASTVisitor& visitor) override {
+        visitor.visit(*this);
+    }
 
     int line() const override { return _line; }
     std::string type() const override { return _type; }
@@ -167,6 +194,9 @@ public:
         : name(name), params(params), 
           body(body), isInline(isInline), _line(ln), _type("") {}
 
+    void accept(ASTVisitor& visitor) override {
+        visitor.visit(*this); // Llama a visit(FunctionDeclarationNode&)
+    }
 
     int line() const override { return _line; }
     std::string type() const override { return _type; }
@@ -188,6 +218,9 @@ public:
     LetNode(std::vector<LetDeclaration>* decls, ASTNode* body, int ln)
         : declarations(decls), body(body), _line(ln), _type("") {}
 
+    void accept(ASTVisitor& visitor) override {
+        visitor.visit(*this);
+    }
 
     int line() const override { return _line; }
     std::string type() const override { return _type; }
@@ -203,6 +236,9 @@ public:
     AssignmentNode(ASTNode* lhs, ASTNode* rhs, int ln)
         : lhs(lhs), rhs(rhs), _line(ln), _type("") {}
 
+    void accept(ASTVisitor& visitor) override {
+        visitor.visit(*this);
+    }
 
     int line() const override { return _line; }
     std::string type() const override { return _type; }
@@ -223,6 +259,9 @@ public:
     IfNode(std::vector<IfBranch>* branches, ASTNode* elseBody, int ln)
         : branches(branches), elseBody(elseBody), _line(ln), _type("") {}
 
+    void accept(ASTVisitor& visitor) override {
+        visitor.visit(*this);
+    }
 
     int line() const override { return _line; }
     std::string type() const override { return _type; }
@@ -237,6 +276,10 @@ class WhileNode : public ASTNode {
     
         WhileNode(ASTNode* cond, ASTNode* b, int ln)
             : condition(cond), body(b), _line(ln), _type("") {}
+    
+        void accept(ASTVisitor& visitor) override {
+            visitor.visit(*this);
+        }
     
         int line() const override { return _line; }
         std::string type() const override { return _type; }
@@ -255,6 +298,9 @@ public:
     ForNode(const std::string& var, ASTNode* init, ASTNode* end, ASTNode* b, int ln)
         : varName(var), init_range(init), end_range(end), body(b), _line(ln), _type("") {}
 
+    void accept(ASTVisitor& visitor) override {
+        visitor.visit(*this);
+    }
 
     int line() const override { return _line; }
     std::string type() const override { return _type; }
@@ -282,6 +328,7 @@ public:
           baseType(std::move(baseType)), baseArgs(std::move(baseArgs)),
           _line(line) {}
 
+    void accept(ASTVisitor& v) override { v.visit(*this); }
     int line() const override { return _line; }
     std::string type() const override { return "Type"; }
 };
@@ -296,6 +343,7 @@ public:
     NewInstanceNode(std::string typeName, std::vector<ASTNode*> args, int line)
         : typeName(std::move(typeName)), args(std::move(args)), _line(line), _type("") {}
 
+    void accept(ASTVisitor& v) override { v.visit(*this); }
     int line() const override { return _line; }
     std::string type() const override { return _type; }
 };
@@ -329,6 +377,7 @@ public:
     MethodCallNode(ASTNode* obj, std::string methodName, std::vector<ASTNode*> args, int line)
         : object(obj), methodName(std::move(methodName)), args(std::move(args)), _line(line), _type("") {}
 
+    void accept(ASTVisitor& v) override { v.visit(*this); }
     int line() const override { return _line; }
     std::string type() const override { return _type; }
 };
@@ -342,6 +391,7 @@ public:
     BaseCallNode(std::vector<ASTNode*> args, int line)
         : args(std::move(args)), _line(line), _type("") {}
 
+    void accept(ASTVisitor& v) override { v.visit(*this); }
     int line() const override { return _line; }
     std::string type() const override { return _type; }
 };
@@ -355,6 +405,7 @@ public:
     SelfCallNode(const std::string& varName, int line)
         : varName(varName), _line(line), _type("") {}
 
+    void accept(ASTVisitor& v) override { v.visit(*this); }
     int line() const override { return _line; }
     std::string type() const override { return _type; }
 };
