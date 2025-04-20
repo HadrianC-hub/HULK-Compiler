@@ -386,3 +386,139 @@ statement:
             | expression                { $$ = new std::vector<ASTNode*>(); $$->push_back($1); }
             | args ',' expression       { $1->push_back($3); $$ = $1; }
         ;
+
+        assign_expr:
+            ID REASSIGN expression {
+                $$ = new AssignmentNode(new IdentifierNode(*$1, yylloc.first_line), $3, yylloc.first_line);
+            }
+        | SELF '.' ID REASSIGN expression {
+                $$ = new AssignmentNode(new SelfCallNode(*$3, yylloc.first_line), $5, yylloc.first_line);
+            }
+
+        ;
+
+        let_expr:
+              LET decl IN body                { $$ = new LetNode($2, $4, yylloc.first_line);  }
+            | LET decl IN '(' body ')'        { $$ = new LetNode($2, $5, yylloc.first_line);  }
+            | LET decl IN body ';'            { $$ = new LetNode($2, $4, yylloc.first_line);  }
+            | LET decl IN '(' body ')' ';'    { $$ = new LetNode($2, $5, yylloc.first_line);  }
+        ;
+
+        decl:
+              ID '=' expression             {
+                                                LetDeclaration d;
+                                                d.name = *$1;
+                                                d.initializer = $3;
+                                                $$ = new std::vector<LetDeclaration>();
+                                                $$->push_back(d); 
+                                            }
+            | decl ',' ID '=' expression    {
+                                                LetDeclaration d;
+                                                d.name = *$3;
+                                                d.initializer = $5;
+                                                $1->push_back(d); $$ = $1;
+                                               
+                                            }
+        ;
+
+        body:
+              statement                     { $$ = $1; }
+            | expression                    { $$ = $1; }
+            | PRINT '(' expression ')'      { 
+                                                std::vector<ASTNode*> args = vectorize($3, nullptr, 1);
+                                                $$ = new BuiltInFunctionNode("print", args, yylloc.first_line);
+                                            }
+        ;
+
+        if_expr:
+            if_head                     { $$ = new IfNode($1, nullptr, yylloc.first_line); }
+            | if_head ELSE body         { $$ = new IfNode($1, $3, yylloc.first_line); }
+        ;
+
+        if_head:
+            IF '(' expression ')' body                      { 
+                                                                IfBranch b;
+                                                                b.condition = $3;
+                                                                b.body = $5;
+                                                                $$ = new std::vector<IfBranch>(); 
+                                                                $$->push_back(b);
+                                                            }
+            | if_head ELIF '(' expression ')' body          { 
+                                                                IfBranch b;
+                                                                b.condition = $4;
+                                                                b.body = $6;
+                                                                $1->push_back(b); 
+                                                                $$ = $1;  
+                                                            }
+        ;
+
+        while_expr:
+            WHILE '(' expression ')' body                   { $$ = new WhileNode($3, $5, yylloc.first_line); }
+        ;
+
+        for_expr:
+            FOR '(' ID IN RANGE '(' expression ',' expression ')' ')' body      { $$ = new ForNode(*$3, $7, $9, $12, yylloc.first_line); }
+        ;
+
+        type_decl:
+            TYPE ID '(' params ')' '{' attribute_decl method_decl '}' {
+                $$ = new TypeDeclarationNode(*$2, $4, $7, $8, std::nullopt, std::vector<ASTNode*>(), yylloc.first_line);
+            }
+            | TYPE ID '{' attribute_decl method_decl '}' {
+                $$ = new TypeDeclarationNode(*$2, new std::vector<Parameter>(), $4, $5, std::nullopt, std::vector<ASTNode*>(), yylloc.first_line);
+            }
+            | TYPE ID '(' params ')' INHERITS ID '(' args ')' '{' attribute_decl method_decl '}' {
+                $$ = new TypeDeclarationNode(*$2, $4, $12, $13, *$7, *$9, yylloc.first_line);
+            }
+        ;
+
+        attribute_decl:
+            /* empty */                     { $$ = new std::vector<AttributeDeclaration>(); }
+            | ID '=' expression ';'         { 
+                $$ = new std::vector<AttributeDeclaration>();
+                $$->push_back(AttributeDeclaration(*$1, $3));
+            }
+            | attribute_decl ID '=' expression ';' { 
+                $1->push_back(AttributeDeclaration(*$2, $4));
+                $$ = $1;
+            }
+        ;
+
+        method_decl:
+            /* empty */                     { $$ = new std::vector<MethodDeclaration>(); }
+            | ID '(' params ')' LAMBDA expression ';' {
+                $$ = new std::vector<MethodDeclaration>();
+                $$->push_back(MethodDeclaration(*$1, $3, $6));
+            }
+            | method_decl ID '(' params ')' LAMBDA expression ';' {
+                $1->push_back(MethodDeclaration(*$2, $4, $7));
+                $$ = $1;
+            }
+        ;
+
+        method_call:
+            expression '.' ID '(' args ')' {
+                $$ = new MethodCallNode($1, *$3, *$5, yylloc.first_line);
+            }
+        ;
+
+        base_call:
+            BASE '(' args ')' {
+                $$ = new BaseCallNode(*$3, yylloc.first_line);
+            }
+        ;
+
+        new_instance:
+            NEW ID '(' args ')' {
+                $$ = new NewInstanceNode(*$2, *$4, yylloc.first_line);
+            }
+        ;
+
+%%
+
+void yyerror(const char *msg) {
+    fprintf(stderr, "Error en línea %d, columna %d: %s\n",
+            yylloc.first_line, yylloc.first_column, msg);
+}
+
+
