@@ -220,28 +220,28 @@ statement:
 
         elem_expr:
               expression ADD expression {
-                $$ = new BinaryOpNode("+", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode("+", $1, $3, yylloc.first_line);
                 
             }
             | expression SUB expression {
-                $$ = new BinaryOpNode("-", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode("-", $1, $3, yylloc.first_line);
                 
             }
             | expression MUL expression {
-                $$ = new BinaryOpNode("*", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode("*", $1, $3, yylloc.first_line);
                 
             }
             | expression DIV expression {
-                $$ = new BinaryOpNode("/", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode("/", $1, $3, yylloc.first_line);
                 
             }
             | expression MOD expression {
                 
-                $$ = new BinaryOpNode("%", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode("%", $1, $3, yylloc.first_line);
                 
             }
             | expression POW expression {
-                $$ = new BinaryOpNode("^", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode("^", $1, $3, yylloc.first_line);
                 
             }
 
@@ -298,47 +298,47 @@ statement:
             | PI    { $$ = new IdentifierNode("pi", yylloc.first_line); }
 
             | expression CONCAT expression {
-                $$ = new BinaryOpNode("@", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode("@", $1, $3, yylloc.first_line);
                
             }
             | expression CONCAT_SPACE expression {
-                $$ = new BinaryOpNode("@@", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode("@@", $1, $3, yylloc.first_line);
                
             }
 
             | expression LT expression {
                 
-                $$ = new BinaryOpNode("<", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode("<", $1, $3, yylloc.first_line);
                 
             }
             | expression GT expression {
-                $$ = new BinaryOpNode(">", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode(">", $1, $3, yylloc.first_line);
                 
             }
             | expression LE expression {
-                $$ = new BinaryOpNode("<=", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode("<=", $1, $3, yylloc.first_line);
                
             }
             | expression GE expression {
-                $$ = new BinaryOpNode(">=", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode(">=", $1, $3, yylloc.first_line);
                 
             }
 
             | expression EQ expression {
-                $$ = new BinaryOpNode("==", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode("==", $1, $3, yylloc.first_line);
                
             }
             | expression NE expression {
-                $$ = new BinaryOpNode("!=", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode("!=", $1, $3, yylloc.first_line);
                
             }
 
             | expression AND expression {
-                $$ = new BinaryOpNode("&", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode("&", $1, $3, yylloc.first_line);
                 
             }
             | expression OR expression {
-                $$ = new BinaryOpNode("|", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperationNode("|", $1, $3, yylloc.first_line);
                 
             }
             | NOT expression {
@@ -517,7 +517,7 @@ statement:
 %%
 
 void yyerror(const char *msg) {
-    fprintf(stderr, "Error en línea %d, columna %d: %s\n",
+    fprintf(stderr, "[SYNTAX ERROR] Error sintáctico en línea %d, columna %d: %s\n",
             yylloc.first_line, yylloc.first_column, msg);
 }
 

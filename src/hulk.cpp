@@ -1,10 +1,10 @@
 #include <cstdio>
 #include <iostream>
 #include <vector>
-#include "ast/
-#include "utils/
-#include "semantic/
-#include "codegen/
+#include "ast/AST.hpp"
+#include "utils/AST_utils.hpp"
+#include "semantic/SemanticAnalyzer.hpp"
+#include "codegen/CodeGenContext.hpp"
 
 
 extern int yyparse();               // Bison
@@ -25,7 +25,7 @@ int main(int argc, char **argv)
     FILE *input_file = fopen(filename, "r");
     if (!input_file)
     {
-        std::cerr << "Error abriendo archivo: " << filename << std::endl;
+        std::cerr << "[ERROR] No se pudo abrir el archivo: " << filename << std::endl;
         perror("perror");
         return 1;
     }
@@ -34,12 +34,26 @@ int main(int argc, char **argv)
 
     if (yyparse() != 0)
     { // Realizar el análisis sintáctico
-        std::cerr << "Error: Falló el análisis sintáctico." << std::endl;
+        std::cerr << "[ERROR] Falló el análisis sintáctico." << std::endl;
         fclose(input_file);
         return 1;
     }
     fclose(input_file);
 
+    if (!is_valid_ast(root))
+    {
+        std::cerr << "[ERROR] No se generó un AST válido." << std::endl;
+        return 1;
+    }
+
+    std::cout << "[CHECK] AST terminado." << std::endl;
+
+    // Escribiendo nodos en consola
+    for (auto node : root)
+    {
+        std::cout << "Tipo de nodo raíz: " << node->type()
+                  << " | Línea: " << node->line() << "\n";
+    }
 
     return 0;
 }
