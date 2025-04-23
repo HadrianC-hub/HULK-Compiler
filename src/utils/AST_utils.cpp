@@ -23,3 +23,13 @@ bool is_valid_ast(const std::vector<ASTNode *> &nodes)
     return true;
 }
 
+// Eliminar el AST
+void delete_ast(std::vector<ASTNode *> &nodes)
+{
+    // Liberar cada nodo individualmente
+    for (auto node : nodes)
+    {
+        delete node;
+    }
+    nodes.clear(); // Limpiar el vector
+}
