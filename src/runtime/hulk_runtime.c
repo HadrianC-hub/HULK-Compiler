@@ -24,3 +24,17 @@ char *hulk_str_concat_space(const char *a, const char *b)
     strcat(res, b);
     return res;
 }
+
+// Compare two strings for equality
+bool hulk_str_equals(const char *a, const char *b)
+{
+    if (!a || !b)
+        return false; // Null safety
+    return strcmp(a, b) == 0;
+}
+
+double hulk_rand()
+{
+    return rand() / (double)RAND_MAX;
+}
+
