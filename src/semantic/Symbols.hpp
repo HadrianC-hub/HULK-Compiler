@@ -29,5 +29,38 @@ struct Symbol
     Symbol() = default;
 };
 
+// Símbolo específico para tipos (hereda de Symbol)
+struct TypeSymbol
+{
+    std::string name;
+    std::string parentType;                             // Tipo padre (si hereda)
+    std::vector<std::string> typeParams;                // Parámetros genéricos (ej: Point<T>)
+    std::unordered_map<std::string, Symbol> attributes; // Atributos (nombre: tipo)
+    std::unordered_map<std::string, Symbol> methods;    // Métodos (nombre: firma)
+};
 
+class SymbolTable
+{
+private:
+    // Ámbitos para variables/funciones (pila de tablas)
+    std::vector<std::unordered_map<std::string, Symbol>> scopes;
+
+    // Tabla global de tipos (nombre: TypeSymbol)
+    std::unordered_map<std::string, TypeSymbol> types;
+
+public:
+    SymbolTable();
+
+    // Métodos para variables/funciones
+    void enterScope();
+    void exitScope();
+    bool addSymbol(const std::string &name, const std::string &type, bool is_const, const std::vector<std::string> &params = {});
+    Symbol *lookup(const std::string &name);
+    bool existsInCurrentScope(const std::string &name);
+    bool addFunction(
+        const std::string &name,
+        const std::string &returnType,
+        const std::vector<std::string> &params,
+        ASTNode *body = nullptr // <-- nuevo
+    );
 

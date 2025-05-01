@@ -11,7 +11,14 @@ SymbolTable::SymbolTable() {
     addType("Boolean", "Object");
 }
 
+void SymbolTable::enterScope() {
+    scopes.push_back({});
+}
 
+
+void SymbolTable::exitScope() {
+    if (!scopes.empty()) scopes.pop_back();
+}
 
 
 
