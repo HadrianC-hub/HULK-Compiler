@@ -58,7 +58,21 @@ bool SymbolTable::addFunction(
     return true;
 }
 
-
+bool SymbolTable::addType(
+    const std::string& name,
+    const std::string& parentType,
+    const std::vector<std::string>& typeParams
+) {
+    if (types.find(name) != types.end()) return false;
+    types[name] = TypeSymbol{
+        name,                  // std::string name
+        parentType,            // std::string parentType
+        typeParams,            // std::vector<std::string> typeParams
+        {},                    // Atributos (inicialmente vacío)
+        {}                     // Métodos (inicialmente vacío)
+    };
+    return true;
+}
 
 
 
