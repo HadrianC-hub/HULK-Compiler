@@ -64,3 +64,20 @@ public:
         ASTNode *body = nullptr // <-- nuevo
     );
 
+    // Métodos para tipos
+    bool addType(
+        const std::string &name,
+        const std::string &parentType,
+        const std::vector<std::string> &typeParams = {});
+    TypeSymbol *lookupType(const std::string &name);
+
+    // Métodos para atributos y métodos de tipos
+    bool addTypeAttribute(const std::string &typeName, const std::string &attrName, const std::string &attrType);
+    bool addTypeMethod(
+        const std::string &typeName,
+        const std::string &methodName,
+        const std::string &returnType,
+        const std::vector<std::string> &params);
+
+    std::vector<Symbol> getUserDefinedFunctions() const;
+};

@@ -38,6 +38,10 @@ Symbol* SymbolTable::lookup(const std::string& name) {
 }
 
 
+bool SymbolTable::existsInCurrentScope(const std::string& name) {
+    if (scopes.empty()) return false;
+    return scopes.back().find(name) != scopes.back().end();
+}
 
 
 
