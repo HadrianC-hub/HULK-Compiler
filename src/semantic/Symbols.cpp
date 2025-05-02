@@ -44,7 +44,19 @@ bool SymbolTable::existsInCurrentScope(const std::string& name) {
 }
 
 
+bool SymbolTable::addFunction(
+    const std::string& name,
+    const std::string& returnType,
+    const std::vector<std::string>& params,
+    ASTNode* body
+) {
+    if (scopes.empty()) return false;
+    auto& current = scopes.back();
+    if (current.find(name) != current.end()) return false;
 
+    current[name] = Symbol{"function", returnType, false, params, body};
+    return true;
+}
 
 
 
