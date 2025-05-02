@@ -74,5 +74,9 @@ bool SymbolTable::addType(
     return true;
 }
 
-
+TypeSymbol* SymbolTable::lookupType(const std::string& name) {
+    auto it = types.find(name);
+    if (it == types.end()) return nullptr;
+    return &it->second;
+}
 
