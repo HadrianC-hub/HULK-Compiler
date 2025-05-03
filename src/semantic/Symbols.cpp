@@ -88,3 +88,16 @@ bool SymbolTable::addTypeAttribute(const std::string& typeName, const std::strin
     return true;
 }
 
+bool SymbolTable::addTypeMethod(
+    const std::string& typeName,
+    const std::string& methodName,
+    const std::string& returnType,
+    const std::vector<std::string>& params
+) {
+    TypeSymbol* type = lookupType(typeName);
+    if (!type) return false;
+    if (type->methods.find(methodName) != type->methods.end()) return false;
+    type->methods[methodName] = Symbol{"method", returnType, false, params};
+    return true;
+}
+
