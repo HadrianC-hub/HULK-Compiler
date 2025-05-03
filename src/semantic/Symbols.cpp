@@ -101,3 +101,15 @@ bool SymbolTable::addTypeMethod(
     return true;
 }
 
+std::vector<Symbol> SymbolTable::getUserDefinedFunctions() const {
+    std::vector<Symbol> functions;
+    if (scopes.empty()) return functions;
+
+    const auto& global = scopes.front();
+    for (const auto& [name, sym] : global) {
+        if (sym.body != nullptr) {
+            functions.push_back(sym);
+        }
+    }
+    return functions;
+}
