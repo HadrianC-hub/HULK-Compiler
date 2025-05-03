@@ -80,3 +80,11 @@ TypeSymbol* SymbolTable::lookupType(const std::string& name) {
     return &it->second;
 }
 
+bool SymbolTable::addTypeAttribute(const std::string& typeName, const std::string& attrName, const std::string& attrType) {
+    TypeSymbol* type = lookupType(typeName);
+    if (!type) return false;
+    if (type->attributes.find(attrName) != type->attributes.end()) return false;
+    type->attributes[attrName] = Symbol{"attribute", attrType, true, {}};
+    return true;
+}
+
