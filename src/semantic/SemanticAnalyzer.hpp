@@ -16,6 +16,8 @@ public:
     void visit(ASTNode& node) override {}
     void visit(LiteralNode& node) override;
     void visit(IdentifierNode& node) override;
+    void visit(VariableDeclarationNode& node) override;
+
     
     const std::vector<SemanticError>& getErrors() const { return errors; }
 };
