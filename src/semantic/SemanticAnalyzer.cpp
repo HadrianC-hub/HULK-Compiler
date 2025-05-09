@@ -46,6 +46,30 @@ void SemanticAnalyzer::visit(VariableDeclarationNode& node) {
     symbolTable.addSymbol(node.name, node._type, !node.isMutable);
 }
 
+void SemanticAnalyzer::visit(BinaryOperationNode& node) {
+    node.left->accept(*this);
+    node.right->accept(*this);
+    
+    std::string leftType = node.left->type();
+    std::string rightType = node.right->type();
+    
+    if (node.op == "+" || node.op == "-" || node.op == "*" || node.op == "/") {
+        if (leftType != "Number" || rightType != "Number") {
+            errors.emplace_back("Operandos deben ser números", node.line());
+            node._type = "Error";
+        } else {
+            node._type = "Number";
+        }
+    } 
+    else if (node.op == "==" || node.op == "!=") {
+        node._type = "Boolean";
+    }
+    else {
+        errors.emplace_back("Operador no soportado", node.line());
+        node._type = "Error";
+    }
+}
+
 SymbolTable& SemanticAnalyzer::getSymbolTable() {
     return symbolTable;
 }
