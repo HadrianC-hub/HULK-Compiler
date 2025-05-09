@@ -70,6 +70,33 @@ void SemanticAnalyzer::visit(BinaryOperationNode& node) {
     }
 }
 
+void SemanticAnalyzer::visit(IfNode& node) {
+    for (auto& branch : *node.branches) {
+        branch.condition->accept(*this);
+        if (branch.condition->type() != "Boolean") {
+            errors.emplace_back("La condición debe ser booleana", branch.condition->line());
+        }
+        branch.body->accept(*this);
+    }
+
+    if (node.elseBody) {
+        node.elseBody->accept(*this);
+    }
+
+    // Versión inicial sin chequeo de tipos consistentes en ramas
+    node._type = "Void"; 
+}
+
+void SemanticAnalyzer::visit(WhileNode& node) {
+    node.condition->accept(*this);
+    if (node.condition->type() != "Boolean") {
+        errors.emplace_back("La condición del while debe ser booleana", node.line());
+    }
+
+    node.body->accept(*this);
+    node._type = "Void"; // Versión inicial simplificada
+}
+
 SymbolTable& SemanticAnalyzer::getSymbolTable() {
     return symbolTable;
 }

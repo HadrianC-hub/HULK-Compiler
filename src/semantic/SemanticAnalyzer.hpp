@@ -4,20 +4,23 @@
 #include "../utils/SemanticError.hpp"
 #include <vector>
 
-class SemanticAnalyzer : public ASTVisitor {
+class SemanticAnalyzer : public ASTVisitor
+{
 private:
     SymbolTable symbolTable;
     std::vector<SemanticError> errors;
 
 public:
-    void analyze(const std::vector<ASTNode*>& nodes);
-    SymbolTable& getSymbolTable();
-    
-    void visit(ASTNode& node) override {}
-    void visit(LiteralNode& node) override;
-    void visit(IdentifierNode& node) override;
-    void visit(VariableDeclarationNode& node) override;
-    void visit(BinaryOperationNode& node) override;
+    void analyze(const std::vector<ASTNode *> &nodes);
+    SymbolTable &getSymbolTable();
 
-    const std::vector<SemanticError>& getErrors() const { return errors; }
+    void visit(ASTNode &node) override {}
+    void visit(LiteralNode &node) override;
+    void visit(IdentifierNode &node) override;
+    void visit(VariableDeclarationNode &node) override;
+    void visit(BinaryOperationNode &node) override;
+    void visit(IfNode &node) override;
+    void visit(WhileNode &node) override;
+
+    const std::vector<SemanticError> &getErrors() const { return errors; }
 };
