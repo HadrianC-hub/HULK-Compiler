@@ -14,4 +14,7 @@ public:
     virtual ~FunctionCollector() = default;
 
     void addBuiltins();
+
+    void visit(ASTNode &node) override {}
+    void visit(FunctionDeclarationNode &node) override;
 };

@@ -17,3 +17,17 @@ void FunctionCollector::addBuiltins() {
     symbolTable.addFunction("rand", "Number", {});
     symbolTable.addFunction("print", "Null", {"Object"});
 }
+
+void FunctionCollector::visit(FunctionDeclarationNode& node) {
+    std::vector<std::string> paramTypes;
+    for (const auto& param : *node.params) {
+        paramTypes.push_back(param.type.empty() ? "Object" : param.type); // Tipo por defecto Object
+    }
+
+    // Versión inicial sin verificar duplicados en scope padre
+    symbolTable.addFunction(node.name, 
+                          node.returnType.empty() ? "Object" : node.returnType,
+                          paramTypes);
+    
+    // No maneja el cuerpo de la función aún
+}
