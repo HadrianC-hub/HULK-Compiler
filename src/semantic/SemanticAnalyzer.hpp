@@ -22,5 +22,7 @@ public:
     void visit(IfNode &node) override;
     void visit(WhileNode &node) override;
 
+    bool conformsTo(const std::string& subtype, const std::string& supertype);
+
     const std::vector<SemanticError> &getErrors() const { return errors; }
 };

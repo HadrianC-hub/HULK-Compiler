@@ -97,6 +97,19 @@ void SemanticAnalyzer::visit(WhileNode& node) {
     node._type = "Void"; // Versión inicial simplificada
 }
 
+bool SemanticAnalyzer::conformsTo(const std::string& subtype, const std::string& supertype) {
+    if (subtype == supertype) return true;
+    if (supertype == "Object") return true; // Todos los tipos heredan de Object
+    
+    // Versión inicial con bug: no verifica jerarquía completa
+    TypeSymbol* sub = symbolTable.lookupType(subtype);
+    if (sub && sub->parentType == supertype) {
+        return true;
+    }
+    
+    return false;
+}
+
 SymbolTable& SemanticAnalyzer::getSymbolTable() {
     return symbolTable;
 }
