@@ -98,15 +98,18 @@ void SemanticAnalyzer::visit(WhileNode& node) {
 }
 
 bool SemanticAnalyzer::conformsTo(const std::string& subtype, const std::string& supertype) {
+    if (subtype == "Error" || supertype == "Error") return false;
     if (subtype == supertype) return true;
-    if (supertype == "Object") return true; // Todos los tipos heredan de Object
-    
-    // Versión inicial con bug: no verifica jerarquía completa
+    if (supertype == "Object") return true;
+    if (supertype.empty()) return true;  // Permite compatibilidad con tipos no especificados
+
+    // Ahora recorre toda la jerarquía
     TypeSymbol* sub = symbolTable.lookupType(subtype);
-    if (sub && sub->parentType == supertype) {
-        return true;
+    while (sub && !sub->parentType.empty()) {
+        if (sub->parentType == supertype) return true;
+        sub = symbolTable.lookupType(sub->parentType);
     }
-    
+
     return false;
 }
 
