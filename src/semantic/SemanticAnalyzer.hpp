@@ -21,8 +21,9 @@ public:
     void visit(BinaryOperationNode &node) override;
     void visit(IfNode &node) override;
     void visit(WhileNode &node) override;
+    void visit(BlockNode &node) override;
 
-    bool conformsTo(const std::string& subtype, const std::string& supertype);
+    bool conformsTo(const std::string &subtype, const std::string &supertype);
 
     const std::vector<SemanticError> &getErrors() const { return errors; }
 };
