@@ -22,6 +22,7 @@ public:
     void visit(IfNode &node) override;
     void visit(WhileNode &node) override;
     void visit(BlockNode &node) override;
+    void visit(UnaryOpNode &node) override;
 
     bool conformsTo(const std::string &subtype, const std::string &supertype);
 

@@ -162,6 +162,32 @@ void SemanticAnalyzer::visit(BlockNode &node)
     node._type = lastType; // Tipo del bloque es el de su última expresión
 }
 
+void SemanticAnalyzer::visit(UnaryOpNode& node) {
+    node.operand->accept(*this);
+    std::string operandType = node.operand->type();
+
+    if (node.op == "-") {
+        if (operandType != "Number") {
+            errors.emplace_back("El operador '-' requiere operando numérico", node.line());
+            node._type = "Error";
+        } else {
+            node._type = "Number";
+        }
+    } 
+    else if (node.op == "!") {
+        if (operandType != "Boolean") {
+            errors.emplace_back("El operador '!' requiere operando booleano", node.line());
+            node._type = "Error";
+        } else {
+            node._type = "Boolean";
+        }
+    }
+    else {
+        errors.emplace_back("Operador unario no soportado: " + node.op, node.line());
+        node._type = "Error";
+    }
+}
+
 SymbolTable &SemanticAnalyzer::getSymbolTable()
 {
     return symbolTable;
