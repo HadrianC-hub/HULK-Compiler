@@ -7,10 +7,59 @@
 
 void SemanticAnalyzer::analyze(const std::vector<ASTNode *> &nodes)
 {
+    std::cout << "[SEMANTIC CHECK] Entra en analyze." << std::endl;
+
+    FunctionCollector collector(symbolTable, errors);
+    collector.addBuiltins();
+    std::cout << "[SEMANTIC CHECK] Builtins agregados." << std::endl;
+
     for (ASTNode *node : nodes)
     {
-        node->accept(*this);
+        if (!node)
+        {
+            std::cerr << "[SEMANTIC ERROR] Nodo nulo en AST." << std::endl;
+            continue;
+        }
+
+        std::cout << "[SEMANTIC CHECK] Recolectando funciones para nodo tipo: " << typeid(*node).name() << std::endl;
+        node->accept(collector);
     }
+
+    std::cout << "[SEMANTIC CHECK] Fase de recolección completada." << std::endl;
+
+    for (ASTNode *node : nodes)
+    {
+        try
+        {
+            std::cout << "Análisis semántico de: " << typeid(*node).name() << std::endl;
+            node->accept(*this);
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "[SEMANTIC ERROR] Error durante análisis semántico: " << e.what() << std::endl;
+        }
+    }
+
+    if (!errors.empty())
+    {
+        std::cerr << "[SEMANTIC ERROR] Errores semánticos encontrados:\n";
+        for (const auto &e : errors)
+        {
+            std::cerr << "- Línea " << e.line << ": " << e.message << "\n";
+        }
+    }
+    else
+    {
+        std::cout << "[SEMANTIC CHECK] No se encontraron errores semánticos.\n";
+    }
+
+    if (!errors.empty())
+    {
+        std::cerr << "[SEMANTIC ERROR] Errores semánticos presentes. Abortando ejecución.\n";
+        exit(1);
+    }
+
+    std::cout << "[SEMANTIC CHECK] Análisis semántico completado." << std::endl;
 }
 
 void SemanticAnalyzer::visit(LiteralNode &node)
@@ -169,37 +218,32 @@ void SemanticAnalyzer::visit(BlockNode &node)
 
 void SemanticAnalyzer::visit(UnaryOpNode &node)
 {
-    node.operand->accept(*this);
+    node.operand->accept(*this); // Analiza operand
     std::string operandType = node.operand->type();
 
     if (node.op == "-")
     {
         if (operandType != "Number")
         {
-            errors.emplace_back("El operador '-' requiere operando numérico", node.line());
+            errors.emplace_back("[SEMANTIC ERROR] El operador '-' requiere un operando de tipo Number", node.line());
             node._type = "Error";
         }
-        else
-        {
-            node._type = "Number";
-        }
+        node._type = "Number";
     }
     else if (node.op == "!")
     {
         if (operandType != "Boolean")
         {
-            errors.emplace_back("El operador '!' requiere operando booleano", node.line());
+            errors.emplace_back("[SEMANTIC ERROR] El operador '!' requiere un operando de tipo Boolean", node.line());
             node._type = "Error";
         }
-        else
-        {
-            node._type = "Boolean";
-        }
+        node._type = "Boolean";
     }
     else
     {
-        errors.emplace_back("Operador unario no soportado: " + node.op, node.line());
+        errors.emplace_back("[SEMANTIC ERROR] Operador unario desconocido: " + node.op, node.line());
         node._type = "Error";
+        ;
     }
 }
 
