@@ -1,4 +1,9 @@
 #include "SemanticAnalyzer.hpp"
+#include "../ast/AST.hpp"
+#include "../utils/F_Collector.hpp"
+#include <cctype>
+#include <set>
+#include <iostream>
 
 void SemanticAnalyzer::analyze(const std::vector<ASTNode *> &nodes)
 {
@@ -291,6 +296,75 @@ void SemanticAnalyzer::visit(BuiltInFunctionNode &node)
         errors.emplace_back("[SEMANTIC ERROR] Función builtin '" + fn + "' no reconocida", node.line());
         node._type = "Error";
     }
+}
+
+void SemanticAnalyzer::visit(FunctionDeclarationNode &node)
+{
+    symbolTable.enterScope();
+
+    // Verificar que los parámetros no estén duplicados
+    std::unordered_map<std::string, bool> seen;
+    for (const auto &param : *node.params)
+    {
+        if (seen.count(param.name))
+        {
+            errors.emplace_back("[SEMANTIC ERROR] Parámetro duplicado '" + param.name + "'", node.line());
+            node._type = "Error";
+        }
+        else
+        {
+            seen[param.name] = true;
+            symbolTable.addSymbol(param.name, param.type, false);
+        }
+    }
+
+    // Si no es inline, analizamos el cuerpo y verificamos tipos
+    if (!node.isInline)
+    {
+        node.body->accept(*this);
+        std::string bodyType = node.body->type();
+
+        // Verificar tipo de retorno si está especificado
+        if (!node.returnType.empty())
+        {
+            if (!conformsTo(bodyType, node.returnType))
+            {
+                errors.emplace_back("[SEMANTIC ERROR] Tipo de retorno incorrecto en función '" + node.name + "'", node.line());
+                node._type = "Error";
+            }
+        }
+        else
+        {
+            node.returnType = bodyType; // Inferencia si no se especificó
+        }
+    }
+
+    // Inferencia de tipos de parámetros si no fueron anotados
+    for (auto &param : *node.params)
+    {
+        if (param.type.empty())
+        {
+            Symbol *s = symbolTable.lookup(param.name);
+            std::cout << "tipo de parámetro." << std::endl;
+            if (s && !s->type.empty())
+            {
+                param.type = s->type;
+            }
+            else
+            {
+                // Si es inline, no disparamos error: se infiere en tiempo de invocación
+                if (!node.isInline)
+                {
+                    errors.emplace_back("[SEMANTIC ERROR] No se pudo inferir tipo para el parámetro '" + param.name + "'", node.line());
+                    node._type = "Error";
+                }
+            }
+        }
+    }
+
+    symbolTable.exitScope();
+
+    // No se agrega aquí a la tabla, lo hace FunctionCollector y guarda el cuerpo
 }
 
 SymbolTable &SemanticAnalyzer::getSymbolTable()
