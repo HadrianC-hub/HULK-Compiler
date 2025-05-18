@@ -162,28 +162,133 @@ void SemanticAnalyzer::visit(BlockNode &node)
     node._type = lastType; // Tipo del bloque es el de su última expresión
 }
 
-void SemanticAnalyzer::visit(UnaryOpNode& node) {
+void SemanticAnalyzer::visit(UnaryOpNode &node)
+{
     node.operand->accept(*this);
     std::string operandType = node.operand->type();
 
-    if (node.op == "-") {
-        if (operandType != "Number") {
+    if (node.op == "-")
+    {
+        if (operandType != "Number")
+        {
             errors.emplace_back("El operador '-' requiere operando numérico", node.line());
             node._type = "Error";
-        } else {
+        }
+        else
+        {
             node._type = "Number";
         }
-    } 
-    else if (node.op == "!") {
-        if (operandType != "Boolean") {
+    }
+    else if (node.op == "!")
+    {
+        if (operandType != "Boolean")
+        {
             errors.emplace_back("El operador '!' requiere operando booleano", node.line());
             node._type = "Error";
-        } else {
+        }
+        else
+        {
             node._type = "Boolean";
         }
     }
-    else {
+    else
+    {
         errors.emplace_back("Operador unario no soportado: " + node.op, node.line());
+        node._type = "Error";
+    }
+}
+
+void SemanticAnalyzer::visit(BuiltInFunctionNode &node)
+{
+    for (ASTNode *arg : node.args)
+    {
+        arg->accept(*this);
+    }
+
+    const std::string &fn = node.name;
+    size_t arity = node.args.size();
+
+    for (ASTNode *arg : node.args)
+    {
+        arg->accept(*this);
+    }
+
+    if (fn == "print")
+    {
+        if (arity != 1)
+        {
+            errors.emplace_back("[SEMANTIC ERROR] La función 'print' requiere exactamente 1 argumento", node.line());
+            node._type = "Error";
+            return;
+        }
+        node._type = node.args[0]->type(); // El tipo es el del argumento impreso
+    }
+    else if (fn == "sin" || fn == "cos" || fn == "exp" || fn == "sqrt")
+    {
+        if (node.args.size() != 1)
+        {
+            errors.emplace_back("[SEMANTIC ERROR] Función " + fn + " requiere 1 argumento", node.line());
+            node._type = "Error";
+        }
+        else if (node.args[0]->type() != "Number")
+        {
+            errors.emplace_back("[SEMANTIC ERROR] El argumento de '" + fn + "' debe ser un número", node.line());
+            node._type = "Error";
+        }
+        else
+        {
+            node._type = "Number";
+        }
+    }
+    else if (fn == "log")
+    {
+        if (arity != 2)
+        {
+            errors.emplace_back("[SEMANTIC ERROR] La función 'log' requiere 2 argumentos", node.line());
+            node._type = "Error";
+        }
+        else if (node.args[0]->type() != "Number" || node.args[1]->type() != "Number")
+        {
+            errors.emplace_back("[SEMANTIC ERROR] Los argumentos de 'log' deben ser numéricos", node.line());
+            node._type = "Error";
+        }
+        else
+        {
+            node._type = "Number";
+        }
+    }
+    else if (fn == "rand")
+    {
+        if (arity != 0)
+        {
+            errors.emplace_back("[SEMANTIC ERROR] La función 'rand' no acepta argumentos", node.line());
+            node._type = "Error";
+        }
+        else
+        {
+            node._type = "Number";
+        }
+    }
+    else if (fn == "min" || fn == "max")
+    {
+        if (arity != 2)
+        {
+            errors.emplace_back("[SEMANTIC ERROR] La función '" + fn + "' requiere 2 argumentos", node.line());
+            node._type = "Error";
+        }
+        else if (node.args[0]->type() != "Number" || node.args[1]->type() != "Number")
+        {
+            errors.emplace_back("[SEMANTIC ERROR] Los argumentos de '" + fn + "' deben ser numéricos", node.line());
+            node._type = "Error";
+        }
+        else
+        {
+            node._type = "Number";
+        }
+    }
+    else
+    {
+        errors.emplace_back("[SEMANTIC ERROR] Función builtin '" + fn + "' no reconocida", node.line());
         node._type = "Error";
     }
 }
