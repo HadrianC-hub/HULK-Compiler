@@ -75,6 +75,8 @@ int yycolumn = 1;
 
 "@"                     { printf(" @ \n"); return CONCAT; }
 "@@"                    { printf(" @@ \n"); return CONCAT_SPACE; }
+":"                     { return COLON; }
+
 
 
 "sin"                   { printf(" sin \n"); return SIN; }
