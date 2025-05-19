@@ -114,6 +114,75 @@ void SemanticAnalyzer::visit(VariableDeclarationNode &node)
     symbolTable.addSymbol(node.name, node._type, !node.isMutable);
 }
 
+void SemanticAnalyzer::visit(FunctionCallNode &node)
+{
+    if (node.funcName == "base")
+    {
+        Symbol *self = symbolTable.lookup("self");
+        if (!self)
+        {
+            errors.emplace_back("[SEMANTIC ERROR] 'base' solo puede usarse dentro de métodos", node.line());
+            node._type = "Error";
+            return;
+        }
+
+        TypeSymbol *typeSym = symbolTable.lookupType(self->type);
+        if (!typeSym || typeSym->parentType == "Object")
+        {
+            errors.emplace_back("[SEMANTIC ERROR] 'base' no disponible para este tipo", node.line());
+            node._type = "Error";
+            return;
+        }
+
+        node._type = typeSym->parentType;
+        return;
+    }
+
+    // Funciones built-in como 'print'
+    if (node.funcName == "print")
+    {
+        for (auto arg : node.args)
+        {
+            arg->accept(*this);
+        }
+        node._type = "void";
+        return;
+    }
+
+    // Funciones definidas por el usuario
+    Symbol *symbol = symbolTable.lookup(node.funcName);
+    if (!symbol || symbol->kind != "function")
+    {
+        errors.emplace_back("[SEMANTIC ERROR] Función '" + node.funcName + "' no definida", node.line());
+        node._type = "Error";
+        return;
+    }
+
+    if (node.args.size() != symbol->params.size())
+    {
+        errors.emplace_back("[SEMANTIC ERROR] Número incorrecto de argumentos para '" + node.funcName + "'", node.line());
+        node._type = "Error";
+        return;
+    }
+
+    for (size_t i = 0; i < node.args.size(); ++i)
+    {
+        node.args[i]->accept(*this);
+        std::string argType = node.args[i]->type();
+        std::string expectedType = symbol->params[i];
+
+        if (!conformsTo(argType, expectedType))
+        {
+            errors.emplace_back("[SEMANTIC ERROR] Tipo incorrecto para argumento " + std::to_string(i + 1) +
+                                    " en '" + node.funcName + "': esperado '" + expectedType + "', obtenido '" + argType + "'",
+                                node.line());
+            node._type = "Error";
+        }
+    }
+
+    node._type = symbol->type;
+}
+
 void SemanticAnalyzer::visit(BinaryOperationNode &node)
 {
     node.left->accept(*this);
