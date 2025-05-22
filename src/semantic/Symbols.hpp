@@ -80,4 +80,5 @@ public:
         const std::vector<std::string> &params);
 
     std::vector<Symbol> getUserDefinedFunctions() const;
+
 };

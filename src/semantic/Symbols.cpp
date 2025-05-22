@@ -1,4 +1,5 @@
 #include "Symbols.hpp"
+#include <iostream>
 
 SymbolTable::SymbolTable() {
     enterScope(); // Scope global
@@ -9,6 +10,9 @@ SymbolTable::SymbolTable() {
     addType("Number", "Object");
     addType("String", "Object");
     addType("Boolean", "Object");
+    addType("Iterator", {"Object"});
+    addTypeMethod("Iterator", "next", "Boolean", {});    // next() devuelve Boolean y no recibe parámetros
+    addTypeMethod("Iterator", "current", "Number", {});  // current() devuelve Number y no recibe parámetros
 }
 
 void SymbolTable::enterScope() {
