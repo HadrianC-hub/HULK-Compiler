@@ -40,6 +40,7 @@ void SemanticAnalyzer::analyze(const std::vector<ASTNode *> &nodes)
 
     FunctionCollector collector(symbolTable, errors);
     collector.addBuiltins();
+
     std::cout << "[SEMANTIC CHECK] Builtins agregados." << std::endl;
 
     for (ASTNode *node : nodes)
@@ -134,11 +135,6 @@ void SemanticAnalyzer::visit(BuiltInFunctionNode &node)
     const std::string &fn = node.name;
     size_t arity = node.args.size();
 
-    for (ASTNode *arg : node.args)
-    {
-        arg->accept(*this);
-    }
-
     if (fn == "print")
     {
         if (arity != 1)
@@ -147,11 +143,11 @@ void SemanticAnalyzer::visit(BuiltInFunctionNode &node)
             node._type = "Error";
             return;
         }
-        node._type = node.args[0]->type(); // El tipo es el del argumento impreso
+        node._type = node.args[0]->type();
     }
     else if (fn == "sin" || fn == "cos" || fn == "exp" || fn == "sqrt")
     {
-        if (node.args.size() != 1)
+        if (arity != 1)
         {
             errors.emplace_back("[SEMANTIC ERROR] Función " + fn + " requiere 1 argumento", node.line());
             node._type = "Error";
@@ -212,12 +208,30 @@ void SemanticAnalyzer::visit(BuiltInFunctionNode &node)
             node._type = "Number";
         }
     }
+    else if (fn == "range")
+    {
+        if (arity != 2)
+        {
+            errors.emplace_back("[SEMANTIC ERROR] La función 'range' requiere exactamente 2 argumentos", node.line());
+            node._type = "Error";
+        }
+        else if (node.args[0]->type() != "Number" || node.args[1]->type() != "Number")
+        {
+            errors.emplace_back("[SEMANTIC ERROR] Los argumentos de 'range' deben ser numéricos", node.line());
+            node._type = "Error";
+        }
+        else
+        {
+            node._type = "Iterator";
+        }
+    }
     else
     {
         errors.emplace_back("[SEMANTIC ERROR] Función builtin '" + fn + "' no reconocida", node.line());
         node._type = "Error";
     }
 }
+
 
 void SemanticAnalyzer::visit(FunctionDeclarationNode &node)
 {
@@ -290,8 +304,11 @@ void SemanticAnalyzer::visit(FunctionDeclarationNode &node)
 
 void SemanticAnalyzer::visit(FunctionCallNode &node)
 {
+    // Función especial: base()
     if (node.funcName == "base")
     {
+        std::cout << "[DEBUG] Buscando función: " << node.funcName << std::endl;
+
         Symbol *self = symbolTable.lookup("self");
         if (!self)
         {
@@ -312,7 +329,7 @@ void SemanticAnalyzer::visit(FunctionCallNode &node)
         return;
     }
 
-    // Funciones built-in como 'print'
+    // Función builtin: print(...)
     if (node.funcName == "print")
     {
         for (auto arg : node.args)
@@ -323,10 +340,41 @@ void SemanticAnalyzer::visit(FunctionCallNode &node)
         return;
     }
 
-    // Funciones definidas por el usuario
+    // Función builtin: range(...)
+    if (node.funcName == "range")
+    {
+        for (auto arg : node.args)
+        {
+            arg->accept(*this);
+        }
+
+        if (node.args.size() != 2)
+        {
+            errors.emplace_back("[SEMANTIC ERROR] 'range' espera 2 argumentos", node.line());
+            node._type = "Error";
+        }
+        else
+        {
+            std::string t1 = node.args[0]->type();
+            std::string t2 = node.args[1]->type();
+            if (t1 != "Number" || t2 != "Number")
+            {
+                errors.emplace_back("[SEMANTIC ERROR] Argumentos de 'range' deben ser de tipo 'Number'", node.line());
+                node._type = "Error";
+            }
+            else
+            {
+                node._type = "Iterator";
+            }
+        }
+        return;
+    }
+
+    // Funciones definidas por el usuario o builtins restantes
     Symbol *symbol = symbolTable.lookup(node.funcName);
     if (!symbol || symbol->kind != "function")
     {
+        std::cerr << "[DEBUG] No se encontró la función '" << node.funcName << "' en la tabla de símbolos.\n";
         errors.emplace_back("[SEMANTIC ERROR] Función '" + node.funcName + "' no definida", node.line());
         node._type = "Error";
         return;
