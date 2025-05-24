@@ -16,4 +16,11 @@ public:
     llvm::LLVMContext context; // Global LLVM context (types, constants, etc.)
     llvm::IRBuilder<> builder; // Builder for creating IR instructions
     llvm::Module module;       // LLVM IR module (a single compilation unit)
+
+    std::map<std::string, llvm::Value *> locals;
+    std::vector<llvm::Value *> valueStack;
+
+    CodeGenContext();
+
+    void generateCode(std::vector<ASTNode *> &root);
 }
