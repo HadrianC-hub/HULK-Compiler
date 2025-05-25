@@ -79,3 +79,12 @@ void CodeGenContext::generateCode(std::vector<ASTNode *> &root)
     builder.CreateRet(llvm::ConstantInt::get(context, llvm::APInt(32, 0)));
     llvm::verifyFunction(*mainFunc);
 }
+
+void CodeGenContext::dumpIR(const std::string &filename)
+{
+    std::error_code EC;
+    llvm::raw_fd_ostream out(filename, EC);
+
+    module.print(out, nullptr);
+    out.flush();
+}
