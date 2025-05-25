@@ -60,6 +60,18 @@ void CodeGenContext::generateCode(std::vector<ASTNode *> &root)
             llvm::Value *format = builder.CreateGlobalStringPtr("%g\n");
             builder.CreateCall(module.getFunction("printf"), {format, val});
         }
+        else if (val->getType()->isIntegerTy(1))
+        { // Boolean
+            llvm::Value *str = builder.CreateSelect(
+                val,
+                builder.CreateGlobalStringPtr("true\n"),
+                builder.CreateGlobalStringPtr("false\n"));
+            builder.CreateCall(module.getFunction("puts"), {str});
+        }
+        else if (val->getType()->isPointerTy())
+        { // String
+            builder.CreateCall(module.getFunction("puts"), {val});
+        }
     }
 
     valueStack.clear();
