@@ -85,6 +85,13 @@ void CodeGenContext::dumpIR(const std::string &filename)
     std::error_code EC;
     llvm::raw_fd_ostream out(filename, EC);
 
+    if (EC)
+    {
+        std::cerr << "[ERROR CG]: " << EC.message() << std::endl;
+        return;
+    }
+
     module.print(out, nullptr);
     out.flush();
+    std::cout << "[CHECK CG] IR dumped to: " << filename << std::endl;
 }
