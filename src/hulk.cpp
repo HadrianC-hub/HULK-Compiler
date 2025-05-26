@@ -4,21 +4,20 @@
 #include "ast/AST.hpp"
 #include "utils/AST_utils.hpp"
 #include "semantic/SemanticAnalyzer.hpp"
-#include "codegen/CodeGenContext.hpp"
+#include "codegen/Context.hpp"
 
 
-extern int yyparse();               // Bison
-extern FILE *yyin;                  // Archivo fuente
-extern std::vector<ASTNode *> root; // Nodo raíz del AST generado por el parser
+extern int yyparse();              
+extern FILE *yyin;                  
+extern std::vector<ASTNode *> root; 
 
 int main(int argc, char **argv)
 {
-    // Archivo por defecto
     const char *filename = "script.hulk"; 
 
     if (argc >= 2)
     {
-        filename = argv[1]; // Usar nombre pasado como argumento
+        filename = argv[1]; 
     }
 
     // Abrir archivo
@@ -46,9 +45,8 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    std::cout << "[CHECK] AST terminado." << std::endl;
+    std::cout << "[CHECK] AST terminado correctamente." << std::endl;
 
-    // Escribiendo nodos en consola
     for (auto node : root)
     {
         std::cout << "Tipo de nodo raíz: " << node->type()
