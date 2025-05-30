@@ -68,4 +68,37 @@ std::string processRawString(const std::string &raw)
     return processed;
 }
 
+void LLVMGenerator::visit(LiteralNode &node)
+{
+    llvm::Value *val = nullptr;
+
+    if (node._type == "Number")
+    {
+        double numVal = std::stod(node.value);
+        val = llvm::ConstantFP::get(context.context, llvm::APFloat(numVal));
+    }
+    else if (node._type == "Boolean")
+    {
+        bool b = (node.value == "true");
+        val = llvm::ConstantInt::get(llvm::Type::getInt1Ty(context.context), b);
+    }
+    else if (node._type == "String")
+    {
+        std::string processed = processRawString(node.value);
+        val = context.builder.CreateGlobalStringPtr(processed);
+    }
+    else if (node._type == "Null")
+    {
+        val = llvm::ConstantPointerNull::get(llvm::PointerType::get(llvm::Type::getInt8Ty(context.context), 0));
+    }
+    else
+    {
+        throw std::runtime_error("[ERROR CG] Tipo literal no soportado: " + node._type);
+    }
+
+    context.valueStack.push_back(val);
+
+    std::cout << "[PROC CG] Emitido literal de tipo " << node._type << std::endl;
+}
+
 
