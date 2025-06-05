@@ -243,3 +243,133 @@ void LLVMGenerator::visit(BinaryOperationNode &node)
     std::cout << "[PROC CG] Operación binaria '" << op << "' emitida.\n";
 }
 
+void LLVMGenerator::visit(UnaryOpNode &node)
+{
+    node.operand->accept(*this);
+    llvm::Value *operand = context.valueStack.back();
+    context.valueStack.pop_back();
+
+    llvm::Value *result = nullptr;
+    llvm::IRBuilder<> &builder = context.builder;
+
+    const std::string &op = node.op;
+
+    if (op == "-")
+    {
+        llvm::Value *zero = llvm::ConstantFP::get(context.context, llvm::APFloat(0.0));
+        result = builder.CreateFSub(zero, operand, "negtmp");
+    }
+    else if (op == "!")
+    {
+        result = builder.CreateNot(operand, "nottmp");
+    }
+    else
+    {
+        throw std::runtime_error("[ERROR CG] Operador unario no soportado: " + op);
+    }
+
+    context.valueStack.push_back(result);
+    std::cout << "[PROC CG] Operación unaria '" << op << "' emitida.\n";
+}
+
+void LLVMGenerator::visit(BuiltInFunctionNode &node)
+{
+    llvm::IRBuilder<> &builder = context.builder;
+    std::vector<llvm::Value *> args;
+
+    for (ASTNode *arg : node.args)
+    {
+        arg->accept(*this);
+        args.push_back(context.valueStack.back());
+        context.valueStack.pop_back();
+    }
+
+    llvm::Value *result = nullptr;
+    std::string name = node.name;
+
+    auto emit_llvm_unary_math = [&](const std::string &fnName, llvm::Value *arg)
+    {
+        llvm::Function *fn = context.module.getFunction(fnName);
+        if (!fn)
+        {
+            llvm::FunctionType *ft = llvm::FunctionType::get(
+                llvm::Type::getDoubleTy(context.context),
+                {llvm::Type::getDoubleTy(context.context)},
+                false);
+            fn = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, fnName, context.module);
+        }
+        return builder.CreateCall(fn, {arg});
+    };
+
+    if (name == "print")
+    {
+        result = args[0];
+    }
+    else if (name == "sin" || name == "cos" || name == "sqrt" || name == "exp")
+    {
+        std::string fnName = "llvm." + name + ".f64";
+        result = emit_llvm_unary_math(fnName, args[0]);
+    }
+    else if (name == "min")
+    {
+        llvm::Function *fn = context.module.getFunction("fmin");
+        if (!fn)
+        {
+            llvm::FunctionType *type = llvm::FunctionType::get(
+                llvm::Type::getDoubleTy(context.context),
+                {llvm::Type::getDoubleTy(context.context), llvm::Type::getDoubleTy(context.context)},
+                false);
+            fn = llvm::Function::Create(type, llvm::Function::ExternalLinkage, "fmin", context.module);
+        }
+        result = builder.CreateCall(fn, {args[0], args[1]}, "mincall");
+    }
+    else if (name == "max")
+    {
+        llvm::Function *fn = context.module.getFunction("fmax");
+        if (!fn)
+        {
+            llvm::FunctionType *type = llvm::FunctionType::get(
+                llvm::Type::getDoubleTy(context.context),
+                {llvm::Type::getDoubleTy(context.context), llvm::Type::getDoubleTy(context.context)},
+                false);
+            fn = llvm::Function::Create(type, llvm::Function::ExternalLinkage, "fmax", context.module);
+        }
+        result = builder.CreateCall(fn, {args[0], args[1]}, "maxcall");
+    }
+    else if (name == "log")
+    {
+        llvm::Function *logFn = context.module.getFunction("hulk_log_base_checked");
+        if (!logFn)
+        {
+            llvm::FunctionType *ft = llvm::FunctionType::get(
+                llvm::Type::getDoubleTy(context.context),
+                {llvm::Type::getDoubleTy(context.context), llvm::Type::getDoubleTy(context.context)},
+                false);
+            logFn = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, "hulk_log_base_checked", context.module);
+        }
+        result = builder.CreateCall(logFn, {args[0], args[1]}, "logcall");
+    }
+    else if (name == "rand")
+    {
+        llvm::Function *randFn = context.module.getFunction("hulk_rand");
+        if (!randFn)
+        {
+            llvm::FunctionType *ft = llvm::FunctionType::get(
+                llvm::Type::getDoubleTy(context.context), false);
+            randFn = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, "hulk_rand", context.module);
+        }
+        result = builder.CreateCall(randFn, {}, "randcall");
+    }
+    else
+    {
+        throw std::runtime_error("[ERROR CG] Función built-in no soportada: " + name);
+    }
+
+    if (result)
+    {
+        context.valueStack.push_back(result);
+    }
+
+    std::cout << "🔧 Built-in function '" << name << "' emitted.\n";
+}
+
