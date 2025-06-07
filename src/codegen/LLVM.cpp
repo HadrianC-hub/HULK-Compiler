@@ -373,3 +373,79 @@ void LLVMGenerator::visit(BuiltInFunctionNode &node)
     std::cout << "🔧 Built-in function '" << name << "' emitted.\n";
 }
 
+void LLVMGenerator::visit(BlockNode &node)
+{
+    if (node.expressions.empty())
+    {
+        throw std::runtime_error("[ERROR CG] Un bloque debe contener al menos una expresión (line " + std::to_string(node.line()) + ")");
+    }
+
+    context.pushFuncScope();
+
+    std::vector<ASTNode *> bodyExprs;
+    for (ASTNode *expr : node.expressions)
+    {
+        if (auto *decl = dynamic_cast<FunctionDeclarationNode *>(expr))
+        {
+            context.addFuncDecl(decl->name, decl);
+        }
+        else
+        {
+            bodyExprs.push_back(expr);
+        }
+    }
+
+    llvm::Value *lastValidResult = nullptr;
+
+    for (size_t i = 0; i < bodyExprs.size(); ++i)
+    {
+        ASTNode *expr = bodyExprs[i];
+        expr->accept(*this);
+
+        bool isPrint = false;
+        if (auto *builtin = dynamic_cast<BuiltInFunctionNode *>(expr))
+        {
+            isPrint = (builtin->name == "print");
+        }
+
+        if (!context.valueStack.empty())
+        {
+            llvm::Value *val = context.valueStack.back();
+
+            if (i == bodyExprs.size() - 1)
+            {
+                if (isPrint)
+                {
+                    context.valueStack.push_back(val);
+                    lastValidResult = val;
+                }
+                else
+                {
+                    lastValidResult = val;
+                }
+            }
+            else
+            {
+                if (!isPrint)
+                {
+                    context.valueStack.pop_back();
+                }
+                else
+                {
+                    lastValidResult = val;
+                }
+            }
+        }
+    }
+
+    context.popFuncScope();
+
+    if (!lastValidResult)
+    {
+        throw std::runtime_error("[ERROR CG] El bloque no tiene un valor retornable en su última expresión (line " + std::to_string(node.line()) + ")");
+    }
+
+    std::cout << "[PROC CG] Bloque emitido con " << node.expressions.size() << " expresiones\n";
+}
+
+
