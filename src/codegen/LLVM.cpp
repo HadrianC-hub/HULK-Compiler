@@ -448,4 +448,51 @@ void LLVMGenerator::visit(BlockNode &node)
     std::cout << "[PROC CG] Bloque emitido con " << node.expressions.size() << " expresiones\n";
 }
 
+void LLVMGenerator::visit(IdentifierNode &node)
+{
+    llvm::Value *val = nullptr;
 
+    if (node.name == "pi")
+    {
+        val = llvm::ConstantFP::get(context.context, llvm::APFloat(3.14159265358979323846));
+    }
+    else if (node.name == "e")
+    {
+        val = llvm::ConstantFP::get(context.context, llvm::APFloat(2.71828182845904523536));
+    }
+    else
+    {
+        val = context.lookupLocal(node.name);
+        if (!val)
+        {
+            throw std::runtime_error("[ERROR CG] Variable indefinida '" + node.name +
+                                     "' en línea " + std::to_string(node.line()));
+        }
+    }
+
+    context.valueStack.push_back(val);
+
+    std::cout << "[PROC CG] '" << node.name << "' resuelto y enviado a la pila\n";
+}
+
+void LLVMGenerator::visit(FunctionDeclarationNode &node)
+{
+    context.pushVarScope();
+
+    const auto &params = *node.params;
+    if (params.size() > context.valueStack.size())
+    {
+        throw std::runtime_error("[ERROR CG] No hay suficientes argumentos en la pila para la función: '" + node.name + "'");
+    }
+
+    for (int i = params.size() - 1; i >= 0; --i)
+    {
+        llvm::Value *val = context.valueStack.back();
+        context.valueStack.pop_back();
+        context.addLocal(params[i].name, val);
+    }
+
+    node.body->accept(*this);
+
+    context.popVarScope();
+}
