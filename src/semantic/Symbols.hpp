@@ -57,6 +57,9 @@ public:
     bool addSymbol(const std::string &name, const std::string &type, bool is_const, const std::vector<std::string> &params = {});
     Symbol *lookup(const std::string &name);
     bool existsInCurrentScope(const std::string &name);
+    std::string lowestCommonAncestor(const std::vector<std::string> &types);
+    bool isSubtype(const std::string &subtype, const std::string &supertype);
+
     bool addFunction(
         const std::string &name,
         const std::string &returnType,
@@ -69,6 +72,7 @@ public:
         const std::string &name,
         const std::string &parentType,
         const std::vector<std::string> &typeParams = {});
+    const TypeSymbol *lookupType(const std::string &name) const;
     TypeSymbol *lookupType(const std::string &name);
 
     // Métodos para atributos y métodos de tipos
@@ -80,5 +84,5 @@ public:
         const std::vector<std::string> &params);
 
     std::vector<Symbol> getUserDefinedFunctions() const;
-
+    bool updateSymbolType(const std::string& name, const std::string& newType);
 };

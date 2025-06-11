@@ -4,11 +4,147 @@
 #include <cctype>
 #include <set>
 #include <iostream>
+#include <unordered_set>
+#include <vector>
+
 
 SymbolTable &SemanticAnalyzer::getSymbolTable()
 {
     return symbolTable;
 }
+
+std::string SemanticAnalyzer::inferParamUsageType(const std::string& paramName, ASTNode* body) {
+    std::set<std::string> usageTypes;
+
+    collectParamUsages(body, paramName, usageTypes);
+
+    if (usageTypes.empty()) return "Unknown";
+
+    return symbolTable.lowestCommonAncestor(std::vector<std::string>(
+        usageTypes.begin(), usageTypes.end()
+    ));
+}
+
+void SemanticAnalyzer::collectParamUsages(ASTNode* node, const std::string& paramName, std::set<std::string>& types) {
+    if (!node) return;
+
+    // Identificador que referencia el parámetro
+    if (auto* id = dynamic_cast<IdentifierNode*>(node)) {
+        if (id->name == paramName && id->type() != "Unknown" && id->type() != "Error") {
+            types.insert(id->type());
+        }
+    }
+
+    // Binary operation
+    else if (auto* bin = dynamic_cast<BinaryOperationNode*>(node)) {
+        collectParamUsages(bin->left, paramName,  types);
+        collectParamUsages(bin->right, paramName,  types);
+    }
+
+    // Unary operation
+    else if (auto* un = dynamic_cast<UnaryOpNode*>(node)) {
+        collectParamUsages(un->operand, paramName,  types);
+    }
+
+    // Function call
+    else if (auto* call = dynamic_cast<FunctionCallNode*>(node)) {
+        for (auto* arg : call->args)
+            collectParamUsages(arg, paramName,  types);
+    }
+
+    // Built-in function call
+    else if (auto* builtin = dynamic_cast<BuiltInFunctionNode*>(node)) {
+        for (auto* arg : builtin->args)
+            collectParamUsages(arg, paramName,  types);
+    }
+
+    // Function declaration
+    else if (auto* func = dynamic_cast<FunctionDeclarationNode*>(node)) {
+        collectParamUsages(func->body, paramName,  types);
+    }
+
+    // Method call
+    // else if (auto* method = dynamic_cast<MethodCallNode*>(node)) {
+    //     collectParamUsages(method->object,paramName,  types);
+    //     for (auto* arg : method->args)
+    //         collectParamUsages(arg, paramName,  types);
+    // }
+
+    // Let expression
+    else if (auto* let = dynamic_cast<LetNode*>(node)) {
+        for (auto& decl : *let->declarations) {
+            collectParamUsages(decl.initializer, paramName,  types);
+        }
+        collectParamUsages( let->body, paramName, types);
+    }
+
+    // If expression
+    else if (auto* ifn = dynamic_cast<IfNode*>(node)) {
+        for (auto& branch : *ifn->branches) {
+            collectParamUsages( branch.condition, paramName, types);
+            collectParamUsages(branch.body, paramName,  types);
+        }
+        if (ifn->elseBody)
+            collectParamUsages(ifn->elseBody ,paramName,  types);
+    }
+
+    // While
+    else if (auto* wh = dynamic_cast<WhileNode*>(node)) {
+        collectParamUsages(wh->condition, paramName,  types);
+        collectParamUsages(wh->body, paramName,  types);
+    }
+
+    // For
+    else if (auto* forNode = dynamic_cast<ForNode*>(node)) {
+        collectParamUsages(forNode->init_range, paramName,  types);
+        collectParamUsages(forNode->end_range, paramName,  types);
+        collectParamUsages(forNode->body, paramName,  types);
+    }
+
+    // Assignment
+    else if (auto* assign = dynamic_cast<AssignmentNode*>(node)) {
+        collectParamUsages(assign->rhs, paramName,  types);
+    }
+
+    // Variable declaration
+    else if (auto* decl = dynamic_cast<VariableDeclarationNode*>(node)) {
+        collectParamUsages(decl->initializer, paramName,  types);
+    }
+
+    // Block
+    else if (auto* block = dynamic_cast<BlockNode*>(node)) {
+        for (auto* expr : block->expressions)
+            collectParamUsages(expr, paramName, types);
+    }
+
+    // New instance
+    else if (auto* inst = dynamic_cast<NewInstanceNode*>(node)) {
+        for (auto* arg : inst->args)
+            collectParamUsages(arg, paramName,  types);
+    }
+
+    // Type declaration
+    // else if (auto* typeDecl = dynamic_cast<TypeDeclarationNode*>(node)) {
+    //     for (const auto& attr : *typeDecl->attributes)
+    //         collectParamUsages(attr.initializer, paramName,  types);
+    //     for (const auto& method : *typeDecl->methods)
+    //         collectParamUsages(method.body, paramName,  types);
+    //     for (ASTNode* arg : typeDecl->baseArgs)
+    //         collectParamUsages(arg, paramName,  types);
+    // }
+
+    // Literal: no hay nada que recorrer
+    else if (dynamic_cast<LiteralNode*>(node)) {
+        return;
+    }
+
+    // Otro nodo no manejado explícitamente
+    else {
+        // Opcional: log de depuración
+        // std::cerr << "Nodo no manejado en collectParamUsages: " << typeid(*node).name() << "\n";
+    }
+}
+
 
 bool SemanticAnalyzer::conformsTo(const std::string &subtype, const std::string &supertype)
 {
@@ -19,9 +155,7 @@ bool SemanticAnalyzer::conformsTo(const std::string &subtype, const std::string 
     if (supertype == "Object")
         return true;
     if (supertype == "")
-    {
         return true;
-    }
 
     TypeSymbol *sub = symbolTable.lookupType(subtype);
     while (sub && !sub->parentType.empty())
@@ -135,6 +269,11 @@ void SemanticAnalyzer::visit(BuiltInFunctionNode &node)
     const std::string &fn = node.name;
     size_t arity = node.args.size();
 
+    for (ASTNode *arg : node.args)
+    {
+        arg->accept(*this);
+    }    
+
     if (fn == "print")
     {
         if (arity != 1)
@@ -232,83 +371,104 @@ void SemanticAnalyzer::visit(BuiltInFunctionNode &node)
     }
 }
 
-
 void SemanticAnalyzer::visit(FunctionDeclarationNode &node)
 {
     symbolTable.enterScope();
 
-    // Verificar que los parámetros no estén duplicados
-    std::unordered_map<std::string, bool> seen;
+    std::unordered_map<std::string, bool> paramSeen;
+
+    // Paso 1: insertar todos los parámetros con tipo Unknown (si no están anotados)
     for (const auto &param : *node.params)
     {
-        if (seen.count(param.name))
+        if (paramSeen.count(param.name))
         {
             errors.emplace_back("[SEMANTIC ERROR] Parámetro duplicado '" + param.name + "'", node.line());
             node._type = "Error";
+            continue;
         }
-        else
-        {
-            seen[param.name] = true;
-            symbolTable.addSymbol(param.name, param.type, false);
-        }
+
+        paramSeen[param.name] = true;
+        std::string paramType = param.type.empty() ? "Unknown" : param.type;
+        symbolTable.addSymbol(param.name, paramType, false);
     }
 
-    // Si no es inline, analizamos el cuerpo y verificamos tipos
-    if (!node.isInline)
-    {
-        node.body->accept(*this);
-        std::string bodyType = node.body->type();
+    // Paso 2: analizar el cuerpo con símbolos disponibles
+    node.body->accept(*this);
+    std::string bodyType = node.body->type();
 
-        // Verificar tipo de retorno si está especificado
-        if (!node.returnType.empty())
-        {
-            if (!conformsTo(bodyType, node.returnType))
-            {
-                errors.emplace_back("[SEMANTIC ERROR] Tipo de retorno incorrecto en función '" + node.name + "'", node.line());
-                node._type = "Error";
-            }
-        }
-        else
-        {
-            node.returnType = bodyType; // Inferencia si no se especificó
-        }
-    }
-
-    // Inferencia de tipos de parámetros si no fueron anotados
     for (auto &param : *node.params)
     {
         if (param.type.empty())
         {
-            Symbol *s = symbolTable.lookup(param.name);
-            std::cout << "tipo de parámetro." << std::endl;
-            if (s && !s->type.empty())
+            std::string inferred = inferParamUsageType(param.name, node.body);
+            if (inferred == "Unknown" || inferred.empty())
             {
-                param.type = s->type;
+                errors.emplace_back("[SEMANTIC ERROR] No se pudo inferir el tipo del parámetro '" + param.name + "'", node.line());
+                node._type = "Error";
             }
             else
             {
-                // Si es inline, no disparamos error: se infiere en tiempo de invocación
-                if (!node.isInline)
-                {
-                    errors.emplace_back("[SEMANTIC ERROR] No se pudo inferir tipo para el parámetro '" + param.name + "'", node.line());
-                    node._type = "Error";
-                }
+                param.type = inferred;
+                symbolTable.updateSymbolType(param.name, inferred);
             }
         }
     }
 
-    symbolTable.exitScope();
+    // Paso 3: Inferencia firme para parámetros sin tipo explícito
+    for (auto &param : *node.params)
+    {
+        if (!param.type.empty())
+            continue;
 
-    // No se agrega aquí a la tabla, lo hace FunctionCollector y guarda el cuerpo
+        std::set<std::string> observedTypes;
+        collectParamUsages(node.body, param.name, observedTypes);
+
+        if (observedTypes.empty())
+        {
+            errors.emplace_back("[SEMANTIC ERROR] No se pudo inferir tipo para parámetro '" + param.name + "'", node.line());
+            node._type = "Error";
+        }
+        else if (observedTypes.size() == 1)
+        {
+            param.type = *observedTypes.begin();
+        }
+        else
+        {
+            std::set<std::string> usageTypes;
+
+            std::vector<std::string> observedVec(usageTypes.begin(), usageTypes.end());
+            std::string common = symbolTable.lowestCommonAncestor(observedVec);
+            if (common == "Object")
+            {
+                errors.emplace_back("[SEMANTIC ERROR] Inferencia ambigua para parámetro '" + param.name + "'", node.line());
+                node._type = "Error";
+            }
+            else
+            {
+                param.type = common;
+            }
+        }
+
+        // Actualizar en la tabla de símbolos con tipo inferido
+        symbolTable.lookup(param.name)->type = param.type;
+    }
+
+    // Paso 4: Verificación de tipo de retorno
+    if (!node.returnType.empty() && node.returnType != bodyType)
+    {
+        errors.emplace_back("[SEMANTIC ERROR] Tipo de retorno incorrecto en función '" + node.name + "'", node.line());
+        node._type = "Error";
+    }
+
+    node._type = node.returnType.empty() ? bodyType : node.returnType;
+    symbolTable.exitScope();
 }
 
 void SemanticAnalyzer::visit(FunctionCallNode &node)
 {
-    // Función especial: base()
     if (node.funcName == "base")
     {
         std::cout << "[DEBUG] Buscando función: " << node.funcName << std::endl;
-
         Symbol *self = symbolTable.lookup("self");
         if (!self)
         {
@@ -635,22 +795,69 @@ void SemanticAnalyzer::visit(LetNode &node)
     symbolTable.exitScope();
 }
 
+// void SemanticAnalyzer::visit(AssignmentNode &node)
+// {
+//     node.lhs->accept(*this);
+//     std::string lhsType = node.lhs->type();
+
+//     node.rhs->accept(*this);
+//     std::string rhsType = node.rhs->type();
+
+//     if (!conformsTo(rhsType, lhsType))
+//     {
+//         errors.emplace_back("[SEMANTIC ERROR] Tipo incorrecto en asignación: esperado '" + lhsType + "', obtenido '" + rhsType + "'", node.line());
+//         node._type = "Error";
+//         return;
+//     }
+
+//     node._type = lhsType;
+// }
+
 void SemanticAnalyzer::visit(AssignmentNode &node)
 {
-    node.lhs->accept(*this);
-    std::string lhsType = node.lhs->type();
 
-    node.rhs->accept(*this);
-    std::string rhsType = node.rhs->type();
-
-    if (!conformsTo(rhsType, lhsType))
+    std::string name;
+    if (auto *id = dynamic_cast<IdentifierNode *>(node.name))
     {
-        errors.emplace_back("[SEMANTIC ERROR] Tipo incorrecto en asignación: esperado '" + lhsType + "', obtenido '" + rhsType + "'", node.line());
+        name = id->name;
+    }
+    else if (auto *self = dynamic_cast<SelfCallNode *>(node.name))
+    {
+        name = self->varName;
+    }
+
+    Symbol *symbol = symbolTable.lookup(name);
+
+    if (name == "self")
+    {
+        errors.emplace_back("No se puede reasignar 'self'", node.line());
         node._type = "Error";
         return;
     }
 
-    node._type = lhsType;
+    if (!symbol)
+    {
+        errors.emplace_back("Variable '" + name + "' no declarada", node.line());
+        node._type = "Error";
+        return;
+    }
+
+    if (symbol->is_const)
+    {
+        errors.emplace_back("No se puede reasignar la constante '" + name + "'", node.line());
+        node._type = "Error";
+    }
+
+    node.rhs->accept(*this);
+    std::string rhsType = node.rhs->type();
+
+    if (!conformsTo(rhsType, symbol->type))
+    {
+        errors.emplace_back("Tipo incorrecto en asignación: esperado '" + symbol->type + "', obtenido '" + rhsType + "'", node.line());
+        node._type = "Error";
+    }
+
+    node._type = symbol->type;
 }
 
 void SemanticAnalyzer::visit(IfNode &node)
@@ -709,7 +916,7 @@ void SemanticAnalyzer::visit(WhileNode &node)
     std::string condType = node.condition->type();
     if (condType != "Boolean")
     {
-        errors.emplace_back("[SEMANTIC ERROR] Condición del while debe ser booleana", node.line());
+        errors.emplace_back("[SEMANTIC ERROR] La condición del while debe ser booleana", node.line());
         node._type = "Error";
         std::cout << condType << std::endl;
     }
@@ -742,122 +949,122 @@ void SemanticAnalyzer::visit(ForNode &node)
 
 void SemanticAnalyzer::visit(TypeDeclarationNode &node)
 {
-    if (symbolTable.lookupType(node.name))
-    {
-        errors.emplace_back("[SEMANTIC ERROR] Tipo '" + node.name + "' ya declarado", node.line());
-        return;
-    }
+    // if (symbolTable.lookupType(node.name))
+    // {
+    //     errors.emplace_back("[SEMANTIC ERROR] Tipo '" + node.name + "' ya declarado", node.line());
+    //     return;
+    // }
 
-    const std::set<std::string> builtinTypes = {"Number", "String", "Boolean"};
-    if (node.baseType.has_value() && builtinTypes.count(*node.baseType))
-    {
-        errors.emplace_back("[SEMANTIC ERROR] No se puede heredar de tipo básico '" + *node.baseType + "'", node.line());
-        return;
-    }
+    // const std::set<std::string> builtinTypes = {"Number", "String", "Boolean"};
+    // if (node.baseType.has_value() && builtinTypes.count(*node.baseType))
+    // {
+    //     errors.emplace_back("[SEMANTIC ERROR] No se puede heredar de tipo básico '" + *node.baseType + "'", node.line());
+    //     return;
+    // }
 
-    std::string parent = node.baseType.value_or("Object");
-    std::vector<std::string> paramNames;
-    for (const auto &param : *node.constructorParams)
-    {
-        paramNames.push_back(param.name);
-    }
+    // std::string parent = node.baseType.value_or("Object");
+    // std::vector<std::string> paramNames;
+    // for (const auto &param : *node.constructorParams)
+    // {
+    //     paramNames.push_back(param.name);
+    // }
 
-    if (!symbolTable.addType(node.name, parent, paramNames))
-    {
-        errors.emplace_back("[SEMANTIC ERROR] Tipo '" + node.name + "' ya fue registrado", node.line());
-        return;
-    }
+    // if (!symbolTable.addType(node.name, parent, paramNames))
+    // {
+    //     errors.emplace_back("[SEMANTIC ERROR] Tipo '" + node.name + "' ya fue registrado", node.line());
+    //     return;
+    // }
 
-    if (node.baseType.has_value())
-    {
-        symbolTable.enterScope();
-        for (const auto &param : *node.constructorParams)
-        {
-            symbolTable.addSymbol(param.name, "Unknown", false);
-        }
-        for (ASTNode *arg : node.baseArgs)
-        {
-            arg->accept(*this);
-        }
+    // if (node.baseType.has_value())
+    // {
+    //     symbolTable.enterScope();
+    //     for (const auto &param : *node.constructorParams)
+    //     {
+    //         symbolTable.addSymbol(param.name, "Unknown", false);
+    //     }
+    //     for (ASTNode *arg : node.baseArgs)
+    //     {
+    //         arg->accept(*this);
+    //     }
 
-        TypeSymbol *parentSym = symbolTable.lookupType(parent);
-        if (parentSym && parentSym->typeParams.size() != node.baseArgs.size())
-        {
-            errors.emplace_back("[SEMANTIC ERROR] Cantidad incorrecta de argumentos para constructor del padre", node.line());
-        }
+    //     TypeSymbol *parentSym = symbolTable.lookupType(parent);
+    //     if (parentSym && parentSym->typeParams.size() != node.baseArgs.size())
+    //     {
+    //         errors.emplace_back("[SEMANTIC ERROR] Cantidad incorrecta de argumentos para constructor del padre", node.line());
+    //     }
 
-        symbolTable.exitScope();
-    }
+    //     symbolTable.exitScope();
+    // }
 
-    symbolTable.enterScope();
-    for (const auto &param : *node.constructorParams)
-    {
-        symbolTable.addSymbol(param.name, "Unknown", false);
-    }
+    // symbolTable.enterScope();
+    // for (const auto &param : *node.constructorParams)
+    // {
+    //     symbolTable.addSymbol(param.name, "Unknown", false);
+    // }
 
-    for (const auto &attr : *node.attributes)
-    {
-        attr.initializer->accept(*this);
-        std::string inferredType = attr.initializer->type();
+    // for (const auto &attr : *node.attributes)
+    // {
+    //     attr.initializer->accept(*this);
+    //     std::string inferredType = attr.initializer->type();
 
-        if (inferredType == "Error")
-        {
-            errors.emplace_back("[SEMANTIC ERROR] No se pudo inferir el tipo del atributo '" + attr.name + "'", node.line());
-        }
-        else
-        {
-            symbolTable.addTypeAttribute(node.name, attr.name, inferredType);
-        }
-    }
-    symbolTable.exitScope();
+    //     if (inferredType == "Error")
+    //     {
+    //         errors.emplace_back("[SEMANTIC ERROR] No se pudo inferir el tipo del atributo '" + attr.name + "'", node.line());
+    //     }
+    //     else
+    //     {
+    //         symbolTable.addTypeAttribute(node.name, attr.name, inferredType);
+    //     }
+    // }
+    // symbolTable.exitScope();
 
-    TypeSymbol *typeSym = symbolTable.lookupType(node.name);
-    for (const auto &method : *node.methods)
-    {
-        symbolTable.enterScope();
-        symbolTable.addSymbol("self", node.name, true);
-        for (const auto &param : *method.params)
-        {
-            symbolTable.addSymbol(param.name, param.type, false);
-        }
+    // TypeSymbol *typeSym = symbolTable.lookupType(node.name);
+    // for (const auto &method : *node.methods)
+    // {
+    //     symbolTable.enterScope();
+    //     symbolTable.addSymbol("self", node.name, true);
+    //     for (const auto &param : *method.params)
+    //     {
+    //         symbolTable.addSymbol(param.name, param.type, false);
+    //     }
 
-        method.body->accept(*this);
+    //     method.body->accept(*this);
 
-        if (!method.returnType.empty() &&
-            !conformsTo(method.body->type(), method.returnType))
-        {
-            errors.emplace_back("[SEMANTIC ERROR] El cuerpo del método '" + method.name + "' no conforma al tipo de retorno declarado", node.line());
-        }
+    //     if (!method.returnType.empty() &&
+    //         !conformsTo(method.body->type(), method.returnType))
+    //     {
+    //         errors.emplace_back("[SEMANTIC ERROR] El cuerpo del método '" + method.name + "' no conforma al tipo de retorno declarado", node.line());
+    //     }
 
-        std::vector<std::string> paramTypes;
-        for (const auto &param : *method.params)
-        {
-            paramTypes.push_back(param.type);
-        }
+    //     std::vector<std::string> paramTypes;
+    //     for (const auto &param : *method.params)
+    //     {
+    //         paramTypes.push_back(param.type);
+    //     }
 
-        symbolTable.addTypeMethod(node.name, method.name, method.returnType, paramTypes);
+    //     symbolTable.addTypeMethod(node.name, method.name, method.returnType, paramTypes);
 
-        if (!typeSym->parentType.empty())
-        {
-            TypeSymbol *parentSym = symbolTable.lookupType(typeSym->parentType);
-            if (parentSym)
-            {
-                auto it = parentSym->methods.find(method.name);
-                if (it != parentSym->methods.end())
-                {
-                    const Symbol &inherited = it->second;
-                    if (inherited.params != paramTypes || inherited.type != method.returnType)
-                    {
-                        errors.emplace_back("[SEMANTIC ERROR] Firma de método '" + method.name +
-                                                "' no coincide con la del padre",
-                                            node.line());
-                    }
-                }
-            }
-        }
+    //     if (!typeSym->parentType.empty())
+    //     {
+    //         TypeSymbol *parentSym = symbolTable.lookupType(typeSym->parentType);
+    //         if (parentSym)
+    //         {
+    //             auto it = parentSym->methods.find(method.name);
+    //             if (it != parentSym->methods.end())
+    //             {
+    //                 const Symbol &inherited = it->second;
+    //                 if (inherited.params != paramTypes || inherited.type != method.returnType)
+    //                 {
+    //                     errors.emplace_back("[SEMANTIC ERROR] Firma de método '" + method.name +
+    //                                             "' no coincide con la del padre",
+    //                                         node.line());
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        symbolTable.exitScope();
-    }
+    //     symbolTable.exitScope();
+    // }
 }
 
 void SemanticAnalyzer::visit(NewInstanceNode &node)
@@ -888,41 +1095,106 @@ void SemanticAnalyzer::visit(NewInstanceNode &node)
 
 void SemanticAnalyzer::visit(MethodCallNode &node)
 {
-    node.object->accept(*this);
-    std::string objectType = node.object->type();
+    // node.object->accept(*this);
+    // std::string objectType = node.object->type();
 
-    TypeSymbol *typeSym = symbolTable.lookupType(objectType);
+    // TypeSymbol *typeSym = symbolTable.lookupType(objectType);
+    // if (!typeSym)
+    // {
+    //     errors.emplace_back("[SEMANTIC ERROR] Tipo '" + objectType + "' no definido para llamada a método", node.line());
+    //     node._type = "Error";
+    //     return;
+    // }
+
+    // auto it = typeSym->methods.find(node.methodName);
+    // if (it == typeSym->methods.end())
+    // {
+    //     errors.emplace_back("[SEMANTIC ERROR] Método '" + node.methodName + "' no existe en tipo '" + objectType + "'", node.line());
+    //     node._type = "Error";
+    //     return;
+    // }
+
+    // Symbol &method = it->second;
+    // if (node.args.size() != method.params.size())
+    // {
+    //     errors.emplace_back("[SEMANTIC ERROR] Cantidad incorrecta de argumentos en llamada a método '" + node.methodName + "'", node.line());
+    //     node._type = "Error";
+    //     return;
+    // }
+
+    // for (size_t i = 0; i < node.args.size(); ++i)
+    // {
+    //     node.args[i]->accept(*this);
+    //     if (node.args[i]->type() != method.params[i])
+    //     {
+    //         errors.emplace_back("[SEMANTIC ERROR] Tipo de argumento " + std::to_string(i + 1) + " incorrecto en llamada a método '" + node.methodName + "'", node.line());
+    //     }
+    // }
+
+    // node._type = method.type;
+}
+
+void SemanticAnalyzer::visit(AttributeDeclaration &node)
+{
+    node.initializer->accept(*this);
+}
+
+void SemanticAnalyzer::visit(MethodDeclaration &node)
+{
+    // Implementar
+}
+
+void SemanticAnalyzer::visit(BaseCallNode &node)
+{
+    for (ASTNode *arg : node.args)
+    {
+        arg->accept(*this);
+    }
+
+    Symbol *self = symbolTable.lookup("self");
+    if (!self)
+    {
+        errors.emplace_back("'base' solo puede usarse dentro de métodos", node.line());
+        node._type = "Error";
+        return;
+    }
+
+    TypeSymbol *typeSym = symbolTable.lookupType(self->type);
+    if (!typeSym || typeSym->parentType.empty())
+    {
+        errors.emplace_back("'base' no disponible para este tipo", node.line());
+        node._type = "Error";
+        return;
+    }
+
+    node._type = typeSym->parentType;
+}
+
+void SemanticAnalyzer::visit(SelfCallNode &node)
+{
+    Symbol *self = symbolTable.lookup("self");
+    if (!self)
+    {
+        errors.emplace_back("'self' solo puede usarse dentro de métodos", node.line());
+        node._type = "Error";
+        return;
+    }
+
+    TypeSymbol *typeSym = symbolTable.lookupType(self->type);
     if (!typeSym)
     {
-        errors.emplace_back("[SEMANTIC ERROR] Tipo '" + objectType + "' no definido para llamada a método", node.line());
+        errors.emplace_back("Tipo de 'self' no encontrado", node.line());
         node._type = "Error";
         return;
     }
 
-    auto it = typeSym->methods.find(node.methodName);
-    if (it == typeSym->methods.end())
+    auto it = typeSym->attributes.find(node.varName);
+    if (it == typeSym->attributes.end())
     {
-        errors.emplace_back("[SEMANTIC ERROR] Método '" + node.methodName + "' no existe en tipo '" + objectType + "'", node.line());
+        errors.emplace_back("Atributo '" + node.varName + "' no existe en tipo '" + self->type + "'", node.line());
         node._type = "Error";
         return;
     }
 
-    Symbol &method = it->second;
-    if (node.args.size() != method.params.size())
-    {
-        errors.emplace_back("[SEMANTIC ERROR] Cantidad incorrecta de argumentos en llamada a método '" + node.methodName + "'", node.line());
-        node._type = "Error";
-        return;
-    }
-
-    for (size_t i = 0; i < node.args.size(); ++i)
-    {
-        node.args[i]->accept(*this);
-        if (node.args[i]->type() != method.params[i])
-        {
-            errors.emplace_back("[SEMANTIC ERROR] Tipo de argumento " + std::to_string(i + 1) + " incorrecto en llamada a método '" + node.methodName + "'", node.line());
-        }
-    }
-
-    node._type = method.type;
+    node._type = it->second.type;
 }
