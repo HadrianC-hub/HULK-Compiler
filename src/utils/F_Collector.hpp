@@ -32,7 +32,10 @@ public:
     void visit(NewInstanceNode &node) override {}
     void visit(UnaryOpNode &node) override {}
     void visit(BuiltInFunctionNode &node) override {}
+    void visit(AttributeDeclaration& node) override {}
+    void visit(MethodDeclaration& node) override {}
     void visit(MethodCallNode &node) override {}
-    // void visit(AttributeDeclaration& node) override {}
-    // void visit(MethodDeclaration& node) override {}
+    void visit(BaseCallNode& node) override {}
+    void visit(SelfCallNode& node) override {}
+    
 };

@@ -7,17 +7,18 @@
 #include "codegen/Context.hpp"
 
 
-extern int yyparse();              
-extern FILE *yyin;                  
-extern std::vector<ASTNode *> root; 
+extern int yyparse();               // Bison
+extern FILE *yyin;                  // Archivo fuente
+extern std::vector<ASTNode *> root; // Nodo raíz del AST generado por el parser
 
 int main(int argc, char **argv)
 {
+    // Archivo por defecto
     const char *filename = "script.hulk"; 
 
     if (argc >= 2)
     {
-        filename = argv[1]; 
+        filename = argv[1]; // Usar nombre pasado como argumento
     }
 
     // Abrir archivo
@@ -45,13 +46,44 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    std::cout << "[CHECK] AST terminado correctamente." << std::endl;
+    std::cout << "[CHECK] AST terminado." << std::endl;
 
+    // Escribiendo nodos en consola
     for (auto node : root)
     {
         std::cout << "Tipo de nodo raíz: " << node->type()
                   << " | Línea: " << node->line() << "\n";
     }
+
+    // Crear el analizador semántico
+    SemanticAnalyzer semanticAnalyzer;
+    std::cout << "[CHECK] Instancia anlizador creada." << std::endl;
+
+    // Realizar el análisis semántico
+    semanticAnalyzer.analyze(root);
+    std::cout << "[CHECK] Análisis semántico completado exitosamente." << std::endl;
+
+    CodeGenContext codegen;
+    std::cout << "[CHECK] Instancia generador definida." << std::endl;
+
+    try
+    {
+        codegen.generateCode(root);
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "[ERROR] durante la generación de código: " << e.what() << std::endl;
+        return 1;
+    }
+
+    std::cout << "[CHECK] Generación de código completada." << std::endl;
+
+    codegen.dumpIR("Hulk/Hulk-IR.ll");
+
+    std::cout << "[CHECK] Volcando IR en Hulk-IR.ll." << std::endl;
+
+    // Liberar memoria del AST
+    delete_ast(root);
 
     return 0;
 }

@@ -20,6 +20,8 @@ class TypeDeclarationNode;
 class UnaryOpNode;
 class VariableDeclarationNode;
 class WhileNode;
+class BaseCallNode;
+class SelfCallNode;
 
 class ASTVisitor
 {
@@ -41,10 +43,10 @@ public:
     virtual void visit(ForNode &node) = 0;
     virtual void visit(TypeDeclarationNode &node) = 0;
     virtual void visit(NewInstanceNode &node) = 0;
+    virtual void visit(AttributeDeclaration& node) = 0;
     virtual void visit(UnaryOpNode &node) = 0;
     virtual void visit(BuiltInFunctionNode &node) = 0;
-    // virtual void visit(AttributeDeclaration& node) = 0;
-    // virtual void visit(MethodDeclaration& node) = 0;
-    // virtual void visit(BaseCallNode& node) = 0;
-    // virtual void visit(SelfCallNode& node) = 0;
+    virtual void visit(MethodDeclaration& node) = 0;
+    virtual void visit(BaseCallNode& node) = 0;
+    virtual void visit(SelfCallNode& node) = 0;
 };

@@ -20,6 +20,7 @@ public:
     void visit(class IdentifierNode &node) override;
     void visit(class FunctionDeclarationNode &node) override;
     void visit(class FunctionCallNode &node) override;
+
     void visit(ASTNode &) override {}
     void visit(VariableDeclarationNode &) override {}
     void visit(LetNode &) override {}
@@ -29,6 +30,8 @@ public:
     void visit(ForNode &) override {}
     void visit(TypeDeclarationNode &) override {}
     void visit(NewInstanceNode &) override {}
+    void visit(AttributeDeclaration& node) override {}
+    void visit(MethodDeclaration& node) override {}
     void visit(MethodCallNode &) override {}
     void visit(BaseCallNode&) override {}
     void visit(SelfCallNode&) override {}

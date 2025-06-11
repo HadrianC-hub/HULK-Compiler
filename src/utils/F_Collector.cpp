@@ -20,18 +20,32 @@ void FunctionCollector::addBuiltins() {
 }
 
 
+// void FunctionCollector::visit(FunctionDeclarationNode& node) {
+//     if (symbolTable.existsInCurrentScope(node.name)) {
+//         errors.emplace_back("Función '" + node.name + "' ya declarada", node.line());
+//     } else {
+//         std::vector<std::string> paramTypes;
+//         for (const auto& param : *node.params) {
+//             std::string ptype = param.type.empty() ? "Number" : param.type;
+//             paramTypes.push_back(ptype);
+//         }
+
+//         std::string retType = node.returnType.empty() ? "Number" : node.returnType;
+
+//         symbolTable.addFunction(node.name, retType, paramTypes, node.body);
+//     }
+// }
+
 void FunctionCollector::visit(FunctionDeclarationNode& node) {
     if (symbolTable.existsInCurrentScope(node.name)) {
         errors.emplace_back("Función '" + node.name + "' ya declarada", node.line());
     } else {
         std::vector<std::string> paramTypes;
         for (const auto& param : *node.params) {
-            std::string ptype = param.type.empty() ? "Number" : param.type;
-            paramTypes.push_back(ptype);
+            paramTypes.push_back(param.type);
         }
 
-        std::string retType = node.returnType.empty() ? "Number" : node.returnType;
-
-        symbolTable.addFunction(node.name, retType, paramTypes, node.body);
+        // 💡 Pasar también el cuerpo
+        symbolTable.addFunction(node.name, node.returnType, paramTypes, node.body);
     }
 }

@@ -20,7 +20,6 @@ int yycolumn = 1;
 
 %%
 
-
 [_]+[a-zA-Z0-9_]+       { fprintf(stderr, "[ERROR LEXICO] Variable inválida: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); }
 [0-9]+[a-zA-Z_]+        { fprintf(stderr, "[ERROR LEXICO] Variable inválida: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); }
 
