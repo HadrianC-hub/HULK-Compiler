@@ -496,3 +496,19 @@ void LLVMGenerator::visit(FunctionDeclarationNode &node)
 
     context.popVarScope();
 }
+
+void LLVMGenerator::visit(FunctionCallNode &node)
+{
+    for (ASTNode *arg : node.args)
+    {
+        arg->accept(*this);
+    }
+
+    auto *decl = context.lookupFuncDecl(node.funcName);
+    if (!decl)
+    {
+        throw std::runtime_error("[ERROR CG] Función no declarada: " + node.funcName);
+    }
+
+    decl->accept(*this);
+}
