@@ -1,1 +1,0 @@
-function tan(x: Number): Number => sin(x) / cos(x);
