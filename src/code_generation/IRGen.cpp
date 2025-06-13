@@ -578,33 +578,336 @@ void IRGenerator::visit(FuncCall &node)
 
 void IRGenerator::visit(LetExpression &node)
 {
-    std::cout << "🔍 LetNode - Stack size before: " << context.valueStack.size() << std::endl;
+    // Inicializar nuevo scope de variables con herencia
+    context.PushVar(true);
 
-    // 1. Initialize new variable scope with inheritance
-    context.PushVar(true); // true for inheritance
-
-    // 2. Process each declaration
+    // Procesar declaraciones
     for (const LetDeclaration &decl : *node.declarations)
     {
-        // Process the initializer first
+        // Procesar el inicializador
         decl.initializer->accept(*this);
         llvm::Value *initValue = context.valueStack.back();
         context.valueStack.pop_back();
 
-        // Add the variable to the current scope
+        // Agregar variables al scope
         context.addLocal(decl.name, initValue);
-        std::cout << "  📝 Added variable '" << decl.name << "' to scope" << std::endl;
     }
 
-    // 3. Process the body
-    std::cout << "  🔄 Processing let body - Stack size: " << context.valueStack.size() << std::endl;
+    // Procesar el cuerpo
     node.body->accept(*this);
-    std::cout << "  📤 Body processed - Stack size: " << context.valueStack.size() << std::endl;
 
-    // 4. Keep the body's return value on the stack
-    // The value is already on the stack from the body processing
-
-    // Clean up the scope
+    // Limpiar el scope
     context.PopVar();
-    std::cout << "  ✅ LetNode completed - Final stack size: " << context.valueStack.size() << std::endl;
+}
+
+void IRGenerator::visit(Assignment &node)
+{
+    // Procesar los valores a la derecha primero
+    node.rhs->accept(*this);
+    llvm::Value *newValue = context.valueStack.back();
+    context.valueStack.pop_back();
+
+    // Obtener nombre de variable a la derecha
+    if (auto *idNode = dynamic_cast<VarFuncName *>(node.name))
+    {
+        const std::string &varName = idNode->name;
+        bool found = false;
+
+        // Buscar a través de los scope (desde adentro hacia afuera)
+        for (auto it = context.localScopes.rbegin(); it != context.localScopes.rend(); ++it)
+        {
+            auto foundVar = it->find(varName);
+            if (foundVar != it->end())
+            {
+                // Encontrada la variable, actualizando su valor
+                foundVar->second = newValue;
+                found = true;
+            }
+            else if (found)
+            {
+                // Si antes la encontramos pero ahora no encontramos la variable, deja de buscar
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            throw std::runtime_error("[ERROR] Variable indefinida '" + varName +
+                                     "' en línea: " + std::to_string(node.line()));
+        }
+
+        // 5. Push the assigned value onto the stack
+        context.valueStack.push_back(newValue);
+        std::cout << "[CHECK] Variable '" << varName << "' asignada en scopes relevantes - Tamaño de pila: " << context.valueStack.size() << std::endl;
+    }
+    else
+    {
+        throw std::runtime_error("[ERROR] La parte izquerda debe ser un asignador. Línea: " +
+                                 std::to_string(node.line()));
+    }
+}
+
+void IRGenerator::visit(IfExpression &node)
+{
+    // Procesar cada rama if y elif
+    for (const IfBranch &branch : *node.branches)
+    {
+        // Condición de evaluación
+        branch.condition->accept(*this);
+        llvm::Value *condition = context.valueStack.back();
+        context.valueStack.pop_back();
+
+        // Comparación directa con true (1)
+        if (auto *constInt = llvm::dyn_cast<llvm::ConstantInt>(condition))
+        {
+            if (constInt->getZExtValue() == 1)
+            {
+                // Condición true, evaluar cuerpo
+                branch.body->accept(*this);
+                return;
+            }
+        }
+    }
+
+    // Si llegamos aquí, ninguna condición fue true, evaluando cuerpo de else
+    if (node.elseBody)
+    {
+        node.elseBody->accept(*this);
+    }
+
+    std::cout << "[CHECK] Expresión IF completada - Tamaño de pila: " << context.valueStack.size() << std::endl;
+}
+
+void IRGenerator::visit(WhileLoop &node)
+{
+    // Crear un nuevo scope para variables
+    context.PushVar(true);
+
+    // Crear un vector para almacenar valores del cuerpo del ciclo
+    std::vector<llvm::Value *> loopBodyValues;
+
+    int iteration = 0;
+    // Comenzar ciclo
+    while (true)
+    {
+        // Evaluar condición
+        node.condition->accept(*this);
+        llvm::Value *condition = context.valueStack.back();
+        context.valueStack.pop_back();
+
+        // Comparación directa con true (1)
+        if (auto *constInt = llvm::dyn_cast<llvm::ConstantInt>(condition))
+        {
+            if (constInt->getZExtValue() == 1)
+            {
+                // Condición es true, evaluar cuerpo
+                std::cout << "Iteración " << ++iteration << std::endl;
+                node.body->accept(*this);
+
+                // Si el cuerpo produjo un valor, almacenarlo
+                if (!context.valueStack.empty())
+                {
+                    llvm::Value *bodyValue = context.valueStack.back();
+                    context.valueStack.pop_back(); // Remover del stack global
+                    loopBodyValues.push_back(bodyValue);
+                }
+            }
+            else
+            {
+                // Condición es falsa, salir del loop
+                break;
+            }
+        }
+        else
+        {
+            // Si no es constante, convertir en booleano y comprobar
+            condition = context.builder.CreateFCmpONE(
+                condition,
+                llvm::ConstantFP::get(context.context, llvm::APFloat(0.0)),
+                "whilecond");
+
+            if (auto *boolVal = llvm::dyn_cast<llvm::ConstantInt>(condition))
+            {
+                if (boolVal->getZExtValue() == 1)
+                {
+                    // Condición es true, evaluar cuerpo
+                    std::cout << "Iteración " << ++iteration << std::endl;
+                    node.body->accept(*this);
+
+                    // Si el cuerpo produjo un valor, almacenarlo
+                    if (!context.valueStack.empty())
+                    {
+                        llvm::Value *bodyValue = context.valueStack.back();
+                        context.valueStack.pop_back(); // Remover del stack global
+                        loopBodyValues.push_back(bodyValue);
+                    }
+                }
+                else
+                {
+                    // Condición es falsa, salir del loop
+                    break;
+                }
+            }
+        }
+    }
+
+    std::cout << "[CHECK] Ciclo WHILE terminado después de " << iteration << " iteraciones" << std::endl;
+
+    // Después del ciclo, enviar el último valor del cuerpo a la stack global (si hay algún valor devuelto)
+    // NOTA: ARREGLAR VALOR DEVUELTO
+    if (!loopBodyValues.empty())
+    {
+        context.valueStack.push_back(loopBodyValues.back());
+    }
+
+    // Limpiar scope
+    context.PopVar();
+
+    std::cout << "[CHECK] Ciclo while completado - Tamaño de pila: " << context.valueStack.size() << std::endl;
+}
+
+void IRGenerator::visit(ForLoop &node)
+{
+    // Inicializar scope de variables con propiedad de heredar
+    context.PushVar(true);
+
+    // Evaluar expresiones de iniciar y terminar rango
+    node.init_range->accept(*this);
+    llvm::Value *initValue = context.valueStack.back();
+    context.valueStack.pop_back();
+
+    node.end_range->accept(*this);
+    llvm::Value *endValue = context.valueStack.back();
+    context.valueStack.pop_back();
+
+    // Agregar la variable con el valor inicial al scope
+    context.addLocal(node.varName, initValue);
+
+    // Vector para almacenar valores del cuerpo del ciclo
+    std::vector<llvm::Value *> loopBodyValues;
+
+    int iteration = 0;
+    // Inicializar ciclo
+    while (true)
+    {
+        // Obtener valor actual de la variable del ciclo for
+        llvm::Value *currentValue = context.lookupLocal(node.varName);
+
+        // Comparación de la variable con el valor final
+        llvm::Value *condition = context.builder.CreateFCmpULT(
+            currentValue,
+            endValue,
+            "forcond");
+
+        // Caso en que se deba continuar el ciclo
+        if (auto *constInt = llvm::dyn_cast<llvm::ConstantInt>(condition))
+        {
+            if (constInt->getZExtValue() == 1)
+            {
+                // Evaluar el cuerpo del ciclo para esta iteración
+                node.body->accept(*this);
+
+                // Almacenar valor del cuerpo si existe
+                if (!context.valueStack.empty())
+                {
+                    llvm::Value *bodyValue = context.valueStack.back();
+
+                    // Verificar caso en que se deba imprimir
+                    bool isPrint = false;
+                    if (auto *builtin = dynamic_cast<BuiltInFunc *>(node.body))
+                    {
+                        isPrint = (builtin->name == "print");
+                    }
+
+                    if (isPrint)
+                    {
+                        // Para caso de imprimir, mantener el valor en la stack global y además meter en la stack local
+                        loopBodyValues.push_back(bodyValue);
+                    }
+                    else
+                    {
+                        // Para caso de no imprimir, remover el valor de la stack global y almacenar en la stack local
+                        context.valueStack.pop_back();
+                        loopBodyValues.push_back(bodyValue);
+                    }
+                }
+
+                // Incrementar variable de ciclo
+                llvm::Value *one = llvm::ConstantFP::get(context.context, llvm::APFloat(1.0));
+                llvm::Value *nextValue = context.builder.CreateFAdd(currentValue, one, "nextval");
+                context.addLocal(node.varName, nextValue);
+            }
+            else
+            {
+                // Condicional falsa, salir del ciclo
+                break;
+            }
+        }
+        else
+        {
+            // Si no es constante, convertir a booleana y comprobar
+            condition = context.builder.CreateFCmpONE(
+                condition,
+                llvm::ConstantFP::get(context.context, llvm::APFloat(0.0)),
+                "forcond");
+
+            if (auto *boolVal = llvm::dyn_cast<llvm::ConstantInt>(condition))
+            {
+                if (boolVal->getZExtValue() == 1)
+                {
+                    // Evaluar cuerpo para esta iteración
+                    std::cout << "Iteración " << ++iteration << std::endl;
+                    node.body->accept(*this);
+
+                    // Almacenar valor del cuerpo si existe
+                    if (!context.valueStack.empty())
+                    {
+                        llvm::Value *bodyValue = context.valueStack.back();
+
+                        // Verificar caso en que se deba imprimir
+                        bool isPrint = false;
+                        if (auto *builtin = dynamic_cast<BuiltInFunc *>(node.body))
+                        {
+                            isPrint = (builtin->name == "print");
+                        }
+
+                        if (isPrint)
+                        {
+                            // Para caso de imprimir, mantener el valor en la stack global y además meter en la stack local
+                            loopBodyValues.push_back(bodyValue);
+                        }
+                        else
+                        {
+                            // Para caso de no imprimir, remover el valor de la stack global y almacenar en la stack local
+                            context.valueStack.pop_back();
+                            loopBodyValues.push_back(bodyValue);
+                        }
+                    }
+
+                    // Incrementar variable de ciclo
+                    llvm::Value *one = llvm::ConstantFP::get(context.context, llvm::APFloat(1.0));
+                    llvm::Value *nextValue = context.builder.CreateFAdd(currentValue, one, "nextval");
+                    context.addLocal(node.varName, nextValue);
+                }
+                else
+                {
+                    // Condicional falsa, salir del ciclo
+                    break;
+                }
+            }
+        }
+    }
+
+    std::cout << "[CHECK] Ciclo FOR terminado después de " << iteration << " iteraciones" << std::endl;
+
+    // 7. Push the last body value to global stack if any
+    if (!loopBodyValues.empty())
+    {
+        context.valueStack.push_back(loopBodyValues.back());
+    }
+
+    // Clean up loop scope
+    context.PopVar();
+
+    std::cout << "[CHECK] Ciclo for terminado - Tamaño de pila: " << context.valueStack.size() << std::endl;
 }

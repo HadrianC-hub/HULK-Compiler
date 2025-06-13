@@ -21,14 +21,14 @@ public:
     void visit(class FuncDeclaration& node) override;
     void visit(class FuncCall& node) override;
     void visit(class LetExpression& node) override;
+    void visit(class Assignment& node) override;
+    void visit(class IfExpression& node) override;
+    void visit(class WhileLoop& node) override;
+    void visit(class ForLoop& node) override;
 
     //Faltan por implementar
     void visit(ASTNode&) override {}
     void visit(VarDeclaration&) override {}
-    void visit(Assignment&) override {}
-    void visit(IfExpression&) override {}
-    void visit(WhileLoop&) override {}
-    void visit(ForLoop&) override {}
     void visit(TypeDeclaration&) override {}
     void visit(InitInstance&) override {}
     void visit(AttributeDeclaration& node) override {}
