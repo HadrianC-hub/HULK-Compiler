@@ -1,5 +1,5 @@
 #pragma once
-#include "../ast/AST_Node_Visitor.hpp"
+#include "../AST/AST.hpp"
 #include "../semantic/Symbols.hpp"
 #include "../utils/SemanticError.hpp"
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "AST_Node_Visitor.hpp"
+#include "Node_Visitor.hpp"
 #include <vector>
 #include <optional>
 #include <string>

@@ -1,8 +1,8 @@
 #include <cstdio>
 #include <iostream>
-#include "../ast/AST.hpp"
+#include "../AST/AST.hpp"
 #include "Context.hpp"
-#include "LLVM.hpp"
+#include "LLVM_Generator.hpp"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/raw_ostream.h"
 

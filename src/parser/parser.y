@@ -1,7 +1,7 @@
 %{
 
 #include <stdio.h>
-#include "../ast/AST.hpp"
+#include "../AST/AST.hpp"
 
 extern int yylex();
 void yyerror(const char *msg);
@@ -37,7 +37,7 @@ std::vector<ASTNode*> vectorize(ASTNode* arg1, ASTNode* arg2, int n) {
     #include <iostream>
     #include <cmath>
     #include <vector>
-    #include "../ast/AST.hpp"
+    #include "../AST/AST.hpp"
 }
 
 // Habilitar seguimiento de ubicaciones

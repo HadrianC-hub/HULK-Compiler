@@ -1,10 +1,10 @@
 #include <cstdio>
 #include <iostream>
 #include <vector>
-#include "ast/AST.hpp"
+#include "AST/AST.hpp"
 #include "utils/AST_utils.hpp"
-#include "semantic/SemanticAnalyzer.hpp"
-#include "codegen/Context.hpp"
+#include "Semantic/Semantic_Component.hpp"
+#include "Code_Generator/Context.hpp"
 
 
 extern int yyparse();               // Bison

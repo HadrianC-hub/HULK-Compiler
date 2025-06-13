@@ -1,5 +1,5 @@
 #pragma once
-#include "../ast/AST_Node_Visitor.hpp"
+#include "../AST/Node_Visitor.hpp"
 #include "llvm/IR/Value.h"
 
 class CodeGenContext;

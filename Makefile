@@ -39,8 +39,8 @@ CPP_SRC := $(shell find $(SRC_DIR) -name "*.cpp" ! -name "hulk.cpp")
 CPP_OBJ := $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(CPP_SRC))
 
 # Funciones auxiliares en C
-RUNTIME_SRC := $(SRC_DIR)/runtime/hulk_runtime.c
-RUNTIME_OBJ := $(BUILD_DIR)/runtime/hulk_runtime.o
+RUNTIME_SRC := $(SRC_DIR)/Utils/hulk_utils.c
+RUNTIME_OBJ := $(BUILD_DIR)/Utils/hulk_utils..o
 
 OBJS := $(MAIN_OBJ) $(CPP_OBJ) $(YACC_OBJ) $(LEX_OBJ) $(RUNTIME_OBJ)
 

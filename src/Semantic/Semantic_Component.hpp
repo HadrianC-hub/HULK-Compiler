@@ -1,7 +1,7 @@
 #pragma once
-#include "../ast/AST_Node_Visitor.hpp"
+#include "../AST/Node_Visitor.hpp"
 #include "Symbols.hpp"
-#include "../utils/SemanticError.hpp"
+#include "../Utils/SemanticError.hpp"
 #include <vector>
 
 class SemanticAnalyzer : public ASTVisitor {

@@ -1,6 +1,6 @@
-#include "LLVM.hpp"
+#include "LLVM_Generator.hpp"
 #include "Context.hpp"
-#include "../ast/AST.hpp"
+#include "../AST/AST.hpp"
 #include <stdexcept>
 #include <iostream>
 #include <string>

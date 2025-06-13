@@ -2,7 +2,7 @@
 #define AST_UTILS_HPP
 
 #include <vector>
-#include "../ast/AST.hpp"
+#include "../AST/AST.hpp"
 
 bool is_valid_ast(const std::vector<ASTNode*>& nodes);
 void delete_ast(std::vector<ASTNode*>& nodes);

@@ -4,7 +4,7 @@
 #include <string>
 #include <stdexcept>
 #include <set>
-#include "../ast/AST.hpp"
+#include "../AST/AST.hpp"
 
 // Tipos básicos de HULK (predefinidos)
 const std::set<std::string> BUILTIN_TYPES = {"Object", "Number", "String", "Boolean", "Null"};

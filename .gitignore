@@ -1,0 +1,12 @@
+Compiler.exe
+.build/codegen/Context.o
+.build/codegen/LLVM.o
+.build/lexer/lex.yy.o
+.build/parser/parser.tab.o
+.build/runtime/hulk_runtime.o
+.build/semantic/SemanticAnalyzer.o
+.build/semantic/Symbols.o
+.build/utils/AST_utils.o
+.build/utils/F_Collector.o
+Hulk/Hulk.exe
+.build/hulk.o
