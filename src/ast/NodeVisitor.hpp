@@ -1,52 +1,54 @@
 #pragma once
 
+// Nodos a visitar
 class ASTNode;
-class BinaryOpNode;
-class FunctionCallNode;
-class LiteralNode;
-class BlockNode;
-class VariableDeclarationNode;
-class IdentifierNode;
-class FunctionDeclarationNode;
-class LetNode;
-class AssignmentNode;
-class IfNode;
-class WhileNode;
-class ForNode;
-class TypeDeclarationNode;
-class NewInstanceNode;
-class UnaryOpNode;
-class BuiltInFunctionNode;
+class BinaryOperation;
+class FuncCall;
+class DataType;
+class Block;
+class VarDeclaration;
+class VarFuncName;
+class FuncDeclaration;
+class LetExpression;
+class Assignment;
+class IfExpression;
+class WhileLoop;
+class ForLoop;
+class TypeDeclaration;
+class InitInstance;
+class UnaryOperation;
+class BuiltInFunc;
 class AttributeDeclaration;
 class MethodDeclaration;
-class MethodCallNode;
-class BaseCallNode;
-class SelfCallNode;
+class MethodCall;
+class OriginCall;
+class SelfCall;
 
-class ASTVisitor
+class NodeVisitor
 {
 public:
-    virtual ~ASTVisitor() = default;
+    virtual ~NodeVisitor() = default;
     virtual void visit(ASTNode &node) = 0;
-    virtual void visit(BinaryOpNode &node) = 0;
-    virtual void visit(FunctionCallNode &node) = 0;
-    virtual void visit(LiteralNode &node) = 0;
-    virtual void visit(BlockNode &node) = 0;
-    virtual void visit(VariableDeclarationNode &node) = 0;
-    virtual void visit(IdentifierNode &node) = 0;
-    virtual void visit(FunctionDeclarationNode &node) = 0;
-    virtual void visit(LetNode &node) = 0;
-    virtual void visit(AssignmentNode &node) = 0;
-    virtual void visit(IfNode &node) = 0;
-    virtual void visit(WhileNode &node) = 0;
-    virtual void visit(ForNode &node) = 0;
-    virtual void visit(TypeDeclarationNode &node) = 0;
-    virtual void visit(NewInstanceNode &node) = 0;
+    virtual void visit(BinaryOperation &node) = 0;
+    virtual void visit(FuncCall &node) = 0;
+    virtual void visit(DataType &node) = 0;
+    virtual void visit(Block &node) = 0;
+    virtual void visit(VarDeclaration &node) = 0;
+    virtual void visit(VarFuncName &node) = 0;
+    virtual void visit(FuncDeclaration &node) = 0;
+    virtual void visit(LetExpression &node) = 0;
+    virtual void visit(Assignment &node) = 0;
+    virtual void visit(IfExpression &node) = 0;
+    virtual void visit(WhileLoop &node) = 0;
+    virtual void visit(ForLoop &node) = 0;
+    virtual void visit(TypeDeclaration &node) = 0;
+    virtual void visit(InitInstance &node) = 0;
     virtual void visit(AttributeDeclaration &node) = 0;
     virtual void visit(MethodDeclaration &node) = 0;
-    virtual void visit(MethodCallNode &node) = 0;
-    virtual void visit(BaseCallNode &node) = 0;
-    virtual void visit(SelfCallNode &node) = 0;
-    virtual void visit(UnaryOpNode &node) = 0;
-    virtual void visit(BuiltInFunctionNode &node) = 0;
+    virtual void visit(MethodCall &node) = 0;
+    virtual void visit(OriginCall &node) = 0;
+    virtual void visit(SelfCall &node) = 0;
+    virtual void visit(UnaryOperation &node) = 0;
+    virtual void visit(BuiltInFunc &node) = 0;
 };
+

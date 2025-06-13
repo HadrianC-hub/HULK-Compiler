@@ -3,39 +3,37 @@
 #include "../ast/NodeVisitor.hpp"
 #include "llvm/IR/Value.h"
 
-class CodeGenContext;
+class Context;
 
-// This class implements the visitor pattern for generating LLVM IR
-class LLVMGenerator : public ASTVisitor {
+class IRGenerator : public NodeVisitor {
 private:
-    CodeGenContext& context;
+    Context& context;
 
 public:
-    LLVMGenerator(CodeGenContext& ctx);
+    IRGenerator(Context& ctx);
 
-    // Implemented nodes
-    void visit(class LiteralNode& node) override;
-    void visit(class BinaryOpNode& node) override;
-    void visit(class UnaryOpNode& node) override;
-    void visit(class BuiltInFunctionNode& node) override;
-    void visit(class BlockNode& node) override;
-    void visit(class IdentifierNode& node) override;
-    void visit(class FunctionDeclarationNode& node) override;
-    void visit(class FunctionCallNode& node) override;
+    void visit(class DataType& node) override;
+    void visit(class BinaryOperation& node) override;
+    void visit(class UnaryOperation& node) override;
+    void visit(class BuiltInFunc& node) override;
+    void visit(class Block& node) override;
+    void visit(class VarFuncName& node) override;
+    void visit(class FuncDeclaration& node) override;
+    void visit(class FuncCall& node) override;
 
-    // Stubs for other nodes
+    //Faltan por implementar
     void visit(ASTNode&) override {}
-    void visit(VariableDeclarationNode&) override {}
-    void visit(LetNode&) override {}
-    void visit(AssignmentNode&) override {}
-    void visit(IfNode&) override {}
-    void visit(WhileNode&) override {}
-    void visit(ForNode&) override {}
-    void visit(TypeDeclarationNode&) override {}
-    void visit(NewInstanceNode&) override {}
+    void visit(VarDeclaration&) override {}
+    void visit(LetExpression&) override {}
+    void visit(Assignment&) override {}
+    void visit(IfExpression&) override {}
+    void visit(WhileLoop&) override {}
+    void visit(ForLoop&) override {}
+    void visit(TypeDeclaration&) override {}
+    void visit(InitInstance&) override {}
     void visit(AttributeDeclaration& node) override {}
     void visit(MethodDeclaration& node) override {}
-    void visit(MethodCallNode& node) override {}
-    void visit(BaseCallNode&) override {}
-    void visit(SelfCallNode&) override {}
+    void visit(MethodCall& node) override {}
+    void visit(OriginCall&) override {}
+    void visit(SelfCall&) override {}
 };

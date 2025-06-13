@@ -10,9 +10,9 @@
 #include <vector>
 
 class ASTNode;
-class FunctionDeclarationNode;
+class FuncDeclaration;
 
-class CodeGenContext
+class Context
 {
 public:
     llvm::LLVMContext context;
@@ -22,16 +22,16 @@ public:
     std::map<std::string, llvm::Value *> locals;
     std::vector<llvm::Value *> valueStack;
 
-    CodeGenContext();
+    Context();
 
-    void generateCode(std::vector<ASTNode *> &root);
-    void dumpIR(const std::string &filename = "hulk-low-code.ll");
+    void Generate(std::vector<ASTNode *> &root);
+    void WriteDownCode(const std::string &filename = "hulk.ll");
 
     std::vector<std::map<std::string, llvm::Value *>> localScopes;
-    std::vector<std::map<std::string, FunctionDeclarationNode *>> functionScopes;
+    std::vector<std::map<std::string, FuncDeclaration *>> functionScopes;
 
-    void pushVarScope() { localScopes.emplace_back(); }
-    void popVarScope() { localScopes.pop_back(); }
+    void PushVar() { localScopes.emplace_back(); }
+    void PopVar() { localScopes.pop_back(); }
     void addLocal(const std::string &name, llvm::Value *val)
     {
         if (!localScopes.empty())
@@ -48,14 +48,14 @@ public:
         return nullptr;
     }
 
-    void pushFuncScope() { functionScopes.emplace_back(); }
-    void popFuncScope() { functionScopes.pop_back(); }
-    void addFuncDecl(const std::string &name, FunctionDeclarationNode *decl)
+    void PushFunc() { functionScopes.emplace_back(); }
+    void PopFunc() { functionScopes.pop_back(); }
+    void addFuncDecl(const std::string &name, FuncDeclaration *decl)
     {
         if (!functionScopes.empty())
             functionScopes.back()[name] = decl;
     }
-    FunctionDeclarationNode *lookupFuncDecl(const std::string &name) const
+    FuncDeclaration *lookupFuncDecl(const std::string &name) const
     {
         for (auto it = functionScopes.rbegin(); it != functionScopes.rend(); ++it)
         {

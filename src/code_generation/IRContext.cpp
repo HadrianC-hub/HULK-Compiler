@@ -6,18 +6,18 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/raw_ostream.h"
 
-CodeGenContext::CodeGenContext()
+Context::Context()
     : builder(context), module("hulk_module", context) {}
 
-void CodeGenContext::generateCode(std::vector<ASTNode *> &root)
+void Context::Generate(std::vector<ASTNode *> &root)
 {
 
-    pushFuncScope();
+    PushFunc();
 
     std::vector<ASTNode *> exprs;
     for (ASTNode *node : root)
     {
-        if (auto *fn = dynamic_cast<FunctionDeclarationNode *>(node))
+        if (auto *fn = dynamic_cast<FuncDeclaration *>(node))
         {
             addFuncDecl(fn->name, fn);
         }
@@ -47,7 +47,7 @@ void CodeGenContext::generateCode(std::vector<ASTNode *> &root)
     llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", mainFunc);
     builder.SetInsertPoint(entry);
 
-    LLVMGenerator generator(*this);
+    IRGenerator generator(*this);
     for (ASTNode *node : root)
     {
         node->accept(generator);
@@ -80,18 +80,18 @@ void CodeGenContext::generateCode(std::vector<ASTNode *> &root)
     llvm::verifyFunction(*mainFunc);
 }
 
-void CodeGenContext::dumpIR(const std::string &filename)
+void Context::WriteDownCode(const std::string &filename)
 {
     std::error_code EC;
     llvm::raw_fd_ostream out(filename, EC);
 
     if (EC)
     {
-        std::cerr << "❌ Error: " << EC.message() << std::endl;
+        std::cerr << "[ERROR-IRCODE]: " << EC.message() << std::endl;
         return;
     }
 
     module.print(out, nullptr);
     out.flush();
-    std::cout << "✅ IR dumped to: " << filename << std::endl;
+    std::cout << "[IRCODE] Representación intermedia: " << filename << std::endl;
 }

@@ -1,13 +1,13 @@
-//FunctionCollector.cpp
+// FunctionCollector.cpp
 #include "Function.hpp"
 #include "../ast/AST.hpp"
+#include "../Semantic.hpp"
 
-FunctionCollector::FunctionCollector(SymbolTable& symTable, std::vector<SemanticError>& err)
+FunctionCollector::FunctionCollector(SymbolTable &symTable, std::vector<SemanticError> &err)
     : symbolTable(symTable), errors(err) {}
 
-
-void FunctionCollector::addBuiltins() {
-    // Las funciones builtin están disponibles globalmente.
+void FunctionCollector::addBuiltins()
+{
     symbolTable.addFunction("sin", "Number", {"Number"});
     symbolTable.addFunction("cos", "Number", {"Number"});
     symbolTable.addFunction("exp", "Number", {"Number"});
@@ -19,17 +19,20 @@ void FunctionCollector::addBuiltins() {
     symbolTable.addFunction("print", "Null", {"Object"});
 }
 
-
-void FunctionCollector::visit(FunctionDeclarationNode& node) {
-    if (symbolTable.existsInCurrentScope(node.name)) {
+void FunctionCollector::visit(FuncDeclaration &node)
+{
+    if (symbolTable.existsInCurrentScope(node.name))
+    {
         errors.emplace_back("Función '" + node.name + "' ya declarada", node.line());
-    } else {
+    }
+    else
+    {
         std::vector<std::string> paramTypes;
-        for (const auto& param : *node.params) {
+        for (const auto &param : *node.params)
+        {
             paramTypes.push_back(param.type);
         }
 
-        // 💡 Pasar también el cuerpo
         symbolTable.addFunction(node.name, node.returnType, paramTypes, node.body);
     }
 }

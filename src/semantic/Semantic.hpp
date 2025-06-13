@@ -2,9 +2,15 @@
 #include "../ast/NodeVisitor.hpp"
 #include "scope/Symbol.hpp"
 #include <vector>
-#include "SemanticError.hpp"
+#include <string>
 
-class SemanticAnalyzer : public ASTVisitor
+struct SemanticError {
+    std::string message;
+    int line;
+    SemanticError(const std::string& msg, int ln) : message(msg), line(ln) {}
+};
+
+class SemanticValidation : public NodeVisitor
 {
 private:
     SymbolTable symbolTable;
@@ -19,34 +25,34 @@ private:
     std::string currentMethodContext;
 
 public:
-    void analyze(const std::vector<ASTNode *> &nodes);
+    void validate(const std::vector<ASTNode *> &nodes);
     std::string inferParamUsageType(const std::string &paramName, ASTNode *body);
     void collectParamUsages(ASTNode *node, const std::string &paramName, std::set<std::string> &types);
     Symbol *lookupMethodInHierarchy(const std::string &typeName, const std::string &methodName);
 
     // Métodos visit
-    void visit(FunctionDeclarationNode &node) override;
-    void visit(BinaryOpNode &node) override;
-    void visit(FunctionCallNode &node) override;
+    void visit(FuncDeclaration &node) override;
+    void visit(BinaryOperation &node) override;
+    void visit(FuncCall &node) override;
     void visit(ASTNode &node) override;
-    void visit(LiteralNode &node) override;
-    void visit(BlockNode &node) override;
-    void visit(VariableDeclarationNode &node) override;
-    void visit(IdentifierNode &node) override;
-    void visit(LetNode &node) override;
-    void visit(AssignmentNode &node) override;
-    void visit(IfNode &node) override;
-    void visit(WhileNode &node) override;
-    void visit(ForNode &node) override;
-    void visit(TypeDeclarationNode &node) override;
-    void visit(NewInstanceNode &node) override;
-    void visit(UnaryOpNode &node) override;
-    void visit(BuiltInFunctionNode &node) override;
+    void visit(DataType &node) override;
+    void visit(Block &node) override;
+    void visit(VarDeclaration &node) override;
+    void visit(VarFuncName &node) override;
+    void visit(LetExpression &node) override;
+    void visit(Assignment &node) override;
+    void visit(IfExpression &node) override;
+    void visit(WhileLoop &node) override;
+    void visit(ForLoop &node) override;
+    void visit(TypeDeclaration &node) override;
+    void visit(InitInstance &node) override;
+    void visit(UnaryOperation &node) override;
+    void visit(BuiltInFunc &node) override;
     void visit(AttributeDeclaration &node) override;
     void visit(MethodDeclaration &node) override;
-    void visit(MethodCallNode &node) override;
-    void visit(BaseCallNode &node) override;
-    void visit(SelfCallNode &node) override;
+    void visit(MethodCall &node) override;
+    void visit(OriginCall &node) override;
+    void visit(SelfCall &node) override;
 
     const std::vector<SemanticError> &getErrors() const { return errors; }
 

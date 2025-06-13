@@ -1,31 +1,34 @@
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <math.h>
-#include <stdio.h> 
+#include "hulk_utils.hpp"
+#include <cstdlib>
+#include <cstring>
+#include <cmath>
+#include <cstdio>
 
-// a + b → "ab"
 char* hulk_str_concat(const char* a, const char* b) {
     size_t len = strlen(a) + strlen(b) + 1;
-    char* res = malloc(len);
+    char* res = (char*)malloc(len);
     strcpy(res, a);
     strcat(res, b);
     return res;
 }
 
-// a + " " + b → "a b"
 char* hulk_str_concat_space(const char* a, const char* b) {
+    if (!a) a = "";
+    if (!b) b = "";
     size_t len = strlen(a) + strlen(b) + 2;
-    char* res = malloc(len);
+    char* res = (char*)malloc(len);
+    if (!res) {
+        fprintf(stderr, "Error: malloc falló en hulk_str_concat_space\n");
+        exit(1);
+    }
     strcpy(res, a);
     strcat(res, " ");
     strcat(res, b);
     return res;
 }
 
-// Compare two strings for equality
 bool hulk_str_equals(const char* a, const char* b) {
-    if (!a || !b) return false;  // Null safety
+    if (!a || !b) return false;
     return strcmp(a, b) == 0;
 }
 

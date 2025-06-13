@@ -8,12 +8,12 @@
 #include <vector>
 #include <algorithm>
 
-SymbolTable &SemanticAnalyzer::getSymbolTable()
+SymbolTable &SemanticValidation::getSymbolTable()
 {
     return symbolTable;
 }
 
-std::string SemanticAnalyzer::inferParamUsageType(const std::string &paramName, ASTNode *body)
+std::string SemanticValidation::inferParamUsageType(const std::string &paramName, ASTNode *body)
 {
     std::set<std::string> usageTypes;
     collectParamUsages(body, paramName, usageTypes);
@@ -95,13 +95,13 @@ std::string SemanticAnalyzer::inferParamUsageType(const std::string &paramName, 
     return commonType;
 }
 
-void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &paramName, std::set<std::string> &types)
+void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &paramName, std::set<std::string> &types)
 {
     if (!node)
         return;
 
     // Identificador que referencia el parámetro
-    if (auto *id = dynamic_cast<IdentifierNode *>(node))
+    if (auto *id = dynamic_cast<VarFuncName *>(node))
     {
         if (id->name == paramName && id->type() != "Unknown" && id->type() != "Error")
         {
@@ -110,7 +110,7 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
     }
 
     // Binary operation - verificar restricciones de tipo
-    else if (auto *bin = dynamic_cast<BinaryOpNode *>(node))
+    else if (auto *bin = dynamic_cast<BinaryOperation *>(node))
     {
         collectParamUsages(bin->left, paramName, types);
         collectParamUsages(bin->right, paramName, types);
@@ -119,8 +119,8 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
         if (bin->op == "+" || bin->op == "-" || bin->op == "*" || bin->op == "/" || bin->op == "^" || bin->op == "%")
         {
             // Operaciones aritméticas requieren Number
-            auto *leftId = dynamic_cast<IdentifierNode *>(bin->left);
-            auto *rightId = dynamic_cast<IdentifierNode *>(bin->right);
+            auto *leftId = dynamic_cast<VarFuncName *>(bin->left);
+            auto *rightId = dynamic_cast<VarFuncName *>(bin->right);
             if ((leftId && leftId->name == paramName) || (rightId && rightId->name == paramName))
             {
                 types.insert("Number");
@@ -129,8 +129,8 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
         else if (bin->op == ">" || bin->op == "<" || bin->op == ">=" || bin->op == "<=")
         {
             // Operaciones de comparación requieren Number
-            auto *leftId = dynamic_cast<IdentifierNode *>(bin->left);
-            auto *rightId = dynamic_cast<IdentifierNode *>(bin->right);
+            auto *leftId = dynamic_cast<VarFuncName *>(bin->left);
+            auto *rightId = dynamic_cast<VarFuncName *>(bin->right);
             if ((leftId && leftId->name == paramName) || (rightId && rightId->name == paramName))
             {
                 types.insert("Number");
@@ -139,8 +139,8 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
         else if (bin->op == "&" || bin->op == "|")
         {
             // Operaciones lógicas requieren Boolean
-            auto *leftId = dynamic_cast<IdentifierNode *>(bin->left);
-            auto *rightId = dynamic_cast<IdentifierNode *>(bin->right);
+            auto *leftId = dynamic_cast<VarFuncName *>(bin->left);
+            auto *rightId = dynamic_cast<VarFuncName *>(bin->right);
             if ((leftId && leftId->name == paramName) || (rightId && rightId->name == paramName))
             {
                 types.insert("Boolean");
@@ -149,13 +149,13 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
         else if (bin->op == "@" || bin->op == "@@")
         {
             // Operaciones de concatenación requieren String o Number
-            auto *leftId = dynamic_cast<IdentifierNode *>(bin->left);
-            auto *rightId = dynamic_cast<IdentifierNode *>(bin->right);
+            auto *leftId = dynamic_cast<VarFuncName *>(bin->left);
+            auto *rightId = dynamic_cast<VarFuncName *>(bin->right);
 
             if (leftId && leftId->name == paramName)
             {
                 // Si el otro operando es un literal, usamos su tipo
-                if (auto *rightLit = dynamic_cast<LiteralNode *>(bin->right))
+                if (auto *rightLit = dynamic_cast<DataType *>(bin->right))
                 {
                     types.insert(rightLit->type());
                 }
@@ -170,7 +170,7 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
             if (rightId && rightId->name == paramName)
             {
                 // Si el otro operando es un literal, usamos su tipo
-                if (auto *leftLit = dynamic_cast<LiteralNode *>(bin->left))
+                if (auto *leftLit = dynamic_cast<DataType *>(bin->left))
                 {
                     types.insert(leftLit->type());
                 }
@@ -186,8 +186,8 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
         else if (bin->op == "==" || bin->op == "!=")
         {
             // Operaciones de comparación requieren tipos compatibles
-            auto *leftId = dynamic_cast<IdentifierNode *>(bin->left);
-            auto *rightId = dynamic_cast<IdentifierNode *>(bin->right);
+            auto *leftId = dynamic_cast<VarFuncName *>(bin->left);
+            auto *rightId = dynamic_cast<VarFuncName *>(bin->right);
             if (leftId && leftId->name == paramName)
             {
                 types.insert(bin->right->type());
@@ -199,10 +199,10 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
         }
     }
     // Unary operation
-    else if (auto *un = dynamic_cast<UnaryOpNode *>(node))
+    else if (auto *un = dynamic_cast<UnaryOperation *>(node))
     {
         collectParamUsages(un->operand, paramName, types);
-        auto *operandId = dynamic_cast<IdentifierNode *>(un->operand);
+        auto *operandId = dynamic_cast<VarFuncName *>(un->operand);
 
         if (operandId && operandId->name == paramName)
         {
@@ -214,7 +214,7 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
     }
 
     // Function call
-    else if (auto *call = dynamic_cast<FunctionCallNode *>(node))
+    else if (auto *call = dynamic_cast<FuncCall *>(node))
     {
         for (auto *arg : call->args)
             collectParamUsages(arg, paramName, types);
@@ -225,7 +225,7 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
         {
             for (size_t i = 0; i < call->args.size(); ++i)
             {
-                if (auto *id = dynamic_cast<IdentifierNode *>(call->args[i]))
+                if (auto *id = dynamic_cast<VarFuncName *>(call->args[i]))
                 {
                     if (id->name == paramName)
                     {
@@ -258,14 +258,14 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
     }
 
     // Built-in function call
-    else if (auto *builtin = dynamic_cast<BuiltInFunctionNode *>(node))
+    else if (auto *builtin = dynamic_cast<BuiltInFunc *>(node))
     {
         for (auto *arg : builtin->args)
         {
             collectParamUsages(arg, paramName, types);
 
             // Si este argumento es el parámetro que estamos inferiendo y la función requiere Number, inferir Number
-            if (auto *id = dynamic_cast<IdentifierNode *>(arg))
+            if (auto *id = dynamic_cast<VarFuncName *>(arg))
             {
                 if (id->name == paramName)
                 {
@@ -281,7 +281,7 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
     }
 
     // Method call
-    else if (auto *method = dynamic_cast<MethodCallNode *>(node))
+    else if (auto *method = dynamic_cast<MethodCall *>(node))
     {
         // Analizar todos los argumentos de la llamada al método
         for (auto *arg : method->args)
@@ -310,7 +310,7 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
 
                 for (size_t i = 0; i < method->args.size(); ++i)
                 {
-                    if (auto *id = dynamic_cast<IdentifierNode *>(method->args[i]))
+                    if (auto *id = dynamic_cast<VarFuncName *>(method->args[i]))
                     {
                         if (id->name == paramName && i < methodSym.params.size())
                         {
@@ -329,7 +329,7 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
     }
 
     // Let expression
-    else if (auto *let = dynamic_cast<LetNode *>(node))
+    else if (auto *let = dynamic_cast<LetExpression *>(node))
     {
         // Primero analizar las declaraciones
         for (auto &decl : *let->declarations)
@@ -337,7 +337,7 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
             collectParamUsages(decl.initializer, paramName, types);
 
             // Si el parámetro es usado en el inicializador, su tipo debe ser compatible
-            if (auto *id = dynamic_cast<IdentifierNode *>(decl.initializer))
+            if (auto *id = dynamic_cast<VarFuncName *>(decl.initializer))
             {
                 if (id->name == paramName)
                 {
@@ -349,7 +349,7 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
     }
 
     // If expression
-    else if (auto *ifn = dynamic_cast<IfNode *>(node))
+    else if (auto *ifn = dynamic_cast<IfExpression *>(node))
     {
         // Analizar condición
         collectParamUsages(ifn->branches->front().condition, paramName, types);
@@ -368,14 +368,14 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
     }
 
     // While expression
-    else if (auto *wh = dynamic_cast<WhileNode *>(node))
+    else if (auto *wh = dynamic_cast<WhileLoop *>(node))
     {
         collectParamUsages(wh->condition, paramName, types);
         collectParamUsages(wh->body, paramName, types);
     }
 
     // For expression
-    else if (auto *forNode = dynamic_cast<ForNode *>(node))
+    else if (auto *forNode = dynamic_cast<ForLoop *>(node))
     {
         collectParamUsages(forNode->init_range, paramName, types);
         collectParamUsages(forNode->end_range, paramName, types);
@@ -383,21 +383,21 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
     }
 
     // Assignment
-    else if (auto *assign = dynamic_cast<AssignmentNode *>(node))
+    else if (auto *assign = dynamic_cast<Assignment *>(node))
     {
         collectParamUsages(assign->rhs, paramName, types);
 
-        if (auto *id = dynamic_cast<IdentifierNode *>(assign->rhs))
+        if (auto *id = dynamic_cast<VarFuncName *>(assign->rhs))
         {
             if (id->name == paramName)
             {
                 std::string targetName;
 
-                if (auto *idName = dynamic_cast<IdentifierNode *>(assign->name))
+                if (auto *idName = dynamic_cast<VarFuncName *>(assign->name))
                 {
                     targetName = idName->name;
                 }
-                else if (auto *selfField = dynamic_cast<SelfCallNode *>(assign->name))
+                else if (auto *selfField = dynamic_cast<SelfCall *>(assign->name))
                 {
                     targetName = selfField->varName;
                 }
@@ -415,14 +415,14 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
     }
 
     // Variable declaration
-    else if (auto *decl = dynamic_cast<VariableDeclarationNode *>(node))
+    else if (auto *decl = dynamic_cast<VarDeclaration *>(node))
     {
         if (decl->initializer)
         {
             collectParamUsages(decl->initializer, paramName, types);
 
             // Si el parámetro es usado en el inicializador, su tipo debe ser compatible
-            if (auto *id = dynamic_cast<IdentifierNode *>(decl->initializer))
+            if (auto *id = dynamic_cast<VarFuncName *>(decl->initializer))
             {
                 if (id->name == paramName)
                 {
@@ -433,14 +433,14 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
     }
 
     // Block
-    else if (auto *block = dynamic_cast<BlockNode *>(node))
+    else if (auto *block = dynamic_cast<Block *>(node))
     {
         for (auto *expr : block->expressions)
             collectParamUsages(expr, paramName, types);
     }
 
     // New instance
-    else if (auto *inst = dynamic_cast<NewInstanceNode *>(node))
+    else if (auto *inst = dynamic_cast<InitInstance *>(node))
     {
         for (auto *arg : inst->args)
             collectParamUsages(arg, paramName, types);
@@ -451,7 +451,7 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
         {
             for (size_t i = 0; i < inst->args.size(); ++i)
             {
-                if (auto *id = dynamic_cast<IdentifierNode *>(inst->args[i]))
+                if (auto *id = dynamic_cast<VarFuncName *>(inst->args[i]))
                 {
                     if (id->name == paramName && i < typeSym->typeParams.size())
                     {
@@ -463,7 +463,7 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
     }
 
     // Type declaration
-    else if (auto *typeDecl = dynamic_cast<TypeDeclarationNode *>(node))
+    else if (auto *typeDecl = dynamic_cast<TypeDeclaration *>(node))
     {
         // Recolectar tipos desde atributos
         if (typeDecl->body && typeDecl->body->attributes)
@@ -491,7 +491,7 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
     }
 
     // Literal: no hay nada que recorrer
-    else if (dynamic_cast<LiteralNode *>(node))
+    else if (dynamic_cast<DataType *>(node))
     {
         return;
     }
@@ -504,7 +504,7 @@ void SemanticAnalyzer::collectParamUsages(ASTNode *node, const std::string &para
     }
 }
 
-bool SemanticAnalyzer::conformsTo(const std::string &subtype, const std::string &supertype)
+bool SemanticValidation::conformsTo(const std::string &subtype, const std::string &supertype)
 {
     if (subtype == "Error" || supertype == "Error")
         return false;
@@ -528,7 +528,7 @@ bool SemanticAnalyzer::conformsTo(const std::string &subtype, const std::string 
     return false;
 }
 
-void SemanticAnalyzer::analyze(const std::vector<ASTNode *> &nodes)
+void SemanticValidation::validate(const std::vector<ASTNode *> &nodes)
 {
     std::cout << "Entra en analyze." << std::endl;
 
@@ -585,11 +585,11 @@ void SemanticAnalyzer::analyze(const std::vector<ASTNode *> &nodes)
     std::cout << "Análisis semántico completado." << std::endl;
 }
 
-void SemanticAnalyzer::visit(ASTNode &node) {}
+void SemanticValidation::visit(ASTNode &node) {}
 
 // Implementación de visitas a nodos
 
-void SemanticAnalyzer::visit(UnaryOpNode &node)
+void SemanticValidation::visit(UnaryOperation &node)
 {
     node.operand->accept(*this);
     std::string operandType = node.operand->type();
@@ -626,7 +626,7 @@ void SemanticAnalyzer::visit(UnaryOpNode &node)
     }
 }
 
-void SemanticAnalyzer::visit(BuiltInFunctionNode &node)
+void SemanticValidation::visit(BuiltInFunc &node)
 {
     for (ASTNode *arg : node.args)
     {
@@ -740,7 +740,7 @@ void SemanticAnalyzer::visit(BuiltInFunctionNode &node)
     }
 }
 
-void SemanticAnalyzer::visit(FunctionDeclarationNode &node)
+void SemanticValidation::visit(FuncDeclaration &node)
 {
     std::cout << "\n=== Iniciando análisis de función: " << node.name << " ===\n";
     std::vector<std::string> paramTypes;
@@ -784,14 +784,14 @@ void SemanticAnalyzer::visit(FunctionDeclarationNode &node)
 
         std::cout << "  - Intentando inferir tipo para parámetro: " << param.name << "\n";
 
-        if (auto *call = dynamic_cast<FunctionCallNode *>(node.body))
+        if (auto *call = dynamic_cast<FuncCall *>(node.body))
         {
             Symbol *funcSym = symbolTable.lookup(call->funcName);
             if (funcSym && funcSym->kind == "function")
             {
                 for (size_t i = 0; i < call->args.size(); ++i)
                 {
-                    if (auto *id = dynamic_cast<IdentifierNode *>(call->args[i]))
+                    if (auto *id = dynamic_cast<VarFuncName *>(call->args[i]))
                     {
                         if (id->name == param.name)
                         {
@@ -809,13 +809,13 @@ void SemanticAnalyzer::visit(FunctionDeclarationNode &node)
             }
         }
 
-        if (auto *bin = dynamic_cast<BinaryOpNode *>(node.body))
+        if (auto *bin = dynamic_cast<BinaryOperation *>(node.body))
         {
             std::cout << "    - Cuerpo es una operación binaria con operador: " << bin->op << "\n";
             if (bin->op == "+" || bin->op == "-" || bin->op == "*" || bin->op == "/")
             {
-                auto *leftId = dynamic_cast<IdentifierNode *>(bin->left);
-                auto *rightId = dynamic_cast<IdentifierNode *>(bin->right);
+                auto *leftId = dynamic_cast<VarFuncName *>(bin->left);
+                auto *rightId = dynamic_cast<VarFuncName *>(bin->right);
 
                 std::cout << "    - Verificando operandos:\n";
                 if (leftId)
@@ -870,7 +870,7 @@ void SemanticAnalyzer::visit(FunctionDeclarationNode &node)
     symbolTable.exitScope();
 }
 
-void SemanticAnalyzer::visit(FunctionCallNode &node)
+void SemanticValidation::visit(FuncCall &node)
 {
     if (node.funcName == "base")
     {
@@ -956,7 +956,7 @@ void SemanticAnalyzer::visit(FunctionCallNode &node)
     }
 }
 
-void SemanticAnalyzer::visit(BinaryOpNode &node)
+void SemanticValidation::visit(BinaryOperation &node)
 {
     node.left->accept(*this);
     node.right->accept(*this);
@@ -1107,12 +1107,12 @@ void SemanticAnalyzer::visit(BinaryOpNode &node)
     }
 }
 
-void SemanticAnalyzer::visit(LiteralNode &node)
+void SemanticValidation::visit(DataType &node)
 {
     node._type = node._type;
 }
 
-void SemanticAnalyzer::visit(BlockNode &node)
+void SemanticValidation::visit(Block &node)
 {
     symbolTable.enterScope();
 
@@ -1127,7 +1127,7 @@ void SemanticAnalyzer::visit(BlockNode &node)
     node._type = lastType;
 }
 
-void SemanticAnalyzer::visit(VariableDeclarationNode &node)
+void SemanticValidation::visit(VarDeclaration &node)
 {
     if (symbolTable.existsInCurrentScope(node.name))
     {
@@ -1162,7 +1162,7 @@ void SemanticAnalyzer::visit(VariableDeclarationNode &node)
     symbolTable.addSymbol(node.name, node._type, !node.isMutable);
 }
 
-void SemanticAnalyzer::visit(IdentifierNode &node)
+void SemanticValidation::visit(VarFuncName &node)
 {
     Symbol *symbol = symbolTable.lookup(node.name);
     if (!symbol)
@@ -1174,7 +1174,7 @@ void SemanticAnalyzer::visit(IdentifierNode &node)
     node._type = symbol->type;
 }
 
-bool SemanticAnalyzer::isValidIdentifier(const std::string &name)
+bool SemanticValidation::isValidIdentifier(const std::string &name)
 {
     if (name.empty())
         return false;
@@ -1188,7 +1188,7 @@ bool SemanticAnalyzer::isValidIdentifier(const std::string &name)
     return true;
 }
 
-void SemanticAnalyzer::visit(LetNode &node)
+void SemanticValidation::visit(LetExpression &node)
 {
     symbolTable.enterScope();
 
@@ -1232,15 +1232,15 @@ void SemanticAnalyzer::visit(LetNode &node)
     symbolTable.exitScope();
 }
 
-void SemanticAnalyzer::visit(AssignmentNode &node)
+void SemanticValidation::visit(Assignment &node)
 {
 
     std::string name;
-    if (auto *id = dynamic_cast<IdentifierNode *>(node.name))
+    if (auto *id = dynamic_cast<VarFuncName *>(node.name))
     {
         name = id->name;
     }
-    else if (auto *self = dynamic_cast<SelfCallNode *>(node.name))
+    else if (auto *self = dynamic_cast<SelfCall *>(node.name))
     {
         name = self->varName;
     }
@@ -1287,7 +1287,7 @@ void SemanticAnalyzer::visit(AssignmentNode &node)
     node._type = symbol->type;
 }
 
-void SemanticAnalyzer::visit(IfNode &node)
+void SemanticValidation::visit(IfExpression &node)
 {
 
     std::vector<std::string> branchTypes;
@@ -1335,7 +1335,7 @@ void SemanticAnalyzer::visit(IfNode &node)
     node._type = commonType;
 }
 
-void SemanticAnalyzer::visit(WhileNode &node)
+void SemanticValidation::visit(WhileLoop &node)
 {
     // Verificar condición es booleana
     node.condition->accept(*this);
@@ -1352,7 +1352,7 @@ void SemanticAnalyzer::visit(WhileNode &node)
     node._type = node.body->type(); // Tipo del while = tipo del cuerpo
 }
 
-void SemanticAnalyzer::visit(ForNode &node)
+void SemanticValidation::visit(ForLoop &node)
 {
     node.init_range->accept(*this);
     node.end_range->accept(*this);
@@ -1373,7 +1373,7 @@ void SemanticAnalyzer::visit(ForNode &node)
     symbolTable.exitScope();
 }
 
-void SemanticAnalyzer::visit(TypeDeclarationNode &node)
+void SemanticValidation::visit(TypeDeclaration &node)
 {
     std::cout << "Analizando tipo: " << node.name << "\n";
 
@@ -1430,7 +1430,7 @@ void SemanticAnalyzer::visit(TypeDeclarationNode &node)
                 for (const std::string &paramName : parentSym->typeParams)
                 {
                     node.constructorParams->emplace_back(Parameter{paramName, ""});
-                    node.baseArgs.push_back(new IdentifierNode(paramName, node.line()));
+                    node.baseArgs.push_back(new VarFuncName(paramName, node.line()));
                     std::cerr << "  + Param heredado: " << paramName << "\n";
                 }
             }
@@ -1450,7 +1450,7 @@ void SemanticAnalyzer::visit(TypeDeclarationNode &node)
 
         for (const auto &param : *node.constructorParams)
         {
-            node.baseArgs.push_back(new IdentifierNode(param.name, node.line()));
+            node.baseArgs.push_back(new VarFuncName(param.name, node.line()));
         }
     }
 
@@ -1556,7 +1556,7 @@ void SemanticAnalyzer::visit(TypeDeclarationNode &node)
     std::cout << "Tipo '" << node.name << "' analizado correctamente\n";
 }
 
-void SemanticAnalyzer::visit(NewInstanceNode &node)
+void SemanticValidation::visit(InitInstance &node)
 {
     TypeSymbol *typeSym = symbolTable.lookupType(node.typeName);
     if (!typeSym)
@@ -1582,7 +1582,7 @@ void SemanticAnalyzer::visit(NewInstanceNode &node)
     node._type = node.typeName;
 }
 
-void SemanticAnalyzer::visit(MethodCallNode &node)
+void SemanticValidation::visit(MethodCall &node)
 {
     Symbol *instSym = symbolTable.lookup(node.instanceName);
     if (!instSym)
@@ -1645,16 +1645,16 @@ void SemanticAnalyzer::visit(MethodCallNode &node)
     node._type = method->type;
 }
 
-void SemanticAnalyzer::visit(AttributeDeclaration &node)
+void SemanticValidation::visit(AttributeDeclaration &node)
 {
     node.initializer->accept(*this);
 }
 
-void SemanticAnalyzer::visit(MethodDeclaration &node)
+void SemanticValidation::visit(MethodDeclaration &node)
 {
 }
 
-void SemanticAnalyzer::visit(BaseCallNode &node)
+void SemanticValidation::visit(OriginCall &node)
 {
     Symbol *self = symbolTable.lookup("self");
     if (!self)
@@ -1701,7 +1701,7 @@ void SemanticAnalyzer::visit(BaseCallNode &node)
     node._type = it->second.type;
 }
 
-void SemanticAnalyzer::visit(SelfCallNode &node)
+void SemanticValidation::visit(SelfCall &node)
 {
     Symbol *self = symbolTable.lookup("self");
     if (!self)
@@ -1730,7 +1730,7 @@ void SemanticAnalyzer::visit(SelfCallNode &node)
     node._type = it->second.type;
 }
 
-Symbol *SemanticAnalyzer::lookupMethodInHierarchy(const std::string &typeName, const std::string &methodName)
+Symbol *SemanticValidation::lookupMethodInHierarchy(const std::string &typeName, const std::string &methodName)
 {
     std::cout << "[DEBUG] Buscando método '" << methodName << "' en jerarquía de tipo '" << typeName << "'\n";
 

@@ -35,12 +35,12 @@ LEX_OBJ = $(BUILD_DIR)/lexer/lex.yy.o
 YACC_OBJ = $(BUILD_DIR)/parser/parser.tab.o
 
 # Detectar automáticamente todos los *.cpp de src/
-CPP_SRC := $(shell find $(SRC_DIR) -name "*.cpp" ! -name "hulk.cpp")
+CPP_SRC := $(shell find $(SRC_DIR) -name "*.cpp" ! -name "hulk.cpp" ! -name "hulk_utils.cpp")
 CPP_OBJ := $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(CPP_SRC))
 
 # Funciones auxiliares en C
-RUNTIME_SRC := $(SRC_DIR)/Utils/hulk_utils.c
-RUNTIME_OBJ := $(BUILD_DIR)/Utils/hulk_utils..o
+RUNTIME_SRC := $(SRC_DIR)/Utils/hulk_utils.cpp
+RUNTIME_OBJ := $(BUILD_DIR)/Utils/hulk_utils.o
 
 OBJS := $(MAIN_OBJ) $(CPP_OBJ) $(YACC_OBJ) $(LEX_OBJ) $(RUNTIME_OBJ)
 
@@ -59,7 +59,13 @@ run: build $(LLVM_IR) $(CODE)
 
 compile: run
 
-execute: compile
+execute:
+	@if [ -f "$(CODE)" ]; then \
+		echo "⚡ Ejecutable ya existe. Ejecutando..."; \
+	else \
+		echo "🔧 Ejecutable no encontrado. Compilando..."; \
+		$(MAKE) $(CODE); \
+	fi
 	@echo "🚀 Ejecutando programa..."
 	@./$(CODE)
 	@echo "🏁 Ejecución completada"
@@ -108,7 +114,7 @@ $(YACC_OBJ): $(PARSER_SRC)
 
 $(RUNTIME_OBJ): $(RUNTIME_SRC)
 	@mkdir -p $(dir $@)
-	gcc -Wall -O2 -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(LLVM_CXXFLAGS) -c $< -o $@
 
 # Compilar hulk.cpp y otros .cpp
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp

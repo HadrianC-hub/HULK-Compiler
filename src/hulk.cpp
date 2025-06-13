@@ -44,20 +44,20 @@ int main(int argc, char **argv) {
                 << " | Línea: " << node->line() << "\n";
     }
 
-    SemanticAnalyzer semanticAnalyzer;
-    semanticAnalyzer.analyze(root);
+    SemanticValidation semantic;
+    semantic.validate(root);
     std::cout << "Análisis semántico completado exitosamente." << std::endl;
-    CodeGenContext cg;
+    Context cg;
         
     try {
-        cg.generateCode(root);
+        cg.Generate(root);
     } catch (const std::exception& e) {
         std::cerr << "Error during code generation: " << e.what() << std::endl;
         return 1;
     }
 
     std::cout << "Generación de código completada." << std::endl;
-    cg.dumpIR("Hulk/Hulk-IR.ll");
+    cg.WriteDownCode("Hulk/Hulk-IR.ll");
     delete_ast(root);
 
     return 0;

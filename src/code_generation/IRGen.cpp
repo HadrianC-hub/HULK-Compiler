@@ -1,22 +1,14 @@
 #include "IRGen.hpp"
 #include "IRContext.hpp"
 #include "../ast/AST.hpp"
+#include "../Utils/hulk_utils.hpp"
 #include <stdexcept>
 #include <iostream>
 #include <string>
 #include <cstring>
 #include <math.h>
 
-extern "C"
-{
-    char *hulk_str_concat(const char *a, const char *b);
-    char *hulk_str_concat_space(const char *a, const char *b);
-    bool hulk_str_equals(const char *a, const char *b);
-    double hulk_log_base_checked(double x, double base);
-    double hulk_rand();
-}
-
-LLVMGenerator::LLVMGenerator(CodeGenContext &ctx)
+IRGenerator::IRGenerator(Context &ctx)
     : context(ctx) {}
 
 std::string processRawString(const std::string &raw)
@@ -68,7 +60,7 @@ std::string processRawString(const std::string &raw)
     return processed;
 }
 
-void LLVMGenerator::visit(LiteralNode &node)
+void IRGenerator::visit(DataType &node)
 {
     llvm::Value *val = nullptr;
 
@@ -93,15 +85,15 @@ void LLVMGenerator::visit(LiteralNode &node)
     }
     else
     {
-        throw std::runtime_error("Unsupported literal type: " + node._type);
+        throw std::runtime_error("Tipo no soportado: " + node._type);
     }
 
     context.valueStack.push_back(val);
 
-    std::cout << "🔧 Emitted literal of type " << node._type << std::endl;
+    std::cout << "[EMITIDO] " << node._type << std::endl;
 }
 
-void LLVMGenerator::visit(BinaryOpNode &node)
+void IRGenerator::visit(BinaryOperation &node)
 {
     node.left->accept(*this);
     llvm::Value *left = context.valueStack.back();
@@ -204,7 +196,7 @@ void LLVMGenerator::visit(BinaryOpNode &node)
         }
         else
         {
-            throw std::runtime_error("❌ Unsupported type for '==' or '!=': " + nodeType);
+            throw std::runtime_error("Tipo no soportado para las operaciones '==' o '!=': " + nodeType);
         }
     }
 
@@ -236,14 +228,14 @@ void LLVMGenerator::visit(BinaryOpNode &node)
 
     else
     {
-        throw std::runtime_error("❌ Unsupported binary operator: " + op);
+        throw std::runtime_error("Operador binario no soportado: " + op);
     }
 
     context.valueStack.push_back(result);
-    std::cout << "🔧 Binary op '" << op << "' emitted.\n";
+    std::cout << "[EMITIDO]" << op << "operador binario.\n";
 }
 
-void LLVMGenerator::visit(UnaryOpNode &node)
+void IRGenerator::visit(UnaryOperation &node)
 {
 
     node.operand->accept(*this);
@@ -266,14 +258,14 @@ void LLVMGenerator::visit(UnaryOpNode &node)
     }
     else
     {
-        throw std::runtime_error("❌ Unsupported unary operator: " + op);
+        throw std::runtime_error("Operador unario no soportado: " + op);
     }
 
     context.valueStack.push_back(result);
-    std::cout << "🔧 Unary op '" << op << "' emitted.\n";
+    std::cout << "[EMITIDO] " << op << " operador unario.\n";
 }
 
-void LLVMGenerator::visit(BuiltInFunctionNode &node)
+void IRGenerator::visit(BuiltInFunc &node)
 {
     llvm::IRBuilder<> &builder = context.builder;
     std::vector<llvm::Value *> args;
@@ -363,7 +355,7 @@ void LLVMGenerator::visit(BuiltInFunctionNode &node)
     }
     else
     {
-        throw std::runtime_error("❌ Unsupported built-in function: " + name);
+        throw std::runtime_error("Función Built-In no soportada: " + name);
     }
 
     if (result)
@@ -371,22 +363,22 @@ void LLVMGenerator::visit(BuiltInFunctionNode &node)
         context.valueStack.push_back(result);
     }
 
-    std::cout << "🔧 Built-in function '" << name << "' emitted.\n";
+    std::cout << "[EMITIDO] " << name << "' Built-In.\n";
 }
 
-void LLVMGenerator::visit(BlockNode &node)
+void IRGenerator::visit(Block &node)
 {
     if (node.expressions.empty())
     {
-        throw std::runtime_error("❌ Block must contain at least one expression (line " + std::to_string(node.line()) + ")");
+        throw std::runtime_error("[ERROR] El bloque debe contener al menos una expresión: (line " + std::to_string(node.line()) + ")");
     }
 
-    context.pushFuncScope();
+    context.PushFunc();
 
     std::vector<ASTNode *> bodyExprs;
     for (ASTNode *expr : node.expressions)
     {
-        if (auto *decl = dynamic_cast<FunctionDeclarationNode *>(expr))
+        if (auto *decl = dynamic_cast<FuncDeclaration *>(expr))
         {
             context.addFuncDecl(decl->name, decl);
         }
@@ -404,7 +396,7 @@ void LLVMGenerator::visit(BlockNode &node)
         expr->accept(*this);
 
         bool isPrint = false;
-        if (auto *builtin = dynamic_cast<BuiltInFunctionNode *>(expr))
+        if (auto *builtin = dynamic_cast<BuiltInFunc *>(expr))
         {
             isPrint = (builtin->name == "print");
         }
@@ -439,17 +431,17 @@ void LLVMGenerator::visit(BlockNode &node)
         }
     }
 
-    context.popFuncScope();
+    context.PopFunc();
 
     if (!lastValidResult)
     {
-        throw std::runtime_error("❌ Block has no returnable value on last expression (line " + std::to_string(node.line()) + ")");
+        throw std::runtime_error("[ERROR] El bloque no tiene valor retornable en su última expresión: (line " + std::to_string(node.line()) + ")");
     }
 
-    std::cout << "🔧 BlockNode emitted with " << node.expressions.size() << " expressions\n";
+    std::cout << "[EMITIDO] " << node.expressions.size() << " expressiones en el bloque.\n";
 }
 
-void LLVMGenerator::visit(IdentifierNode &node)
+void IRGenerator::visit(VarFuncName &node)
 {
     llvm::Value *val = context.lookupLocal(node.name);
 
@@ -466,24 +458,24 @@ void LLVMGenerator::visit(IdentifierNode &node)
         val = context.lookupLocal(node.name);
         if (!val)
         {
-            throw std::runtime_error("[ERROR CG] Variable indefinida '" + node.name +
+            throw std::runtime_error("[ERROR] Variable indefinida '" + node.name +
                                      "' en línea " + std::to_string(node.line()));
         }
     }
 
     context.valueStack.push_back(val);
 
-    std::cout << "[PROC CG] '" << node.name << "' resuelto y enviado a la pila\n";
+    std::cout << "[EMITIDO] " << node.name << " resuelto y enviado a la pila\n";
 }
 
-void LLVMGenerator::visit(FunctionDeclarationNode &node)
+void IRGenerator::visit(FuncDeclaration &node)
 {
-    context.pushVarScope();
+    context.PushVar();
 
     const auto &params = *node.params;
     if (params.size() > context.valueStack.size())
     {
-        throw std::runtime_error("❌ Not enough arguments on stack for function '" + node.name + "'");
+        throw std::runtime_error("[ERROR] No hay argumentos suficientes para la función: " + node.name + "");
     }
 
     for (int i = params.size() - 1; i >= 0; --i)
@@ -495,10 +487,10 @@ void LLVMGenerator::visit(FunctionDeclarationNode &node)
 
     node.body->accept(*this);
 
-    context.popVarScope();
+    context.PopVar();
 }
 
-void LLVMGenerator::visit(FunctionCallNode &node)
+void IRGenerator::visit(FuncCall &node)
 {
     for (ASTNode *arg : node.args)
     {
@@ -508,7 +500,7 @@ void LLVMGenerator::visit(FunctionCallNode &node)
     auto *decl = context.lookupFuncDecl(node.funcName);
     if (!decl)
     {
-        throw std::runtime_error("❌ Function not declared: " + node.funcName);
+        throw std::runtime_error("[ERROR] Función no declarada: " + node.funcName);
     }
 
     decl->accept(*this);

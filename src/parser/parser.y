@@ -63,39 +63,29 @@ std::vector<ASTNode*> vectorize(ASTNode* arg1, ASTNode* arg2, int n) {
 %token <boolean> BOOL
 %token NULL_VAL
 %token <str> ID
-
 %token ',' ';' '.'
 %token '(' ')'
 %token '{' '}'
 %token LAMBDA 
-%token '=' REASSIGN
-
-// operadores aritméticos
+%token '='
+%token REASSIGN
 %token ADD
 %token SUB
 %token MUL
 %token DIV
 %token MOD
 %token POW
-
-// operadores booleanos entre expresiones numéricas
 %token LT
 %token GT 
 %token LE 
 %token GE 
 %token EQ
 %token NE
-
-// operadores booleanos entre expresiones booleanas
 %token AND
 %token OR 
 %token NOT
-
-// operadores para literales de texto
 %token CONCAT
 %token CONCAT_SPACE
-
-// funciones matemáticas básicas
 %token SIN
 %token COS
 %token MAX
@@ -104,15 +94,9 @@ std::vector<ASTNode*> vectorize(ASTNode* arg1, ASTNode* arg2, int n) {
 %token EXP
 %token LOG
 %token RANDOM
-
-// funciones predeterminadas
 %token PRINT
-
-// constantes 
 %token PI 
 %token E
-
-// palabras clave
 %token FUNC
 %token LET 
 %token IN
@@ -129,7 +113,7 @@ std::vector<ASTNode*> vectorize(ASTNode* arg1, ASTNode* arg2, int n) {
 %token BASE
 %token COLON
 
-// -----------------------------/* Definición de Tipos para las Reglas Gramaticales */------------------------ //
+// Tipos
 %type <node> statement
 %type <node> expression
 %type <node> elem_expr
@@ -156,7 +140,7 @@ std::vector<ASTNode*> vectorize(ASTNode* arg1, ASTNode* arg2, int n) {
 %type <method_decl> method_decl
 %type <type_body> type_body
 
-// ---------------------------------------/* Precedencia de Operadores */------------------------------------- //
+// Precedencia
 %left CONCAT CONCAT_SPACE
 %right NOT
 %left AND OR 
@@ -167,6 +151,8 @@ std::vector<ASTNode*> vectorize(ASTNode* arg1, ASTNode* arg2, int n) {
 
 %%
 
+
+//Producciones
 program:
     /* vacío */
     | program statement             { root.push_back($2); }
@@ -177,19 +163,19 @@ statement:
     expression ';'                  { $$ = $1; }
     | PRINT '(' expression ')' ';'  { 
                                         std::vector<ASTNode*> args = vectorize($3, nullptr, 1);
-                                        $$ = new BuiltInFunctionNode("print", args, yylloc.first_line);
+                                        $$ = new BuiltInFunc("print", args, yylloc.first_line);
                                     }
     | type_decl                     { $$ = $1; }
     | block_expr                    { $$ = $1; }
     | FUNC ID '(' params ')' LAMBDA body
                                     {
-                                        $$ = new FunctionDeclarationNode(*$2, $4, $7, true, yylloc.first_line);
+                                        $$ = new FuncDeclaration(*$2, $4, $7, true, yylloc.first_line);
                                         std::cout << "Definición función inline: " << *$2 << std::endl;
                                         
                                     }
     | FUNC ID '(' params ')' block_expr
                                     {
-                                        $$ = new FunctionDeclarationNode(*$2, $4, $6, false, yylloc.first_line);
+                                        $$ = new FuncDeclaration(*$2, $4, $6, false, yylloc.first_line);
                                         std::cout << "Definición función bloque: " << *$2 << std::endl;
                                         
                                     }
@@ -199,11 +185,11 @@ statement:
 ;
 
     expression:
-          NUMBER                { $$ = new LiteralNode(std::to_string($1), "Number", yylloc.first_line); }
-        | STRING                { $$ = new LiteralNode(*$1, "String", yylloc.first_line);  }
-        | BOOL                  { $$ = new LiteralNode($1 ? "true" : "false", "Boolean", yylloc.first_line); }
-        | NULL_VAL              { $$ = new LiteralNode("null", "Null", yylloc.first_line); }
-        | ID                    { $$ = new IdentifierNode(*$1, yylloc.first_line); }
+          NUMBER                { $$ = new DataType(std::to_string($1), "Number", yylloc.first_line); }
+        | STRING                { $$ = new DataType(*$1, "String", yylloc.first_line);  }
+        | BOOL                  { $$ = new DataType($1 ? "true" : "false", "Boolean", yylloc.first_line); }
+        | NULL_VAL              { $$ = new DataType("null", "Null", yylloc.first_line); }
+        | ID                    { $$ = new VarFuncName(*$1, yylloc.first_line); }
         | self_call             { $$ = $1; }
         | new_instance          { $$ = $1; }
         | elem_expr             { $$ = $1; }
@@ -220,33 +206,33 @@ statement:
 
         elem_expr:
               expression ADD expression {
-                $$ = new BinaryOpNode("+", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation("+", $1, $3, yylloc.first_line);
                 
             }
             | expression SUB expression {
-                $$ = new BinaryOpNode("-", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation("-", $1, $3, yylloc.first_line);
                 
             }
             | expression MUL expression {
-                $$ = new BinaryOpNode("*", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation("*", $1, $3, yylloc.first_line);
                 
             }
             | expression DIV expression {
-                $$ = new BinaryOpNode("/", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation("/", $1, $3, yylloc.first_line);
                 
             }
             | expression MOD expression {
                 
-                $$ = new BinaryOpNode("%", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation("%", $1, $3, yylloc.first_line);
                 
             }
             | expression POW expression {
-                $$ = new BinaryOpNode("^", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation("^", $1, $3, yylloc.first_line);
                 
             }
 
             | SUB expression {
-                $$ = new UnaryOpNode("-", $2, yylloc.first_line);
+                $$ = new UnaryOperation("-", $2, yylloc.first_line);
                 
             }
 
@@ -256,104 +242,104 @@ statement:
 
             | SIN '(' expression ')' {
                 std::vector<ASTNode*> args = vectorize($3, nullptr, 1);
-                $$ = new BuiltInFunctionNode("sin", args, yylloc.first_line);
+                $$ = new BuiltInFunc("sin", args, yylloc.first_line);
                
             }
             | COS '(' expression ')' {
                 std::vector<ASTNode*> args = vectorize($3, nullptr, 1);
-                $$ = new BuiltInFunctionNode("cos", args, yylloc.first_line);
+                $$ = new BuiltInFunc("cos", args, yylloc.first_line);
                 
             }
             | MIN '(' expression ',' expression ')' {
                 std::vector<ASTNode*> args = vectorize($3, $5, 2);
-                $$ = new BuiltInFunctionNode("min", args, yylloc.first_line);
+                $$ = new BuiltInFunc("min", args, yylloc.first_line);
                 
             }
             | MAX '(' expression ',' expression ')' {
                 std::vector<ASTNode*> args = vectorize($3, $5, 2);
-                $$ = new BuiltInFunctionNode("max", args, yylloc.first_line);
+                $$ = new BuiltInFunc("max", args, yylloc.first_line);
                 
             }
             | SQRT '(' expression ')' {
                 std::vector<ASTNode*> args = vectorize($3, nullptr, 1);
-                $$ = new BuiltInFunctionNode("sqrt", args, yylloc.first_line);
+                $$ = new BuiltInFunc("sqrt", args, yylloc.first_line);
                 
             }
             | LOG '(' expression ',' expression ')' {
                 std::vector<ASTNode*> args = vectorize($3, $5, 2);
-                $$ = new BuiltInFunctionNode("log", args, yylloc.first_line);
+                $$ = new BuiltInFunc("log", args, yylloc.first_line);
                 
             }
             | EXP '(' expression ')' {
                 std::vector<ASTNode*> args = vectorize($3, nullptr, 1);
-                $$ = new BuiltInFunctionNode("exp", args, yylloc.first_line);
+                $$ = new BuiltInFunc("exp", args, yylloc.first_line);
                 
             }
 
             | RANDOM '(' ')' {
                 std::vector<ASTNode*> args = vectorize(nullptr, nullptr, 0);
-                $$ = new BuiltInFunctionNode("rand", args, yylloc.first_line);
+                $$ = new BuiltInFunc("rand", args, yylloc.first_line);
             }
-            | E     { $$ = new IdentifierNode("e", yylloc.first_line); }
-            | PI    { $$ = new IdentifierNode("pi", yylloc.first_line); }
+            | E     { $$ = new VarFuncName("e", yylloc.first_line); }
+            | PI    { $$ = new VarFuncName("pi", yylloc.first_line); }
 
             | expression CONCAT expression {
-                $$ = new BinaryOpNode("@", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation("@", $1, $3, yylloc.first_line);
                
             }
             | expression CONCAT_SPACE expression {
-                $$ = new BinaryOpNode("@@", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation("@@", $1, $3, yylloc.first_line);
                
             }
 
             | expression LT expression {
                 
-                $$ = new BinaryOpNode("<", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation("<", $1, $3, yylloc.first_line);
                 
             }
             | expression GT expression {
-                $$ = new BinaryOpNode(">", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation(">", $1, $3, yylloc.first_line);
                 
             }
             | expression LE expression {
-                $$ = new BinaryOpNode("<=", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation("<=", $1, $3, yylloc.first_line);
                
             }
             | expression GE expression {
-                $$ = new BinaryOpNode(">=", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation(">=", $1, $3, yylloc.first_line);
                 
             }
 
             | expression EQ expression {
-                $$ = new BinaryOpNode("==", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation("==", $1, $3, yylloc.first_line);
                
             }
             | expression NE expression {
-                $$ = new BinaryOpNode("!=", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation("!=", $1, $3, yylloc.first_line);
                
             }
 
             | expression AND expression {
-                $$ = new BinaryOpNode("&", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation("&", $1, $3, yylloc.first_line);
                 
             }
             | expression OR expression {
-                $$ = new BinaryOpNode("|", $1, $3, yylloc.first_line);
+                $$ = new BinaryOperation("|", $1, $3, yylloc.first_line);
                 
             }
             | NOT expression {
-                $$ = new UnaryOpNode("!", $2, yylloc.first_line);
+                $$ = new UnaryOperation("!", $2, yylloc.first_line);
                
             }
         ;
 
         id:
-            ID                    { $$ = new IdentifierNode(*$1, yylloc.first_line); }
+            ID                    { $$ = new VarFuncName(*$1, yylloc.first_line); }
         ;
 
         block_expr:
             '{' block_body '}'  {
-                                    $$ = new BlockNode(*$2, yylloc.first_line); // Placeholder
+                                    $$ = new Block(*$2, yylloc.first_line); // Placeholder
                                    
                                 }
         ;
@@ -382,7 +368,7 @@ statement:
         ;
 
         func_call_expr:
-            ID '(' args ')'     { $$ = new FunctionCallNode(*$1, *$3, yylloc.first_line); }
+            ID '(' args ')'     { $$ = new FuncCall(*$1, *$3, yylloc.first_line); }
         ;
 
         args: 
@@ -392,15 +378,15 @@ statement:
         ;
 
         assign_expr:
-            id REASSIGN expression              { $$ = new AssignmentNode($1, $3, yylloc.first_line);  }
-            | self_call REASSIGN expression     { $$ = new AssignmentNode($1, $3, yylloc.first_line);  }
+            id REASSIGN expression              { $$ = new Assignment($1, $3, yylloc.first_line);  }
+            | self_call REASSIGN expression     { $$ = new Assignment($1, $3, yylloc.first_line);  }
         ;
 
         let_expr:
-              LET decl IN body                { $$ = new LetNode($2, $4, yylloc.first_line);  }
-            | LET decl IN '(' body ')'        { $$ = new LetNode($2, $5, yylloc.first_line);  }
-            | LET decl IN body ';'            { $$ = new LetNode($2, $4, yylloc.first_line);  }
-            | LET decl IN '(' body ')' ';'    { $$ = new LetNode($2, $5, yylloc.first_line);  }
+              LET decl IN body                { $$ = new LetExpression($2, $4, yylloc.first_line);  }
+            | LET decl IN '(' body ')'        { $$ = new LetExpression($2, $5, yylloc.first_line);  }
+            | LET decl IN body ';'            { $$ = new LetExpression($2, $4, yylloc.first_line);  }
+            | LET decl IN '(' body ')' ';'    { $$ = new LetExpression($2, $5, yylloc.first_line);  }
         ;
 
         decl:
@@ -437,13 +423,13 @@ statement:
             | expression                    { $$ = $1; }
             | PRINT '(' expression ')'      { 
                                                 std::vector<ASTNode*> args = vectorize($3, nullptr, 1);
-                                                $$ = new BuiltInFunctionNode("print", args, yylloc.first_line);
+                                                $$ = new BuiltInFunc("print", args, yylloc.first_line);
                                             }
         ;
 
         if_expr:
-            if_head                     { $$ = new IfNode($1, nullptr, yylloc.first_line); }
-            | if_head ELSE body         { $$ = new IfNode($1, $3, yylloc.first_line); }
+            if_head                     { $$ = new IfExpression($1, nullptr, yylloc.first_line); }
+            | if_head ELSE body         { $$ = new IfExpression($1, $3, yylloc.first_line); }
         ;
 
         if_head:
@@ -464,31 +450,31 @@ statement:
         ;
 
         while_expr:
-            WHILE '(' expression ')' body                   { $$ = new WhileNode($3, $5, yylloc.first_line); }
+            WHILE '(' expression ')' body                   { $$ = new WhileLoop($3, $5, yylloc.first_line); }
         ;
 
         for_expr:
-            FOR '(' ID IN RANGE '(' expression ',' expression ')' ')' body      { $$ = new ForNode(*$3, $7, $9, $12, yylloc.first_line); }
+            FOR '(' ID IN RANGE '(' expression ',' expression ')' ')' body      { $$ = new ForLoop(*$3, $7, $9, $12, yylloc.first_line); }
         ;
 
         type_decl:
             TYPE ID '(' params ')' '{' type_body '}' {
-                $$ = new TypeDeclarationNode(*$2, $4, $7, std::nullopt, std::vector<ASTNode*>(), yylloc.first_line);
+                $$ = new TypeDeclaration(*$2, $4, $7, std::nullopt, std::vector<ASTNode*>(), yylloc.first_line);
             }
             | TYPE ID '{' type_body '}' {
-                $$ = new TypeDeclarationNode(*$2, new std::vector<Parameter>(), $4, std::nullopt, std::vector<ASTNode*>(), yylloc.first_line);
+                $$ = new TypeDeclaration(*$2, new std::vector<Parameter>(), $4, std::nullopt, std::vector<ASTNode*>(), yylloc.first_line);
             }
             | TYPE ID '(' params ')' INHERITS ID '(' args ')' '{' type_body '}' {
-                $$ = new TypeDeclarationNode(*$2, $4, $12, *$7, *$9, yylloc.first_line);
+                $$ = new TypeDeclaration(*$2, $4, $12, *$7, *$9, yylloc.first_line);
             }
             | TYPE ID INHERITS ID '(' args ')' '{' type_body '}' {
-                $$ = new TypeDeclarationNode(*$2, new std::vector<Parameter>(), $9, std::make_optional(*$4), *$6, yylloc.first_line);
+                $$ = new TypeDeclaration(*$2, new std::vector<Parameter>(), $9, std::make_optional(*$4), *$6, yylloc.first_line);
             }
             | TYPE ID '(' params ')' INHERITS ID '{' type_body '}' {
-                $$ = new TypeDeclarationNode(*$2, $4, $9, std::make_optional(*$7), std::vector<ASTNode*>(), yylloc.first_line);
+                $$ = new TypeDeclaration(*$2, $4, $9, std::make_optional(*$7), std::vector<ASTNode*>(), yylloc.first_line);
             }
             | TYPE ID INHERITS ID '{' type_body '}' {
-                $$ = new TypeDeclarationNode(*$2, new std::vector<Parameter>(), $6, std::make_optional(*$4), std::vector<ASTNode*>(), yylloc.first_line);
+                $$ = new TypeDeclaration(*$2, new std::vector<Parameter>(), $6, std::make_optional(*$4), std::vector<ASTNode*>(), yylloc.first_line);
             }
         ;
         
@@ -538,27 +524,27 @@ statement:
         ;
 
         self_call:
-            SELF '.' ID   { $$ = new SelfCallNode(*$3, yylloc.first_line); }
+            SELF '.' ID   { $$ = new SelfCall(*$3, yylloc.first_line); }
         ;
 
         method_call:
             ID '.' ID '(' args ')' {
-                $$ = new MethodCallNode(*$1, *$3, *$5, yylloc.first_line);
+                $$ = new MethodCall(*$1, *$3, *$5, yylloc.first_line);
             }
             | SELF '.' ID '(' args ')' {
-                $$ = new MethodCallNode("self", *$3, *$5, yylloc.first_line);
+                $$ = new MethodCall("self", *$3, *$5, yylloc.first_line);
             }
         ;
 
         base_call:
             BASE '(' args ')' {
-                $$ = new BaseCallNode(*$3, yylloc.first_line);
+                $$ = new OriginCall(*$3, yylloc.first_line);
             }
         ;
 
         new_instance:
             NEW ID '(' args ')' {
-                $$ = new NewInstanceNode(*$2, *$4, yylloc.first_line);
+                $$ = new InitInstance(*$2, *$4, yylloc.first_line);
             }
         ;
 
@@ -568,5 +554,3 @@ void yyerror(const char *msg) {
     fprintf(stderr, "Error en línea %d, columna %d: %s\n",
             yylloc.first_line, yylloc.first_column, msg);
 }
-
-
