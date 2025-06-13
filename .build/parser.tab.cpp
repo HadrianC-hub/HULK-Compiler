@@ -76,7 +76,6 @@
 extern int yylex();
 void yyerror(const char *msg);
 
-// Definir estructura para ubicación
 typedef struct YYLTYPE {
     int first_line;
     int first_column;
@@ -101,7 +100,7 @@ std::vector<ASTNode*> vectorize(ASTNode* arg1, ASTNode* arg2, int n) {
 }
 
 
-#line 105 ".build/parser.tab.cpp"
+#line 104 ".build/parser.tab.cpp"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -610,18 +609,18 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   173,   173,   175,   176,   180,   181,   185,   186,   187,
-     193,   199,   200,   201,   205,   206,   207,   208,   209,   210,
-     211,   212,   213,   214,   215,   216,   217,   218,   219,   220,
-     221,   225,   229,   233,   237,   241,   246,   251,   256,   260,
-     265,   270,   275,   280,   285,   290,   296,   300,   301,   303,
-     307,   312,   317,   321,   325,   330,   334,   339,   343,   347,
-     354,   358,   365,   366,   367,   371,   372,   379,   388,   392,
-     393,   394,   398,   399,   403,   404,   405,   406,   410,   417,
-     424,   430,   439,   440,   441,   448,   449,   453,   460,   470,
-     474,   478,   481,   484,   487,   490,   493,   499,   502,   505,
-     508,   514,   518,   525,   529,   533,   537,   544,   548,   551,
-     557,   563
+       0,   170,   170,   172,   173,   177,   178,   182,   183,   184,
+     190,   196,   197,   198,   202,   203,   204,   205,   206,   207,
+     208,   209,   210,   211,   212,   213,   214,   215,   216,   217,
+     218,   222,   226,   230,   234,   238,   243,   248,   253,   257,
+     262,   267,   272,   277,   282,   287,   293,   297,   298,   300,
+     304,   309,   314,   318,   322,   327,   331,   336,   340,   344,
+     351,   355,   362,   363,   364,   368,   369,   376,   385,   389,
+     390,   391,   395,   396,   400,   401,   402,   403,   407,   414,
+     421,   427,   436,   437,   438,   445,   446,   450,   457,   467,
+     471,   475,   478,   481,   484,   487,   490,   496,   499,   502,
+     505,   511,   515,   522,   526,   530,   534,   541,   545,   548,
+     554,   560
 };
 #endif
 
@@ -1643,488 +1642,488 @@ yyreduce:
   switch (yyn)
     {
   case 3: /* program: program statement  */
-#line 175 "src/parser/parser.y"
+#line 172 "src/parser/parser.y"
                                     { root.push_back((yyvsp[0].node)); }
-#line 1649 ".build/parser.tab.cpp"
+#line 1648 ".build/parser.tab.cpp"
     break;
 
   case 4: /* program: program error ';'  */
-#line 176 "src/parser/parser.y"
+#line 173 "src/parser/parser.y"
                                     { yyerrok; }
-#line 1655 ".build/parser.tab.cpp"
+#line 1654 ".build/parser.tab.cpp"
     break;
 
   case 5: /* statement: expression ';'  */
-#line 180 "src/parser/parser.y"
+#line 177 "src/parser/parser.y"
                                     { (yyval.node) = (yyvsp[-1].node); }
-#line 1661 ".build/parser.tab.cpp"
+#line 1660 ".build/parser.tab.cpp"
     break;
 
   case 6: /* statement: PRINT '(' expression ')' ';'  */
-#line 181 "src/parser/parser.y"
+#line 178 "src/parser/parser.y"
                                     { 
                                         std::vector<ASTNode*> args = vectorize((yyvsp[-2].node), nullptr, 1);
                                         (yyval.node) = new BuiltInFunctionNode("print", args, yylloc.first_line);
                                     }
-#line 1670 ".build/parser.tab.cpp"
+#line 1669 ".build/parser.tab.cpp"
     break;
 
   case 7: /* statement: type_decl  */
-#line 185 "src/parser/parser.y"
+#line 182 "src/parser/parser.y"
                                     { (yyval.node) = (yyvsp[0].node); }
-#line 1676 ".build/parser.tab.cpp"
+#line 1675 ".build/parser.tab.cpp"
     break;
 
   case 8: /* statement: block_expr  */
-#line 186 "src/parser/parser.y"
+#line 183 "src/parser/parser.y"
                                     { (yyval.node) = (yyvsp[0].node); }
-#line 1682 ".build/parser.tab.cpp"
+#line 1681 ".build/parser.tab.cpp"
     break;
 
   case 9: /* statement: FUNC ID '(' params ')' LAMBDA body  */
-#line 188 "src/parser/parser.y"
+#line 185 "src/parser/parser.y"
                                     {
                                         (yyval.node) = new FunctionDeclarationNode(*(yyvsp[-5].str), (yyvsp[-3].param), (yyvsp[0].node), true, yylloc.first_line);
                                         std::cout << "Definición función inline: " << *(yyvsp[-5].str) << std::endl;
                                         
                                     }
-#line 1692 ".build/parser.tab.cpp"
+#line 1691 ".build/parser.tab.cpp"
     break;
 
   case 10: /* statement: FUNC ID '(' params ')' block_expr  */
-#line 194 "src/parser/parser.y"
+#line 191 "src/parser/parser.y"
                                     {
                                         (yyval.node) = new FunctionDeclarationNode(*(yyvsp[-4].str), (yyvsp[-2].param), (yyvsp[0].node), false, yylloc.first_line);
                                         std::cout << "Definición función bloque: " << *(yyvsp[-4].str) << std::endl;
                                         
                                     }
-#line 1702 ".build/parser.tab.cpp"
+#line 1701 ".build/parser.tab.cpp"
     break;
 
   case 11: /* statement: let_expr  */
-#line 199 "src/parser/parser.y"
+#line 196 "src/parser/parser.y"
                                     { (yyval.node) = (yyvsp[0].node); std::cout << "let_expr " << std::endl; }
-#line 1708 ".build/parser.tab.cpp"
+#line 1707 ".build/parser.tab.cpp"
     break;
 
   case 12: /* statement: while_expr  */
-#line 200 "src/parser/parser.y"
+#line 197 "src/parser/parser.y"
                                     { (yyval.node) = (yyvsp[0].node); std::cout << "while_expr " << std::endl; }
-#line 1714 ".build/parser.tab.cpp"
+#line 1713 ".build/parser.tab.cpp"
     break;
 
   case 13: /* statement: for_expr  */
-#line 201 "src/parser/parser.y"
+#line 198 "src/parser/parser.y"
                                     { (yyval.node) = (yyvsp[0].node); std::cout << "for_expr " << std::endl; }
-#line 1720 ".build/parser.tab.cpp"
+#line 1719 ".build/parser.tab.cpp"
     break;
 
   case 14: /* expression: NUMBER  */
-#line 205 "src/parser/parser.y"
+#line 202 "src/parser/parser.y"
                                 { (yyval.node) = new LiteralNode(std::to_string((yyvsp[0].num)), "Number", yylloc.first_line); }
-#line 1726 ".build/parser.tab.cpp"
+#line 1725 ".build/parser.tab.cpp"
     break;
 
   case 15: /* expression: STRING  */
-#line 206 "src/parser/parser.y"
+#line 203 "src/parser/parser.y"
                                 { (yyval.node) = new LiteralNode(*(yyvsp[0].str), "String", yylloc.first_line);  }
-#line 1732 ".build/parser.tab.cpp"
+#line 1731 ".build/parser.tab.cpp"
     break;
 
   case 16: /* expression: BOOL  */
-#line 207 "src/parser/parser.y"
+#line 204 "src/parser/parser.y"
                                 { (yyval.node) = new LiteralNode((yyvsp[0].boolean) ? "true" : "false", "Boolean", yylloc.first_line); }
-#line 1738 ".build/parser.tab.cpp"
+#line 1737 ".build/parser.tab.cpp"
     break;
 
   case 17: /* expression: NULL_VAL  */
-#line 208 "src/parser/parser.y"
+#line 205 "src/parser/parser.y"
                                 { (yyval.node) = new LiteralNode("null", "Null", yylloc.first_line); }
-#line 1744 ".build/parser.tab.cpp"
+#line 1743 ".build/parser.tab.cpp"
     break;
 
   case 18: /* expression: ID  */
-#line 209 "src/parser/parser.y"
+#line 206 "src/parser/parser.y"
                                 { (yyval.node) = new IdentifierNode(*(yyvsp[0].str), yylloc.first_line); }
-#line 1750 ".build/parser.tab.cpp"
+#line 1749 ".build/parser.tab.cpp"
     break;
 
   case 19: /* expression: self_call  */
-#line 210 "src/parser/parser.y"
+#line 207 "src/parser/parser.y"
                                 { (yyval.node) = (yyvsp[0].node); }
-#line 1756 ".build/parser.tab.cpp"
+#line 1755 ".build/parser.tab.cpp"
     break;
 
   case 20: /* expression: new_instance  */
-#line 211 "src/parser/parser.y"
+#line 208 "src/parser/parser.y"
                                 { (yyval.node) = (yyvsp[0].node); }
-#line 1762 ".build/parser.tab.cpp"
+#line 1761 ".build/parser.tab.cpp"
     break;
 
   case 21: /* expression: elem_expr  */
-#line 212 "src/parser/parser.y"
+#line 209 "src/parser/parser.y"
                                 { (yyval.node) = (yyvsp[0].node); }
-#line 1768 ".build/parser.tab.cpp"
+#line 1767 ".build/parser.tab.cpp"
     break;
 
   case 22: /* expression: block_expr  */
-#line 213 "src/parser/parser.y"
+#line 210 "src/parser/parser.y"
                                 { (yyval.node) = (yyvsp[0].node); }
-#line 1774 ".build/parser.tab.cpp"
+#line 1773 ".build/parser.tab.cpp"
     break;
 
   case 23: /* expression: func_call_expr  */
-#line 214 "src/parser/parser.y"
+#line 211 "src/parser/parser.y"
                                 { (yyval.node) = (yyvsp[0].node); }
-#line 1780 ".build/parser.tab.cpp"
+#line 1779 ".build/parser.tab.cpp"
     break;
 
   case 24: /* expression: method_call  */
-#line 215 "src/parser/parser.y"
+#line 212 "src/parser/parser.y"
                                 { (yyval.node) = (yyvsp[0].node); }
-#line 1786 ".build/parser.tab.cpp"
+#line 1785 ".build/parser.tab.cpp"
     break;
 
   case 25: /* expression: base_call  */
-#line 216 "src/parser/parser.y"
+#line 213 "src/parser/parser.y"
                                 { (yyval.node) = (yyvsp[0].node); }
-#line 1792 ".build/parser.tab.cpp"
+#line 1791 ".build/parser.tab.cpp"
     break;
 
   case 26: /* expression: assign_expr  */
-#line 217 "src/parser/parser.y"
+#line 214 "src/parser/parser.y"
                                 { (yyval.node) = (yyvsp[0].node); }
-#line 1798 ".build/parser.tab.cpp"
+#line 1797 ".build/parser.tab.cpp"
     break;
 
   case 27: /* expression: let_expr  */
-#line 218 "src/parser/parser.y"
+#line 215 "src/parser/parser.y"
                                 { (yyval.node) = (yyvsp[0].node); std::cout << "let_expr " << std::endl; }
-#line 1804 ".build/parser.tab.cpp"
+#line 1803 ".build/parser.tab.cpp"
     break;
 
   case 28: /* expression: if_expr  */
-#line 219 "src/parser/parser.y"
+#line 216 "src/parser/parser.y"
                                 { (yyval.node) = (yyvsp[0].node); std::cout << "if_expr " << std::endl; }
-#line 1810 ".build/parser.tab.cpp"
+#line 1809 ".build/parser.tab.cpp"
     break;
 
   case 29: /* expression: while_expr  */
-#line 220 "src/parser/parser.y"
+#line 217 "src/parser/parser.y"
                                 { (yyval.node) = (yyvsp[0].node); std::cout << "while_expr " << std::endl; }
-#line 1816 ".build/parser.tab.cpp"
+#line 1815 ".build/parser.tab.cpp"
     break;
 
   case 30: /* expression: for_expr  */
-#line 221 "src/parser/parser.y"
+#line 218 "src/parser/parser.y"
                                 { (yyval.node) = (yyvsp[0].node); std::cout << "for_expr " << std::endl; }
-#line 1822 ".build/parser.tab.cpp"
+#line 1821 ".build/parser.tab.cpp"
     break;
 
   case 31: /* elem_expr: expression ADD expression  */
-#line 225 "src/parser/parser.y"
+#line 222 "src/parser/parser.y"
                                         {
                 (yyval.node) = new BinaryOpNode("+", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                 
             }
-#line 1831 ".build/parser.tab.cpp"
+#line 1830 ".build/parser.tab.cpp"
     break;
 
   case 32: /* elem_expr: expression SUB expression  */
-#line 229 "src/parser/parser.y"
+#line 226 "src/parser/parser.y"
                                         {
                 (yyval.node) = new BinaryOpNode("-", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                 
             }
-#line 1840 ".build/parser.tab.cpp"
+#line 1839 ".build/parser.tab.cpp"
     break;
 
   case 33: /* elem_expr: expression MUL expression  */
-#line 233 "src/parser/parser.y"
+#line 230 "src/parser/parser.y"
                                         {
                 (yyval.node) = new BinaryOpNode("*", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                 
             }
-#line 1849 ".build/parser.tab.cpp"
+#line 1848 ".build/parser.tab.cpp"
     break;
 
   case 34: /* elem_expr: expression DIV expression  */
-#line 237 "src/parser/parser.y"
+#line 234 "src/parser/parser.y"
                                         {
                 (yyval.node) = new BinaryOpNode("/", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                 
             }
-#line 1858 ".build/parser.tab.cpp"
+#line 1857 ".build/parser.tab.cpp"
     break;
 
   case 35: /* elem_expr: expression MOD expression  */
-#line 241 "src/parser/parser.y"
+#line 238 "src/parser/parser.y"
                                         {
                 
                 (yyval.node) = new BinaryOpNode("%", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                 
             }
-#line 1868 ".build/parser.tab.cpp"
+#line 1867 ".build/parser.tab.cpp"
     break;
 
   case 36: /* elem_expr: expression POW expression  */
-#line 246 "src/parser/parser.y"
+#line 243 "src/parser/parser.y"
                                         {
                 (yyval.node) = new BinaryOpNode("^", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                 
             }
-#line 1877 ".build/parser.tab.cpp"
+#line 1876 ".build/parser.tab.cpp"
     break;
 
   case 37: /* elem_expr: SUB expression  */
-#line 251 "src/parser/parser.y"
+#line 248 "src/parser/parser.y"
                              {
                 (yyval.node) = new UnaryOpNode("-", (yyvsp[0].node), yylloc.first_line);
                 
             }
-#line 1886 ".build/parser.tab.cpp"
+#line 1885 ".build/parser.tab.cpp"
     break;
 
   case 38: /* elem_expr: '(' expression ')'  */
-#line 256 "src/parser/parser.y"
+#line 253 "src/parser/parser.y"
                                  {
                 (yyval.node) = (yyvsp[-1].node);
             }
-#line 1894 ".build/parser.tab.cpp"
+#line 1893 ".build/parser.tab.cpp"
     break;
 
   case 39: /* elem_expr: SIN '(' expression ')'  */
-#line 260 "src/parser/parser.y"
+#line 257 "src/parser/parser.y"
                                      {
                 std::vector<ASTNode*> args = vectorize((yyvsp[-1].node), nullptr, 1);
                 (yyval.node) = new BuiltInFunctionNode("sin", args, yylloc.first_line);
                
             }
-#line 1904 ".build/parser.tab.cpp"
+#line 1903 ".build/parser.tab.cpp"
     break;
 
   case 40: /* elem_expr: COS '(' expression ')'  */
-#line 265 "src/parser/parser.y"
+#line 262 "src/parser/parser.y"
                                      {
                 std::vector<ASTNode*> args = vectorize((yyvsp[-1].node), nullptr, 1);
                 (yyval.node) = new BuiltInFunctionNode("cos", args, yylloc.first_line);
                 
             }
-#line 1914 ".build/parser.tab.cpp"
+#line 1913 ".build/parser.tab.cpp"
     break;
 
   case 41: /* elem_expr: MIN '(' expression ',' expression ')'  */
-#line 270 "src/parser/parser.y"
+#line 267 "src/parser/parser.y"
                                                     {
                 std::vector<ASTNode*> args = vectorize((yyvsp[-3].node), (yyvsp[-1].node), 2);
                 (yyval.node) = new BuiltInFunctionNode("min", args, yylloc.first_line);
                 
             }
-#line 1924 ".build/parser.tab.cpp"
+#line 1923 ".build/parser.tab.cpp"
     break;
 
   case 42: /* elem_expr: MAX '(' expression ',' expression ')'  */
-#line 275 "src/parser/parser.y"
+#line 272 "src/parser/parser.y"
                                                     {
                 std::vector<ASTNode*> args = vectorize((yyvsp[-3].node), (yyvsp[-1].node), 2);
                 (yyval.node) = new BuiltInFunctionNode("max", args, yylloc.first_line);
                 
             }
-#line 1934 ".build/parser.tab.cpp"
+#line 1933 ".build/parser.tab.cpp"
     break;
 
   case 43: /* elem_expr: SQRT '(' expression ')'  */
-#line 280 "src/parser/parser.y"
+#line 277 "src/parser/parser.y"
                                       {
                 std::vector<ASTNode*> args = vectorize((yyvsp[-1].node), nullptr, 1);
                 (yyval.node) = new BuiltInFunctionNode("sqrt", args, yylloc.first_line);
                 
             }
-#line 1944 ".build/parser.tab.cpp"
+#line 1943 ".build/parser.tab.cpp"
     break;
 
   case 44: /* elem_expr: LOG '(' expression ',' expression ')'  */
-#line 285 "src/parser/parser.y"
+#line 282 "src/parser/parser.y"
                                                     {
                 std::vector<ASTNode*> args = vectorize((yyvsp[-3].node), (yyvsp[-1].node), 2);
                 (yyval.node) = new BuiltInFunctionNode("log", args, yylloc.first_line);
                 
             }
-#line 1954 ".build/parser.tab.cpp"
+#line 1953 ".build/parser.tab.cpp"
     break;
 
   case 45: /* elem_expr: EXP '(' expression ')'  */
-#line 290 "src/parser/parser.y"
+#line 287 "src/parser/parser.y"
                                      {
                 std::vector<ASTNode*> args = vectorize((yyvsp[-1].node), nullptr, 1);
                 (yyval.node) = new BuiltInFunctionNode("exp", args, yylloc.first_line);
                 
             }
-#line 1964 ".build/parser.tab.cpp"
+#line 1963 ".build/parser.tab.cpp"
     break;
 
   case 46: /* elem_expr: RANDOM '(' ')'  */
-#line 296 "src/parser/parser.y"
+#line 293 "src/parser/parser.y"
                              {
                 std::vector<ASTNode*> args = vectorize(nullptr, nullptr, 0);
                 (yyval.node) = new BuiltInFunctionNode("rand", args, yylloc.first_line);
             }
-#line 1973 ".build/parser.tab.cpp"
+#line 1972 ".build/parser.tab.cpp"
     break;
 
   case 47: /* elem_expr: E  */
-#line 300 "src/parser/parser.y"
+#line 297 "src/parser/parser.y"
                     { (yyval.node) = new IdentifierNode("e", yylloc.first_line); }
-#line 1979 ".build/parser.tab.cpp"
+#line 1978 ".build/parser.tab.cpp"
     break;
 
   case 48: /* elem_expr: PI  */
-#line 301 "src/parser/parser.y"
+#line 298 "src/parser/parser.y"
                     { (yyval.node) = new IdentifierNode("pi", yylloc.first_line); }
-#line 1985 ".build/parser.tab.cpp"
+#line 1984 ".build/parser.tab.cpp"
     break;
 
   case 49: /* elem_expr: expression CONCAT expression  */
-#line 303 "src/parser/parser.y"
+#line 300 "src/parser/parser.y"
                                            {
                 (yyval.node) = new BinaryOpNode("@", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                
             }
-#line 1994 ".build/parser.tab.cpp"
+#line 1993 ".build/parser.tab.cpp"
     break;
 
   case 50: /* elem_expr: expression CONCAT_SPACE expression  */
-#line 307 "src/parser/parser.y"
+#line 304 "src/parser/parser.y"
                                                  {
                 (yyval.node) = new BinaryOpNode("@@", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                
             }
-#line 2003 ".build/parser.tab.cpp"
+#line 2002 ".build/parser.tab.cpp"
     break;
 
   case 51: /* elem_expr: expression LT expression  */
-#line 312 "src/parser/parser.y"
+#line 309 "src/parser/parser.y"
                                        {
                 
                 (yyval.node) = new BinaryOpNode("<", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                 
             }
-#line 2013 ".build/parser.tab.cpp"
+#line 2012 ".build/parser.tab.cpp"
     break;
 
   case 52: /* elem_expr: expression GT expression  */
-#line 317 "src/parser/parser.y"
+#line 314 "src/parser/parser.y"
                                        {
                 (yyval.node) = new BinaryOpNode(">", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                 
             }
-#line 2022 ".build/parser.tab.cpp"
+#line 2021 ".build/parser.tab.cpp"
     break;
 
   case 53: /* elem_expr: expression LE expression  */
-#line 321 "src/parser/parser.y"
+#line 318 "src/parser/parser.y"
                                        {
                 (yyval.node) = new BinaryOpNode("<=", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                
             }
-#line 2031 ".build/parser.tab.cpp"
+#line 2030 ".build/parser.tab.cpp"
     break;
 
   case 54: /* elem_expr: expression GE expression  */
-#line 325 "src/parser/parser.y"
+#line 322 "src/parser/parser.y"
                                        {
                 (yyval.node) = new BinaryOpNode(">=", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                 
             }
-#line 2040 ".build/parser.tab.cpp"
+#line 2039 ".build/parser.tab.cpp"
     break;
 
   case 55: /* elem_expr: expression EQ expression  */
-#line 330 "src/parser/parser.y"
+#line 327 "src/parser/parser.y"
                                        {
                 (yyval.node) = new BinaryOpNode("==", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                
             }
-#line 2049 ".build/parser.tab.cpp"
+#line 2048 ".build/parser.tab.cpp"
     break;
 
   case 56: /* elem_expr: expression NE expression  */
-#line 334 "src/parser/parser.y"
+#line 331 "src/parser/parser.y"
                                        {
                 (yyval.node) = new BinaryOpNode("!=", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                
             }
-#line 2058 ".build/parser.tab.cpp"
+#line 2057 ".build/parser.tab.cpp"
     break;
 
   case 57: /* elem_expr: expression AND expression  */
-#line 339 "src/parser/parser.y"
+#line 336 "src/parser/parser.y"
                                         {
                 (yyval.node) = new BinaryOpNode("&", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                 
             }
-#line 2067 ".build/parser.tab.cpp"
+#line 2066 ".build/parser.tab.cpp"
     break;
 
   case 58: /* elem_expr: expression OR expression  */
-#line 343 "src/parser/parser.y"
+#line 340 "src/parser/parser.y"
                                        {
                 (yyval.node) = new BinaryOpNode("|", (yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);
                 
             }
-#line 2076 ".build/parser.tab.cpp"
+#line 2075 ".build/parser.tab.cpp"
     break;
 
   case 59: /* elem_expr: NOT expression  */
-#line 347 "src/parser/parser.y"
+#line 344 "src/parser/parser.y"
                              {
                 (yyval.node) = new UnaryOpNode("!", (yyvsp[0].node), yylloc.first_line);
                
             }
-#line 2085 ".build/parser.tab.cpp"
+#line 2084 ".build/parser.tab.cpp"
     break;
 
   case 60: /* id: ID  */
-#line 354 "src/parser/parser.y"
+#line 351 "src/parser/parser.y"
                                   { (yyval.node) = new IdentifierNode(*(yyvsp[0].str), yylloc.first_line); }
-#line 2091 ".build/parser.tab.cpp"
+#line 2090 ".build/parser.tab.cpp"
     break;
 
   case 61: /* block_expr: '{' block_body '}'  */
-#line 358 "src/parser/parser.y"
+#line 355 "src/parser/parser.y"
                                 {
                                     (yyval.node) = new BlockNode(*(yyvsp[-1].list), yylloc.first_line); // Placeholder
                                    
                                 }
-#line 2100 ".build/parser.tab.cpp"
+#line 2099 ".build/parser.tab.cpp"
     break;
 
   case 62: /* block_body: %empty  */
-#line 365 "src/parser/parser.y"
+#line 362 "src/parser/parser.y"
                                             { (yyval.list) = new std::vector<ASTNode*>(); }
-#line 2106 ".build/parser.tab.cpp"
+#line 2105 ".build/parser.tab.cpp"
     break;
 
   case 63: /* block_body: statement  */
-#line 366 "src/parser/parser.y"
+#line 363 "src/parser/parser.y"
                                             { (yyval.list) = new std::vector<ASTNode*>(); (yyval.list)->push_back((yyvsp[0].node)); }
-#line 2112 ".build/parser.tab.cpp"
+#line 2111 ".build/parser.tab.cpp"
     break;
 
   case 64: /* block_body: block_body statement  */
-#line 367 "src/parser/parser.y"
+#line 364 "src/parser/parser.y"
                                             { (yyvsp[-1].list)->push_back((yyvsp[0].node)); (yyval.list) = (yyvsp[-1].list); }
-#line 2118 ".build/parser.tab.cpp"
+#line 2117 ".build/parser.tab.cpp"
     break;
 
   case 65: /* params: %empty  */
-#line 371 "src/parser/parser.y"
+#line 368 "src/parser/parser.y"
                                 { (yyval.param) = new std::vector<Parameter>(); }
-#line 2124 ".build/parser.tab.cpp"
+#line 2123 ".build/parser.tab.cpp"
     break;
 
   case 66: /* params: ID  */
-#line 372 "src/parser/parser.y"
+#line 369 "src/parser/parser.y"
                                 { 
                                     Parameter p;
                                     p.name = *(yyvsp[0].str);
@@ -2132,82 +2131,82 @@ yyreduce:
                                     (yyval.param)->push_back(p); 
                                    
                                 }
-#line 2136 ".build/parser.tab.cpp"
+#line 2135 ".build/parser.tab.cpp"
     break;
 
   case 67: /* params: params ',' ID  */
-#line 379 "src/parser/parser.y"
+#line 376 "src/parser/parser.y"
                                 { 
                                     Parameter p;
                                     p.name = *(yyvsp[0].str);
                                     (yyvsp[-2].param)->push_back(p); 
                                     (yyval.param) = (yyvsp[-2].param); 
                                 }
-#line 2147 ".build/parser.tab.cpp"
+#line 2146 ".build/parser.tab.cpp"
     break;
 
   case 68: /* func_call_expr: ID '(' args ')'  */
-#line 388 "src/parser/parser.y"
+#line 385 "src/parser/parser.y"
                                 { (yyval.node) = new FunctionCallNode(*(yyvsp[-3].str), *(yyvsp[-1].list), yylloc.first_line); }
-#line 2153 ".build/parser.tab.cpp"
+#line 2152 ".build/parser.tab.cpp"
     break;
 
   case 69: /* args: %empty  */
-#line 392 "src/parser/parser.y"
+#line 389 "src/parser/parser.y"
                                         { (yyval.list) = new std::vector<ASTNode*>(); }
-#line 2159 ".build/parser.tab.cpp"
+#line 2158 ".build/parser.tab.cpp"
     break;
 
   case 70: /* args: expression  */
-#line 393 "src/parser/parser.y"
+#line 390 "src/parser/parser.y"
                                         { (yyval.list) = new std::vector<ASTNode*>(); (yyval.list)->push_back((yyvsp[0].node)); }
-#line 2165 ".build/parser.tab.cpp"
+#line 2164 ".build/parser.tab.cpp"
     break;
 
   case 71: /* args: args ',' expression  */
-#line 394 "src/parser/parser.y"
+#line 391 "src/parser/parser.y"
                                         { (yyvsp[-2].list)->push_back((yyvsp[0].node)); (yyval.list) = (yyvsp[-2].list); }
-#line 2171 ".build/parser.tab.cpp"
+#line 2170 ".build/parser.tab.cpp"
     break;
 
   case 72: /* assign_expr: id REASSIGN expression  */
-#line 398 "src/parser/parser.y"
+#line 395 "src/parser/parser.y"
                                                 { (yyval.node) = new AssignmentNode((yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);  }
-#line 2177 ".build/parser.tab.cpp"
+#line 2176 ".build/parser.tab.cpp"
     break;
 
   case 73: /* assign_expr: self_call REASSIGN expression  */
-#line 399 "src/parser/parser.y"
+#line 396 "src/parser/parser.y"
                                                 { (yyval.node) = new AssignmentNode((yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line);  }
-#line 2183 ".build/parser.tab.cpp"
+#line 2182 ".build/parser.tab.cpp"
     break;
 
   case 74: /* let_expr: LET decl IN body  */
-#line 403 "src/parser/parser.y"
+#line 400 "src/parser/parser.y"
                                               { (yyval.node) = new LetNode((yyvsp[-2].let_decl), (yyvsp[0].node), yylloc.first_line);  }
-#line 2189 ".build/parser.tab.cpp"
+#line 2188 ".build/parser.tab.cpp"
     break;
 
   case 75: /* let_expr: LET decl IN '(' body ')'  */
-#line 404 "src/parser/parser.y"
+#line 401 "src/parser/parser.y"
                                               { (yyval.node) = new LetNode((yyvsp[-4].let_decl), (yyvsp[-1].node), yylloc.first_line);  }
-#line 2195 ".build/parser.tab.cpp"
+#line 2194 ".build/parser.tab.cpp"
     break;
 
   case 76: /* let_expr: LET decl IN body ';'  */
-#line 405 "src/parser/parser.y"
+#line 402 "src/parser/parser.y"
                                               { (yyval.node) = new LetNode((yyvsp[-3].let_decl), (yyvsp[-1].node), yylloc.first_line);  }
-#line 2201 ".build/parser.tab.cpp"
+#line 2200 ".build/parser.tab.cpp"
     break;
 
   case 77: /* let_expr: LET decl IN '(' body ')' ';'  */
-#line 406 "src/parser/parser.y"
+#line 403 "src/parser/parser.y"
                                               { (yyval.node) = new LetNode((yyvsp[-5].let_decl), (yyvsp[-2].node), yylloc.first_line);  }
-#line 2207 ".build/parser.tab.cpp"
+#line 2206 ".build/parser.tab.cpp"
     break;
 
   case 78: /* decl: ID '=' expression  */
-#line 410 "src/parser/parser.y"
+#line 407 "src/parser/parser.y"
                               {
                 LetDeclaration d;
                 d.name = *(yyvsp[-2].str);
@@ -2215,11 +2214,11 @@ yyreduce:
                 (yyval.let_decl) = new std::vector<LetDeclaration>();
                 (yyval.let_decl)->push_back(d);
             }
-#line 2219 ".build/parser.tab.cpp"
+#line 2218 ".build/parser.tab.cpp"
     break;
 
   case 79: /* decl: ID COLON ID '=' expression  */
-#line 417 "src/parser/parser.y"
+#line 414 "src/parser/parser.y"
                                         {
                 LetDeclaration d;
                 d.name = *(yyvsp[-4].str);
@@ -2227,66 +2226,66 @@ yyreduce:
                 (yyval.let_decl) = new std::vector<LetDeclaration>();
                 (yyval.let_decl)->push_back(d);
             }
-#line 2231 ".build/parser.tab.cpp"
+#line 2230 ".build/parser.tab.cpp"
     break;
 
   case 80: /* decl: decl ',' ID '=' expression  */
-#line 424 "src/parser/parser.y"
+#line 421 "src/parser/parser.y"
                                          {
                 LetDeclaration d;
                 d.name = *(yyvsp[-2].str);
                 d.initializer = (yyvsp[0].node);
                 (yyvsp[-4].let_decl)->push_back(d); (yyval.let_decl) = (yyvsp[-4].let_decl);
             }
-#line 2242 ".build/parser.tab.cpp"
+#line 2241 ".build/parser.tab.cpp"
     break;
 
   case 81: /* decl: decl ',' ID COLON ID '=' expression  */
-#line 430 "src/parser/parser.y"
+#line 427 "src/parser/parser.y"
                                                   {
                 LetDeclaration d;
                 d.name = *(yyvsp[-4].str);
                 d.initializer = (yyvsp[0].node);
                 (yyvsp[-6].let_decl)->push_back(d); (yyval.let_decl) = (yyvsp[-6].let_decl);
             }
-#line 2253 ".build/parser.tab.cpp"
+#line 2252 ".build/parser.tab.cpp"
     break;
 
   case 82: /* body: statement  */
-#line 439 "src/parser/parser.y"
+#line 436 "src/parser/parser.y"
                                             { (yyval.node) = (yyvsp[0].node); }
-#line 2259 ".build/parser.tab.cpp"
+#line 2258 ".build/parser.tab.cpp"
     break;
 
   case 83: /* body: expression  */
-#line 440 "src/parser/parser.y"
+#line 437 "src/parser/parser.y"
                                             { (yyval.node) = (yyvsp[0].node); }
-#line 2265 ".build/parser.tab.cpp"
+#line 2264 ".build/parser.tab.cpp"
     break;
 
   case 84: /* body: PRINT '(' expression ')'  */
-#line 441 "src/parser/parser.y"
+#line 438 "src/parser/parser.y"
                                             { 
                                                 std::vector<ASTNode*> args = vectorize((yyvsp[-1].node), nullptr, 1);
                                                 (yyval.node) = new BuiltInFunctionNode("print", args, yylloc.first_line);
                                             }
-#line 2274 ".build/parser.tab.cpp"
+#line 2273 ".build/parser.tab.cpp"
     break;
 
   case 85: /* if_expr: if_head  */
-#line 448 "src/parser/parser.y"
+#line 445 "src/parser/parser.y"
                                         { (yyval.node) = new IfNode((yyvsp[0].if_branch), nullptr, yylloc.first_line); }
-#line 2280 ".build/parser.tab.cpp"
+#line 2279 ".build/parser.tab.cpp"
     break;
 
   case 86: /* if_expr: if_head ELSE body  */
-#line 449 "src/parser/parser.y"
+#line 446 "src/parser/parser.y"
                                         { (yyval.node) = new IfNode((yyvsp[-2].if_branch), (yyvsp[0].node), yylloc.first_line); }
-#line 2286 ".build/parser.tab.cpp"
+#line 2285 ".build/parser.tab.cpp"
     break;
 
   case 87: /* if_head: IF '(' expression ')' body  */
-#line 453 "src/parser/parser.y"
+#line 450 "src/parser/parser.y"
                                                             { 
                                                                 IfBranch b;
                                                                 b.condition = (yyvsp[-2].node);
@@ -2294,11 +2293,11 @@ yyreduce:
                                                                 (yyval.if_branch) = new std::vector<IfBranch>(); 
                                                                 (yyval.if_branch)->push_back(b);
                                                             }
-#line 2298 ".build/parser.tab.cpp"
+#line 2297 ".build/parser.tab.cpp"
     break;
 
   case 88: /* if_head: if_head ELIF '(' expression ')' body  */
-#line 460 "src/parser/parser.y"
+#line 457 "src/parser/parser.y"
                                                             { 
                                                                 IfBranch b;
                                                                 b.condition = (yyvsp[-2].node);
@@ -2306,195 +2305,195 @@ yyreduce:
                                                                 (yyvsp[-5].if_branch)->push_back(b); 
                                                                 (yyval.if_branch) = (yyvsp[-5].if_branch);  
                                                             }
-#line 2310 ".build/parser.tab.cpp"
+#line 2309 ".build/parser.tab.cpp"
     break;
 
   case 89: /* while_expr: WHILE '(' expression ')' body  */
-#line 470 "src/parser/parser.y"
+#line 467 "src/parser/parser.y"
                                                             { (yyval.node) = new WhileNode((yyvsp[-2].node), (yyvsp[0].node), yylloc.first_line); }
-#line 2316 ".build/parser.tab.cpp"
+#line 2315 ".build/parser.tab.cpp"
     break;
 
   case 90: /* for_expr: FOR '(' ID IN RANGE '(' expression ',' expression ')' ')' body  */
-#line 474 "src/parser/parser.y"
+#line 471 "src/parser/parser.y"
                                                                                 { (yyval.node) = new ForNode(*(yyvsp[-9].str), (yyvsp[-5].node), (yyvsp[-3].node), (yyvsp[0].node), yylloc.first_line); }
-#line 2322 ".build/parser.tab.cpp"
+#line 2321 ".build/parser.tab.cpp"
     break;
 
   case 91: /* type_decl: TYPE ID '(' params ')' '{' type_body '}'  */
-#line 478 "src/parser/parser.y"
+#line 475 "src/parser/parser.y"
                                                      {
                 (yyval.node) = new TypeDeclarationNode(*(yyvsp[-6].str), (yyvsp[-4].param), (yyvsp[-1].type_body), std::nullopt, std::vector<ASTNode*>(), yylloc.first_line);
             }
-#line 2330 ".build/parser.tab.cpp"
+#line 2329 ".build/parser.tab.cpp"
     break;
 
   case 92: /* type_decl: TYPE ID '{' type_body '}'  */
-#line 481 "src/parser/parser.y"
+#line 478 "src/parser/parser.y"
                                         {
                 (yyval.node) = new TypeDeclarationNode(*(yyvsp[-3].str), new std::vector<Parameter>(), (yyvsp[-1].type_body), std::nullopt, std::vector<ASTNode*>(), yylloc.first_line);
             }
-#line 2338 ".build/parser.tab.cpp"
+#line 2337 ".build/parser.tab.cpp"
     break;
 
   case 93: /* type_decl: TYPE ID '(' params ')' INHERITS ID '(' args ')' '{' type_body '}'  */
-#line 484 "src/parser/parser.y"
+#line 481 "src/parser/parser.y"
                                                                                 {
                 (yyval.node) = new TypeDeclarationNode(*(yyvsp[-11].str), (yyvsp[-9].param), (yyvsp[-1].type_body), *(yyvsp[-6].str), *(yyvsp[-4].list), yylloc.first_line);
             }
-#line 2346 ".build/parser.tab.cpp"
+#line 2345 ".build/parser.tab.cpp"
     break;
 
   case 94: /* type_decl: TYPE ID INHERITS ID '(' args ')' '{' type_body '}'  */
-#line 487 "src/parser/parser.y"
+#line 484 "src/parser/parser.y"
                                                                  {
                 (yyval.node) = new TypeDeclarationNode(*(yyvsp[-8].str), new std::vector<Parameter>(), (yyvsp[-1].type_body), std::make_optional(*(yyvsp[-6].str)), *(yyvsp[-4].list), yylloc.first_line);
             }
-#line 2354 ".build/parser.tab.cpp"
+#line 2353 ".build/parser.tab.cpp"
     break;
 
   case 95: /* type_decl: TYPE ID '(' params ')' INHERITS ID '{' type_body '}'  */
-#line 490 "src/parser/parser.y"
+#line 487 "src/parser/parser.y"
                                                                    {
                 (yyval.node) = new TypeDeclarationNode(*(yyvsp[-8].str), (yyvsp[-6].param), (yyvsp[-1].type_body), std::make_optional(*(yyvsp[-3].str)), std::vector<ASTNode*>(), yylloc.first_line);
             }
-#line 2362 ".build/parser.tab.cpp"
+#line 2361 ".build/parser.tab.cpp"
     break;
 
   case 96: /* type_decl: TYPE ID INHERITS ID '{' type_body '}'  */
-#line 493 "src/parser/parser.y"
+#line 490 "src/parser/parser.y"
                                                     {
                 (yyval.node) = new TypeDeclarationNode(*(yyvsp[-5].str), new std::vector<Parameter>(), (yyvsp[-1].type_body), std::make_optional(*(yyvsp[-3].str)), std::vector<ASTNode*>(), yylloc.first_line);
             }
-#line 2370 ".build/parser.tab.cpp"
+#line 2369 ".build/parser.tab.cpp"
     break;
 
   case 97: /* type_body: %empty  */
-#line 499 "src/parser/parser.y"
+#line 496 "src/parser/parser.y"
                           {
                 (yyval.type_body) = new TypeBody(new std::vector<AttributeDeclaration>(), new std::vector<MethodDeclaration>());
             }
-#line 2378 ".build/parser.tab.cpp"
+#line 2377 ".build/parser.tab.cpp"
     break;
 
   case 98: /* type_body: attribute_decl  */
-#line 502 "src/parser/parser.y"
+#line 499 "src/parser/parser.y"
                              {
                 (yyval.type_body) = new TypeBody((yyvsp[0].attr_decl), new std::vector<MethodDeclaration>());
             }
-#line 2386 ".build/parser.tab.cpp"
+#line 2385 ".build/parser.tab.cpp"
     break;
 
   case 99: /* type_body: method_decl  */
-#line 505 "src/parser/parser.y"
+#line 502 "src/parser/parser.y"
                           {
                 (yyval.type_body) = new TypeBody(new std::vector<AttributeDeclaration>(), (yyvsp[0].method_decl));
             }
-#line 2394 ".build/parser.tab.cpp"
+#line 2393 ".build/parser.tab.cpp"
     break;
 
   case 100: /* type_body: attribute_decl method_decl  */
-#line 508 "src/parser/parser.y"
+#line 505 "src/parser/parser.y"
                                          {
                 (yyval.type_body) = new TypeBody((yyvsp[-1].attr_decl), (yyvsp[0].method_decl));
             }
-#line 2402 ".build/parser.tab.cpp"
+#line 2401 ".build/parser.tab.cpp"
     break;
 
   case 101: /* attribute_decl: ID '=' expression ';'  */
-#line 514 "src/parser/parser.y"
+#line 511 "src/parser/parser.y"
                                           { 
                 (yyval.attr_decl) = new std::vector<AttributeDeclaration>();
                 (yyval.attr_decl)->push_back(AttributeDeclaration(*(yyvsp[-3].str), (yyvsp[-1].node)));
             }
-#line 2411 ".build/parser.tab.cpp"
+#line 2410 ".build/parser.tab.cpp"
     break;
 
   case 102: /* attribute_decl: attribute_decl ID '=' expression ';'  */
-#line 518 "src/parser/parser.y"
+#line 515 "src/parser/parser.y"
                                                    { 
                 (yyvsp[-4].attr_decl)->push_back(AttributeDeclaration(*(yyvsp[-3].str), (yyvsp[-1].node)));
                 (yyval.attr_decl) = (yyvsp[-4].attr_decl);
             }
-#line 2420 ".build/parser.tab.cpp"
+#line 2419 ".build/parser.tab.cpp"
     break;
 
   case 103: /* method_decl: ID '(' params ')' LAMBDA expression ';'  */
-#line 525 "src/parser/parser.y"
+#line 522 "src/parser/parser.y"
                                                     {
                 (yyval.method_decl) = new std::vector<MethodDeclaration>();
                 (yyval.method_decl)->push_back(MethodDeclaration(*(yyvsp[-6].str), (yyvsp[-4].param), (yyvsp[-1].node)));
             }
-#line 2429 ".build/parser.tab.cpp"
+#line 2428 ".build/parser.tab.cpp"
     break;
 
   case 104: /* method_decl: ID '(' params ')' block_expr ';'  */
-#line 529 "src/parser/parser.y"
+#line 526 "src/parser/parser.y"
                                                {
                 (yyval.method_decl) = new std::vector<MethodDeclaration>();
                 (yyval.method_decl)->push_back(MethodDeclaration(*(yyvsp[-5].str), (yyvsp[-3].param), (yyvsp[-1].node)));
             }
-#line 2438 ".build/parser.tab.cpp"
+#line 2437 ".build/parser.tab.cpp"
     break;
 
   case 105: /* method_decl: method_decl ID '(' params ')' LAMBDA expression ';'  */
-#line 533 "src/parser/parser.y"
+#line 530 "src/parser/parser.y"
                                                                   {
                 (yyvsp[-7].method_decl)->push_back(MethodDeclaration(*(yyvsp[-6].str), (yyvsp[-4].param), (yyvsp[-1].node)));
                 (yyval.method_decl) = (yyvsp[-7].method_decl);
             }
-#line 2447 ".build/parser.tab.cpp"
+#line 2446 ".build/parser.tab.cpp"
     break;
 
   case 106: /* method_decl: method_decl ID '(' params ')' block_expr ';'  */
-#line 537 "src/parser/parser.y"
+#line 534 "src/parser/parser.y"
                                                            {
                 (yyvsp[-6].method_decl)->push_back(MethodDeclaration(*(yyvsp[-5].str), (yyvsp[-3].param), (yyvsp[-1].node)));
                 (yyval.method_decl) = (yyvsp[-6].method_decl);
             }
-#line 2456 ".build/parser.tab.cpp"
+#line 2455 ".build/parser.tab.cpp"
     break;
 
   case 107: /* self_call: SELF '.' ID  */
-#line 544 "src/parser/parser.y"
+#line 541 "src/parser/parser.y"
                           { (yyval.node) = new SelfCallNode(*(yyvsp[0].str), yylloc.first_line); }
-#line 2462 ".build/parser.tab.cpp"
+#line 2461 ".build/parser.tab.cpp"
     break;
 
   case 108: /* method_call: ID '.' ID '(' args ')'  */
-#line 548 "src/parser/parser.y"
+#line 545 "src/parser/parser.y"
                                    {
                 (yyval.node) = new MethodCallNode(*(yyvsp[-5].str), *(yyvsp[-3].str), *(yyvsp[-1].list), yylloc.first_line);
             }
-#line 2470 ".build/parser.tab.cpp"
+#line 2469 ".build/parser.tab.cpp"
     break;
 
   case 109: /* method_call: SELF '.' ID '(' args ')'  */
-#line 551 "src/parser/parser.y"
+#line 548 "src/parser/parser.y"
                                        {
                 (yyval.node) = new MethodCallNode("self", *(yyvsp[-3].str), *(yyvsp[-1].list), yylloc.first_line);
             }
-#line 2478 ".build/parser.tab.cpp"
+#line 2477 ".build/parser.tab.cpp"
     break;
 
   case 110: /* base_call: BASE '(' args ')'  */
-#line 557 "src/parser/parser.y"
+#line 554 "src/parser/parser.y"
                               {
                 (yyval.node) = new BaseCallNode(*(yyvsp[-1].list), yylloc.first_line);
             }
-#line 2486 ".build/parser.tab.cpp"
+#line 2485 ".build/parser.tab.cpp"
     break;
 
   case 111: /* new_instance: NEW ID '(' args ')'  */
-#line 563 "src/parser/parser.y"
+#line 560 "src/parser/parser.y"
                                 {
                 (yyval.node) = new NewInstanceNode(*(yyvsp[-3].str), *(yyvsp[-1].list), yylloc.first_line);
             }
-#line 2494 ".build/parser.tab.cpp"
+#line 2493 ".build/parser.tab.cpp"
     break;
 
 
-#line 2498 ".build/parser.tab.cpp"
+#line 2497 ".build/parser.tab.cpp"
 
       default: break;
     }
@@ -2692,7 +2691,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 568 "src/parser/parser.y"
+#line 565 "src/parser/parser.y"
 
 
 void yyerror(const char *msg) {
