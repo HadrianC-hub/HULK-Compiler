@@ -1,6 +1,6 @@
-#include "LLVM_Generator.hpp"
-#include "Context.hpp"
-#include "../AST/AST.hpp"
+#include "IRGen.hpp"
+#include "IRContext.hpp"
+#include "../ast/AST.hpp"
 #include <stdexcept>
 #include <iostream>
 #include <string>
@@ -93,15 +93,15 @@ void LLVMGenerator::visit(LiteralNode &node)
     }
     else
     {
-        throw std::runtime_error("[ERROR CG] Tipo literal no soportado: " + node._type);
+        throw std::runtime_error("Unsupported literal type: " + node._type);
     }
 
     context.valueStack.push_back(val);
 
-    std::cout << "[PROC CG] Emitido literal de tipo " << node._type << std::endl;
+    std::cout << "🔧 Emitted literal of type " << node._type << std::endl;
 }
 
-void LLVMGenerator::visit(BinaryOperationNode &node)
+void LLVMGenerator::visit(BinaryOpNode &node)
 {
     node.left->accept(*this);
     llvm::Value *left = context.valueStack.back();
@@ -204,7 +204,7 @@ void LLVMGenerator::visit(BinaryOperationNode &node)
         }
         else
         {
-            throw std::runtime_error("[ERROR CG] Tipo no soportado para operaciones '==' o '!=': " + nodeType);
+            throw std::runtime_error("❌ Unsupported type for '==' or '!=': " + nodeType);
         }
     }
 
@@ -236,15 +236,16 @@ void LLVMGenerator::visit(BinaryOperationNode &node)
 
     else
     {
-        throw std::runtime_error("[ERROR CG] Operador binario no soportado: " + op);
+        throw std::runtime_error("❌ Unsupported binary operator: " + op);
     }
 
     context.valueStack.push_back(result);
-    std::cout << "[PROC CG] Operación binaria '" << op << "' emitida.\n";
+    std::cout << "🔧 Binary op '" << op << "' emitted.\n";
 }
 
 void LLVMGenerator::visit(UnaryOpNode &node)
 {
+
     node.operand->accept(*this);
     llvm::Value *operand = context.valueStack.back();
     context.valueStack.pop_back();
@@ -265,11 +266,11 @@ void LLVMGenerator::visit(UnaryOpNode &node)
     }
     else
     {
-        throw std::runtime_error("[ERROR CG] Operador unario no soportado: " + op);
+        throw std::runtime_error("❌ Unsupported unary operator: " + op);
     }
 
     context.valueStack.push_back(result);
-    std::cout << "[PROC CG] Operación unaria '" << op << "' emitida.\n";
+    std::cout << "🔧 Unary op '" << op << "' emitted.\n";
 }
 
 void LLVMGenerator::visit(BuiltInFunctionNode &node)
@@ -362,7 +363,7 @@ void LLVMGenerator::visit(BuiltInFunctionNode &node)
     }
     else
     {
-        throw std::runtime_error("[ERROR CG] Función built-in no soportada: " + name);
+        throw std::runtime_error("❌ Unsupported built-in function: " + name);
     }
 
     if (result)
@@ -377,7 +378,7 @@ void LLVMGenerator::visit(BlockNode &node)
 {
     if (node.expressions.empty())
     {
-        throw std::runtime_error("[ERROR CG] Un bloque debe contener al menos una expresión (line " + std::to_string(node.line()) + ")");
+        throw std::runtime_error("❌ Block must contain at least one expression (line " + std::to_string(node.line()) + ")");
     }
 
     context.pushFuncScope();
@@ -442,15 +443,15 @@ void LLVMGenerator::visit(BlockNode &node)
 
     if (!lastValidResult)
     {
-        throw std::runtime_error("[ERROR CG] El bloque no tiene un valor retornable en su última expresión (line " + std::to_string(node.line()) + ")");
+        throw std::runtime_error("❌ Block has no returnable value on last expression (line " + std::to_string(node.line()) + ")");
     }
 
-    std::cout << "[PROC CG] Bloque emitido con " << node.expressions.size() << " expresiones\n";
+    std::cout << "🔧 BlockNode emitted with " << node.expressions.size() << " expressions\n";
 }
 
 void LLVMGenerator::visit(IdentifierNode &node)
 {
-    llvm::Value *val = nullptr;
+    llvm::Value *val = context.lookupLocal(node.name);
 
     if (node.name == "pi")
     {
@@ -482,7 +483,7 @@ void LLVMGenerator::visit(FunctionDeclarationNode &node)
     const auto &params = *node.params;
     if (params.size() > context.valueStack.size())
     {
-        throw std::runtime_error("[ERROR CG] No hay suficientes argumentos en la pila para la función: '" + node.name + "'");
+        throw std::runtime_error("❌ Not enough arguments on stack for function '" + node.name + "'");
     }
 
     for (int i = params.size() - 1; i >= 0; --i)
@@ -507,7 +508,7 @@ void LLVMGenerator::visit(FunctionCallNode &node)
     auto *decl = context.lookupFuncDecl(node.funcName);
     if (!decl)
     {
-        throw std::runtime_error("[ERROR CG] Función no declarada: " + node.funcName);
+        throw std::runtime_error("❌ Function not declared: " + node.funcName);
     }
 
     decl->accept(*this);

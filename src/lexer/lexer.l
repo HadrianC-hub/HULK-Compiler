@@ -2,10 +2,7 @@
 #include "../../.build/parser.tab.hpp"     
 #include <string>
 
-// Variables para seguimiento de columnas
 int yycolumn = 1;
-
-// Macro que se ejecuta ANTES de cada token
 #define YY_USER_ACTION \
     yylloc.first_line = yylineno; \
     yylloc.first_column = yycolumn; \
@@ -20,8 +17,8 @@ int yycolumn = 1;
 
 %%
 
-[_]+[a-zA-Z0-9_]+       { fprintf(stderr, "[ERROR LEXICO] Variable inválida: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); }
-[0-9]+[a-zA-Z_]+        { fprintf(stderr, "[ERROR LEXICO] Variable inválida: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); }
+[_]+[a-zA-Z0-9_]+       { fprintf(stderr, "Error léxico. Variable inválida: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); }
+[0-9]+[a-zA-Z_]+        { fprintf(stderr, "Error léxico. Variable inválida: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); }
 
 
 [0-9]+(\.[0-9]+)?       { 
@@ -74,8 +71,6 @@ int yycolumn = 1;
 
 "@"                     { printf(" @ \n"); return CONCAT; }
 "@@"                    { printf(" @@ \n"); return CONCAT_SPACE; }
-":"                     { return COLON; }
-
 
 
 "sin"                   { printf(" sin \n"); return SIN; }
@@ -86,6 +81,7 @@ int yycolumn = 1;
 "exp"                   { printf(" exp \n"); return EXP; }
 "log"                   { printf(" log \n"); return LOG; }
 "rand"                  { printf(" rand \n"); return RANDOM; }
+":"                     { return COLON; }
 
 
 "print"                 { printf("print\n"); return PRINT; }
@@ -139,7 +135,7 @@ int yycolumn = 1;
 [ \t]+                  { /* Whitespace handled by YY_USER_ACTION */ }  // Ignorar espacios
 \n                      { yycolumn = 1; }        // Resetear columna al salto de línea
 .                       { 
-                            fprintf(stderr, "[ERROR LEXICO] '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); 
+                            fprintf(stderr, "Error léxico: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); 
                         }
 
 %%

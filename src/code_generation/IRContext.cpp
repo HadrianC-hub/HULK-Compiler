@@ -1,8 +1,8 @@
 #include <cstdio>
 #include <iostream>
-#include "../AST/AST.hpp"
-#include "Context.hpp"
-#include "LLVM_Generator.hpp"
+#include "../ast/AST.hpp"
+#include "IRContext.hpp"
+#include "IRGen.hpp"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -56,12 +56,12 @@ void CodeGenContext::generateCode(std::vector<ASTNode *> &root)
     for (llvm::Value *val : valueStack)
     {
         if (val->getType()->isDoubleTy())
-        { // Number
+        {
             llvm::Value *format = builder.CreateGlobalStringPtr("%g\n");
             builder.CreateCall(module.getFunction("printf"), {format, val});
         }
         else if (val->getType()->isIntegerTy(1))
-        { // Boolean
+        {
             llvm::Value *str = builder.CreateSelect(
                 val,
                 builder.CreateGlobalStringPtr("true\n"),
@@ -69,7 +69,7 @@ void CodeGenContext::generateCode(std::vector<ASTNode *> &root)
             builder.CreateCall(module.getFunction("puts"), {str});
         }
         else if (val->getType()->isPointerTy())
-        { // String
+        {
             builder.CreateCall(module.getFunction("puts"), {val});
         }
     }
@@ -87,11 +87,11 @@ void CodeGenContext::dumpIR(const std::string &filename)
 
     if (EC)
     {
-        std::cerr << "[ERROR CG]: " << EC.message() << std::endl;
+        std::cerr << "❌ Error: " << EC.message() << std::endl;
         return;
     }
 
     module.print(out, nullptr);
     out.flush();
-    std::cout << "[CHECK CG] IR dumped to: " << filename << std::endl;
+    std::cout << "✅ IR dumped to: " << filename << std::endl;
 }

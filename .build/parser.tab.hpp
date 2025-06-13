@@ -51,7 +51,7 @@ extern int yydebug;
     #include <iostream>
     #include <cmath>
     #include <vector>
-    #include "../AST/AST.hpp"
+    #include "../ast/AST.hpp"
 
 #line 57 ".build/parser.tab.hpp"
 

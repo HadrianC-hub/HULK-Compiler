@@ -1,8 +1,10 @@
 #pragma once
+
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Value.h"
+
 #include <string>
 #include <map>
 #include <vector>
@@ -13,9 +15,9 @@ class FunctionDeclarationNode;
 class CodeGenContext
 {
 public:
-    llvm::LLVMContext context; // Global LLVM context (types, constants, etc.)
-    llvm::IRBuilder<> builder; // Builder for creating IR instructions
-    llvm::Module module;       // LLVM IR module (a single compilation unit)
+    llvm::LLVMContext context;
+    llvm::IRBuilder<> builder;
+    llvm::Module module;
 
     std::map<std::string, llvm::Value *> locals;
     std::vector<llvm::Value *> valueStack;

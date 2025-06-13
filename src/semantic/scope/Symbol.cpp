@@ -1,5 +1,5 @@
-#include "Symbols.hpp"
-#include <iostream>
+//SymbolTable.cpp
+#include "Symbol.hpp"
 
 SymbolTable::SymbolTable() {
     enterScope(); // Scope global
@@ -10,9 +10,6 @@ SymbolTable::SymbolTable() {
     addType("Number", "Object");
     addType("String", "Object");
     addType("Boolean", "Object");
-    addType("Iterator", {"Object"});                     //
-    addTypeMethod("Iterator", "next", "Boolean", {});    // next() devuelve Boolean y no recibe parámetros
-    addTypeMethod("Iterator", "current", "Number", {});  // current() devuelve Number y no recibe parámetros
 }
 
 void SymbolTable::enterScope() {
@@ -58,7 +55,7 @@ bool SymbolTable::addFunction(
     auto& current = scopes.back();
     if (current.find(name) != current.end()) return false;
 
-    current[name] = Symbol{"function", returnType, false, params, body};
+    current[name] = Symbol{"function", returnType, false, params, body}; // incluye cuerpo
     return true;
 }
 
@@ -84,7 +81,6 @@ TypeSymbol* SymbolTable::lookupType(const std::string& name) {
     return &it->second;
 }
 
-//
 const TypeSymbol* SymbolTable::lookupType(const std::string& name) const {
     auto it = types.find(name);
     if (it == types.end()) return nullptr;
@@ -182,3 +178,12 @@ std::string SymbolTable::lowestCommonAncestor(const std::vector<std::string>& ty
 
     return candidate;
 }
+
+void SymbolTable::updateTypeParams(const std::string& typeName, const std::vector<std::string>& params) {
+    auto it = types.find(typeName);
+    if (it != types.end()) {
+        it->second.typeParams = params;
+    }
+}
+
+
