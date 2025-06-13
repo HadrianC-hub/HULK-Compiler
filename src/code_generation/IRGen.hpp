@@ -20,11 +20,11 @@ public:
     void visit(class VarFuncName& node) override;
     void visit(class FuncDeclaration& node) override;
     void visit(class FuncCall& node) override;
+    void visit(class LetExpression& node) override;
 
     //Faltan por implementar
     void visit(ASTNode&) override {}
     void visit(VarDeclaration&) override {}
-    void visit(LetExpression&) override {}
     void visit(Assignment&) override {}
     void visit(IfExpression&) override {}
     void visit(WhileLoop&) override {}

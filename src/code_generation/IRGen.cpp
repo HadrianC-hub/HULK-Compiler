@@ -8,6 +8,14 @@
 #include <cstring>
 #include <math.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#ifndef M_E
+#define M_E 2.7182818284590452354
+#endif
+
 IRGenerator::IRGenerator(Context &ctx)
     : context(ctx) {}
 
@@ -213,17 +221,63 @@ void IRGenerator::visit(BinaryOperation &node)
     {
         const char *funcName = (op == "@") ? "hulk_str_concat" : "hulk_str_concat_space";
 
+        std::cout << "🔍 String concatenation with " << funcName << std::endl;
+
+        // Convertir numeros a string
+        llvm::Value *leftStr = left;
+        llvm::Value *rightStr = right;
+
+        auto convertToString = [&](llvm::Value *val) -> llvm::Value *
+        {
+            if (val->getType()->isDoubleTy())
+            {
+                // Get the sprintf function
+                llvm::Function *sprintfFn = context.module.getFunction("sprintf");
+                if (!sprintfFn)
+                {
+                    llvm::FunctionType *sprintfType = llvm::FunctionType::get(
+                        llvm::Type::getInt32Ty(context.context),
+                        {llvm::PointerType::get(llvm::Type::getInt8Ty(context.context), 0),
+                         llvm::PointerType::get(llvm::Type::getInt8Ty(context.context), 0)},
+                        true);
+                    sprintfFn = llvm::Function::Create(
+                        sprintfType,
+                        llvm::Function::ExternalLinkage,
+                        "sprintf",
+                        context.module);
+                }
+
+                llvm::Value *buffer = context.builder.CreateAlloca(
+                    llvm::Type::getInt8Ty(context.context),
+                    llvm::ConstantInt::get(llvm::Type::getInt64Ty(context.context), 32));
+
+                // Formatear string para double
+                llvm::Value *formatStr = context.builder.CreateGlobalStringPtr("%g");
+
+                std::vector<llvm::Value *> args = {buffer, formatStr, val};
+                context.builder.CreateCall(sprintfFn, args);
+
+                return buffer;
+            }
+            return val;
+        };
+
+        // Convertir operandos si son numeros
+        leftStr = convertToString(left);
+        rightStr = convertToString(right);
+
         llvm::Function *concatFn = context.module.getFunction(funcName);
         if (!concatFn)
         {
             llvm::FunctionType *concatType = llvm::FunctionType::get(
                 llvm::PointerType::get(llvm::Type::getInt8Ty(context.context), 0),
-                {llvm::PointerType::get(llvm::Type::getInt8Ty(context.context), 0), llvm::PointerType::get(llvm::Type::getInt8Ty(context.context), 0)},
+                {llvm::PointerType::get(llvm::Type::getInt8Ty(context.context), 0),
+                 llvm::PointerType::get(llvm::Type::getInt8Ty(context.context), 0)},
                 false);
             concatFn = llvm::Function::Create(concatType, llvm::Function::ExternalLinkage, funcName, context.module);
         }
 
-        result = context.builder.CreateCall(concatFn, {left, right}, "concat");
+        result = context.builder.CreateCall(concatFn, {leftStr, rightStr}, "concat");
     }
 
     else
@@ -373,6 +427,7 @@ void IRGenerator::visit(Block &node)
         throw std::runtime_error("[ERROR] El bloque debe contener al menos una expresión: (line " + std::to_string(node.line()) + ")");
     }
 
+    std::cout << "🔍 BlockNode - Stack size before: " << context.valueStack.size() << std::endl;
     context.PushFunc();
 
     std::vector<ASTNode *> bodyExprs;
@@ -381,6 +436,7 @@ void IRGenerator::visit(Block &node)
         if (auto *decl = dynamic_cast<FuncDeclaration *>(expr))
         {
             context.addFuncDecl(decl->name, decl);
+            std::cout << "  📝 Registered function: " << decl->name << std::endl;
         }
         else
         {
@@ -393,6 +449,7 @@ void IRGenerator::visit(Block &node)
     for (size_t i = 0; i < bodyExprs.size(); ++i)
     {
         ASTNode *expr = bodyExprs[i];
+        std::cout << "  🔄 Evaluating expression " << i + 1 << "/" << bodyExprs.size() << " - Stack size: " << context.valueStack.size() << std::endl;
         expr->accept(*this);
 
         bool isPrint = false;
@@ -438,20 +495,26 @@ void IRGenerator::visit(Block &node)
         throw std::runtime_error("[ERROR] El bloque no tiene valor retornable en su última expresión: (line " + std::to_string(node.line()) + ")");
     }
 
-    std::cout << "[EMITIDO] " << node.expressions.size() << " expressiones en el bloque.\n";
+    std::cout << "[EMITIDO] Bloque completado - Tamaño final: " << context.valueStack.size() << "\n";
 }
 
 void IRGenerator::visit(VarFuncName &node)
 {
     llvm::Value *val = context.lookupLocal(node.name);
 
-    if (node.name == "pi")
+    if (node.name == "PI" || node.name == "pi")
     {
-        val = llvm::ConstantFP::get(context.context, llvm::APFloat(3.14159265358979323846));
+        llvm::Value *pi = llvm::ConstantFP::get(context.context, llvm::APFloat(M_PI));
+        context.valueStack.push_back(pi);
+        std::cout << "Constante PI emitida\n";
+        return;
     }
-    else if (node.name == "e")
+    else if (node.name == "E" || node.name == "e")
     {
-        val = llvm::ConstantFP::get(context.context, llvm::APFloat(2.71828182845904523536));
+        llvm::Value *e = llvm::ConstantFP::get(context.context, llvm::APFloat(M_E));
+        context.valueStack.push_back(e);
+        std::cout << "Constante E emitida\n";
+        return;
     }
     else
     {
@@ -470,7 +533,7 @@ void IRGenerator::visit(VarFuncName &node)
 
 void IRGenerator::visit(FuncDeclaration &node)
 {
-    context.PushVar();
+    context.PushVar(false); // Crea un scope aislado para parametros de funcion
 
     const auto &params = *node.params;
     if (params.size() > context.valueStack.size())
@@ -486,6 +549,13 @@ void IRGenerator::visit(FuncDeclaration &node)
     }
 
     node.body->accept(*this);
+
+    if (context.valueStack.empty())
+    {
+        std::cout << "[NOTA] No hay valor de retorno, devolviendo null" << std::endl;
+        context.valueStack.push_back(
+            llvm::ConstantPointerNull::get(llvm::PointerType::get(llvm::Type::getInt8Ty(context.context), 0)));
+    }
 
     context.PopVar();
 }
@@ -504,4 +574,37 @@ void IRGenerator::visit(FuncCall &node)
     }
 
     decl->accept(*this);
+}
+
+void IRGenerator::visit(LetExpression &node)
+{
+    std::cout << "🔍 LetNode - Stack size before: " << context.valueStack.size() << std::endl;
+
+    // 1. Initialize new variable scope with inheritance
+    context.PushVar(true); // true for inheritance
+
+    // 2. Process each declaration
+    for (const LetDeclaration &decl : *node.declarations)
+    {
+        // Process the initializer first
+        decl.initializer->accept(*this);
+        llvm::Value *initValue = context.valueStack.back();
+        context.valueStack.pop_back();
+
+        // Add the variable to the current scope
+        context.addLocal(decl.name, initValue);
+        std::cout << "  📝 Added variable '" << decl.name << "' to scope" << std::endl;
+    }
+
+    // 3. Process the body
+    std::cout << "  🔄 Processing let body - Stack size: " << context.valueStack.size() << std::endl;
+    node.body->accept(*this);
+    std::cout << "  📤 Body processed - Stack size: " << context.valueStack.size() << std::endl;
+
+    // 4. Keep the body's return value on the stack
+    // The value is already on the stack from the body processing
+
+    // Clean up the scope
+    context.PopVar();
+    std::cout << "  ✅ LetNode completed - Final stack size: " << context.valueStack.size() << std::endl;
 }

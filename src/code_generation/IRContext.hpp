@@ -30,12 +30,27 @@ public:
     std::vector<std::map<std::string, llvm::Value *>> localScopes;
     std::vector<std::map<std::string, FuncDeclaration *>> functionScopes;
 
-    void PushVar() { localScopes.emplace_back(); }
+    void PushVar(bool inherit = true)
+    {
+        if (inherit && !localScopes.empty())
+        {
+            // Crear nuevo scope (herencia)
+            localScopes.push_back(localScopes.back());
+        }
+        else
+        {
+            // Create scope vacío (no herencia - funciones)
+            localScopes.emplace_back();
+        }
+    }
     void PopVar() { localScopes.pop_back(); }
     void addLocal(const std::string &name, llvm::Value *val)
     {
-        if (!localScopes.empty())
+        if (!localScopes.empty()) {
+            // Agregar o actualizar variables en el scope actual 
+            // (sobreescribe a cualquier variable con el mismo nombre en scope de padres)
             localScopes.back()[name] = val;
+        }
     }
     llvm::Value *lookupLocal(const std::string &name) const
     {
@@ -48,7 +63,17 @@ public:
         return nullptr;
     }
 
-    void PushFunc() { functionScopes.emplace_back(); }
+    void PushFunc()
+    {
+        if (functionScopes.empty())
+        {
+            functionScopes.emplace_back();
+        }
+        else
+        {
+            functionScopes.push_back(functionScopes.back());
+        }
+    }
     void PopFunc() { functionScopes.pop_back(); }
     void addFuncDecl(const std::string &name, FuncDeclaration *decl)
     {

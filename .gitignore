@@ -14,3 +14,5 @@ Hulk/Hulk-IR.ll
 .build/code_generation/IRContext.o
 .gitignore
 Compiler.exe
+script.hulk
+.gitignore
