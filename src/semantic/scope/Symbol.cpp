@@ -1,4 +1,3 @@
-// SymbolTable.cpp
 #include "Symbol.hpp"
 
 SymbolTable::SymbolTable()
@@ -10,6 +9,7 @@ SymbolTable::SymbolTable()
     addType("Number", "Object");
     addType("String", "Object");
     addType("Boolean", "Object");
+    addType("Null", "");
 }
 
 void SymbolTable::enterScope()
@@ -36,7 +36,7 @@ bool SymbolTable::addSymbol(const std::string &name, const std::string &type, bo
 
 Symbol *SymbolTable::lookup(const std::string &name)
 {
-    // Buscar en ámbitos locales
+    // Buscar en ambitos locales
     for (auto it = scopes.rbegin(); it != scopes.rend(); ++it)
     {
         auto entry = it->find(name);
@@ -81,7 +81,8 @@ bool SymbolTable::addType(
         parentType,
         typeParams,
         {},
-        {}};
+        {}
+    };
     return true;
 }
 

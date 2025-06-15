@@ -5,12 +5,14 @@ CXX     := g++
 BISON   := bison
 FLEX    := flex
 LLVM	:= llvm-config
+LLC     := llc
 
-CXXFLAGS := -std=c++17 -Wall -Wextra -g	-Isrc	-Isrc/ast	-Wno-free-nonheap-object
+CXXFLAGS := -std=c++17 -Wall -Wextra -g -Isrc -Isrc/ast -Wno-free-nonheap-object -finput-charset=UTF-8 -fexec-charset=UTF-8
+
 LDFLAGS += -lfl -lstdc++
 
-LLVM_CXXFLAGS 	:= $(filter-out -fno-exceptions, $(shell $(LLVM) --cxxflags))
-LLVM_LDFLAGS	:= $(shell $(LLVM) --ldflags --libs all --system-libs)
+LLVM_CXXFLAGS := $(filter-out -fno-exceptions, $(shell $(LLVM) --cxxflags))
+LLVM_LDFLAGS  := $(shell $(LLVM) --ldflags --libs all --system-libs)
 
 # Directorios
 BUILD_DIR := .build
@@ -29,12 +31,12 @@ PARSER_SRC := $(BUILD_DIR)/parser.tab.cpp
 PARSER_HEADER := $(BUILD_DIR)/parser.tab.hpp
 LEXER_SRC := $(BUILD_DIR)/lex.yy.cpp
 
-# Objetos explícitos
+# Objetos explicitos
 MAIN_OBJ = $(BUILD_DIR)/hulk.o
 LEX_OBJ = $(BUILD_DIR)/lexer/lex.yy.o
 YACC_OBJ = $(BUILD_DIR)/parser/parser.tab.o
 
-# Detectar automáticamente todos los *.cpp de src/
+# Detectar automaticamente todos los *.cpp de src/
 CPP_SRC := $(shell find $(SRC_DIR) -name "*.cpp" ! -name "hulk.cpp" ! -name "hulk_utils.cpp")
 CPP_OBJ := $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(CPP_SRC))
 
@@ -47,6 +49,7 @@ OBJS := $(MAIN_OBJ) $(CPP_OBJ) $(YACC_OBJ) $(LEX_OBJ) $(RUNTIME_OBJ)
 EXEC := Compiler.exe
 INPUT_FILE := $(word 2, $(MAKECMDGOALS))
 LLVM_IR := $(OUTPUT_DIR)/Hulk-IR.ll
+HULK_OBJ := $(OUTPUT_DIR)/Hulk-IR.o
 CODE := $(OUTPUT_DIR)/Hulk.exe
 
 # === TARGETS ===
@@ -68,25 +71,29 @@ execute:
 	fi
 	@echo "🚀 Ejecutando programa..."
 	@./$(CODE)
-	@echo "🏁 Ejecución completada"
+	@echo "🏁 Ejecucion completada"
 
-# Generación del IR
+# Generacion del IR
 $(LLVM_IR): build | $(OUTPUT_DIR)
 	@./$(EXEC) $(INPUT_FILE)
 
+# Compilar LLVM IR a objeto
+$(HULK_OBJ): $(LLVM_IR)
+	$(LLC) -filetype=obj $< -o $@
+
 # Compilar a ejecutable
-$(CODE): $(LLVM_IR) $(RUNTIME_OBJ)
-	@clang $(LLVM_IR) $(RUNTIME_OBJ) -lm -o $(CODE)
+$(CODE): $(HULK_OBJ) $(RUNTIME_OBJ)
+	$(CXX) $(HULK_OBJ) $(RUNTIME_OBJ) -o $@ $(LLVM_LDFLAGS) -lm
 	@echo "🔨 Generado ejecutable: $(CODE)"
 
 clean:
 	rm -rf $(BUILD_DIR) $(EXEC) $(OUTPUT_DIR)
 	@echo "🧹 Proyecto limpiado."
 
-# === REGLAS DE COMPILACIÓN ===
+# === REGLAS DE COMPILACIoN ===
 
 $(BUILD_DIR):
-	mkdir -p $@  
+	mkdir -p $@
 
 $(BUILD_DIR)/lexer:
 	mkdir -p $@
@@ -123,7 +130,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 
 $(EXEC): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(LLVM_CXXFLAGS) -o $(EXEC) $(OBJS) $(LLVM_LDFLAGS)
-	@echo "✅ Compilación completa. Ejecutable en $(EXEC)"
+	@echo "✅ Compilacion completa. Ejecutable en $(EXEC)"
 
 # === META ===
 .PHONY: all build run compile execute clean

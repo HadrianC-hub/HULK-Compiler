@@ -25,30 +25,29 @@ int main(int argc, char **argv) {
 
     yyin = input_file;
     if (yyparse() != 0) {
-        std::cerr << "Error: Falló el análisis sintáctico." << std::endl;
+        std::cerr << "Error: Fallo el analisis sintactico." << std::endl;
         fclose(input_file);
         return 1;
     }
     fclose(input_file);
 
     if (!is_valid_ast(root)) {
-        std::cerr << "Error: No se generó un AST válido." << std::endl;
+        std::cerr << "Error: No se genero un AST valido." << std::endl;
         return 1;
     }
-
 
     std::cout << "AST terminado." << std::endl;
 
     for (auto node : root) {
-        std::cout << "Tipo de nodo raíz: " << node->type() 
-                << " | Línea: " << node->line() << "\n";
+        std::cout << "Tipo de nodo raiz: " << node->type() 
+                << " | Linea: " << node->line() << "\n";
     }
 
     SemanticValidation semantic;
     semantic.validate(root);
-    std::cout << "Análisis semántico completado exitosamente." << std::endl;
-    Context cg;
-        
+    std::cout << "Analisis semantico completado exitosamente." << std::endl;
+
+    Context cg;    
     try {
         cg.Generate(root);
     } catch (const std::exception& e) {
@@ -56,7 +55,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    std::cout << "Generación de código completada." << std::endl;
+    std::cout << "Generacion de codigo completada." << std::endl;
     cg.WriteDownCode("Hulk/Hulk-IR.ll");
     delete_ast(root);
 

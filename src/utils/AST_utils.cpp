@@ -1,9 +1,9 @@
 #include "ast_utils.hpp"
-#include "../ast/AST.hpp"  // O ajusta esta ruta según la ubicación real de tu definición de ASTNode
+#include "../ast/AST.hpp"  // O ajusta esta ruta segun la ubicacion real de tu definicion de ASTNode
 
 bool is_valid_ast(const std::vector<ASTNode*>& nodes) {
     if (nodes.empty()) {
-        std::cerr << "AST vacío: ningún nodo generado" << std::endl;
+        std::cerr << "AST vacio: ningun nodo generado" << std::endl;
         return false;
     }
 

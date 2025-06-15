@@ -55,7 +55,7 @@ std::vector<ASTNode*> vectorize(ASTNode* arg1, ASTNode* arg2, int n) {
     TypeBody* type_body;
 }
 
-// --------------------------------------/* Definición de Tokens */------------------------------------------- //
+// --------------------------------------/* Definicion de Tokens */------------------------------------------- //
 
 // Literales 
 %token <num> NUMBER
@@ -154,7 +154,7 @@ std::vector<ASTNode*> vectorize(ASTNode* arg1, ASTNode* arg2, int n) {
 
 //Producciones
 program:
-    /* vacío */
+    /* vacio */
     | program statement             { root.push_back($2); }
     | program error ';'             { yyerrok; }
 ;
@@ -170,13 +170,13 @@ statement:
     | FUNC ID '(' params ')' LAMBDA body
                                     {
                                         $$ = new FuncDeclaration(*$2, $4, $7, true, yylloc.first_line);
-                                        std::cout << "Definición función inline: " << *$2 << std::endl;
+                                        std::cout << "Definicion funcion inline: " << *$2 << std::endl;
                                         
                                     }
     | FUNC ID '(' params ')' block_expr
                                     {
                                         $$ = new FuncDeclaration(*$2, $4, $6, false, yylloc.first_line);
-                                        std::cout << "Definición función bloque: " << *$2 << std::endl;
+                                        std::cout << "Definicion funcion bloque: " << *$2 << std::endl;
                                         
                                     }
     | let_expr                      { $$ = $1; std::cout << "let_expr " << std::endl; }
@@ -387,6 +387,7 @@ statement:
             | LET decl IN '(' body ')'        { $$ = new LetExpression($2, $5, yylloc.first_line);  }
             | LET decl IN body ';'            { $$ = new LetExpression($2, $4, yylloc.first_line);  }
             | LET decl IN '(' body ')' ';'    { $$ = new LetExpression($2, $5, yylloc.first_line);  }
+            | LET decl ',' let_expr           { $$ = new LetExpression($2, $4, yylloc.first_line);  } //ATENTO A ESTO OJITO
         ;
 
         decl:
@@ -551,6 +552,6 @@ statement:
 %%
 
 void yyerror(const char *msg) {
-    fprintf(stderr, "Error en línea %d, columna %d: %s\n",
+    fprintf(stderr, "Error en linea %d, columna %d: %s\n",
             yylloc.first_line, yylloc.first_column, msg);
 }

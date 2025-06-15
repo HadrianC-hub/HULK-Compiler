@@ -1,30 +1,30 @@
 # HULK Compiler
 
-HULK es un compilador diseñado para el lenguaje **HULK**, desarrollado como parte de un proyecto de la asignatura de Compilación de tercer año de Ciencias de la Computación. El objetivo del compilador es traducir programas escritos en el lenguaje HULK a **LLVM IR**, permitiendo su posterior optimización y ejecución eficiente.
+HULK es un compilador diseñado para el lenguaje **HULK**, desarrollado como parte de un proyecto de la asignatura de Compilacion de tercer año de Ciencias de la Computacion. El objetivo del compilador es traducir programas escritos en el lenguaje HULK a **LLVM IR**, permitiendo su posterior optimizacion y ejecucion eficiente.
 
-## Descripción
+## Descripcion
 
-Este compilador toma como entrada archivos `.hulk` y genera código intermedio en formato `.ll` compatible con LLVM. Está implementado en C++ utilizando herramientas tradicionales de compilación como **Flex** (para el análisis léxico) y **Bison** (para el análisis sintáctico). Además, el compilador incluye:
+Este compilador toma como entrada archivos `.hulk` y genera codigo intermedio en formato `.ll` compatible con LLVM. Esta implementado en C++ utilizando herramientas tradicionales de compilacion como **Flex** (para el analisis lexico) y **Bison** (para el analisis sintactico). Ademas, el compilador incluye:
 
-- Análisis semántico y manejo de tipos.
-- Construcción de un **AST (Árbol de Sintaxis Abstracta)**.
-- Generación de código intermedio LLVM.
+- Analisis semantico y manejo de tipos.
+- Construccion de un **AST (arbol de Sintaxis Abstracta)**.
+- Generacion de codigo intermedio LLVM.
 - Soporte para estructuras del lenguaje HULK: funciones, expresiones, variables, condicionales, ciclos, clases con herencia, etc.
-- Sistema de errores detallado con línea y columna de reporte.
+- Sistema de errores detallado con linea y columna de reporte.
 
 ## Arquitectura
 
 1. **Lexer (`Lexer.l`)**  
-   Genera tokens a partir del código fuente utilizando expresiones regulares.
+   Genera tokens a partir del codigo fuente utilizando expresiones regulares.
 
 2. **Parser (`Parser.y`)**  
    Analiza la estructura gramatical y construye el AST.
 
 3. **AST (`/ast`)**  
-   Contiene las clases que representan los nodos del árbol de sintaxis abstracta.
+   Contiene las clases que representan los nodos del arbol de sintaxis abstracta.
 
-4. **Análisis Semántico (`/semantic`)**  
-   Verifica tipos, declaraciones y coherencia semántica del código.
+4. **Analisis Semantico (`/semantic`)**  
+   Verifica tipos, declaraciones y coherencia semantica del codigo.
 
 5. **Generador LLVM (`/code_generation`)**  
    Transforma el AST validado en LLVM IR.

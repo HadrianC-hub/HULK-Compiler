@@ -30,7 +30,7 @@ public:
     void collectParamUsages(ASTNode *node, const std::string &paramName, std::set<std::string> &types);
     Symbol *lookupMethodInHierarchy(const std::string &typeName, const std::string &methodName);
 
-    // Métodos visit
+    // Metodos visit
     void visit(FuncDeclaration &node) override;
     void visit(BinaryOperation &node) override;
     void visit(FuncCall &node) override;

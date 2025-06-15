@@ -25,15 +25,16 @@ public:
     void visit(class IfExpression& node) override;
     void visit(class WhileLoop& node) override;
     void visit(class ForLoop& node) override;
+    void visit(class TypeDeclaration& node) override;
+    void visit(class InitInstance& node) override;
+    void visit(class MethodCall& node) override;
+    void visit(class SelfCall& node) override; 
 
     //Faltan por implementar
     void visit(ASTNode&) override {}
     void visit(VarDeclaration&) override {}
-    void visit(TypeDeclaration&) override {}
-    void visit(InitInstance&) override {}
     void visit(AttributeDeclaration& node) override {}
     void visit(MethodDeclaration& node) override {}
-    void visit(MethodCall& node) override {}
     void visit(OriginCall&) override {}
-    void visit(SelfCall&) override {}
+    
 };

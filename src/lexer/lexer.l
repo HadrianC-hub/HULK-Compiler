@@ -8,7 +8,7 @@ int yycolumn = 1;
     yylloc.first_column = yycolumn; \
     yylloc.last_line = yylineno; \
     yylloc.last_column = yycolumn + yyleng - 1; \
-    yycolumn += yyleng;  // Actualizar después de registrar la posición
+    yycolumn += yyleng;  // Actualizar despues de registrar la posicion
 %}
 
 %option noyywrap         
@@ -17,33 +17,33 @@ int yycolumn = 1;
 
 %%
 
-[_]+[a-zA-Z0-9_]+       { fprintf(stderr, "Error léxico. Variable inválida: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); }
-[0-9]+[a-zA-Z_]+        { fprintf(stderr, "Error léxico. Variable inválida: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); }
+[_]+[a-zA-Z0-9_]+       { fprintf(stderr, "Error lexico. Variable invalida: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); }
+[0-9]+[a-zA-Z_]+        { fprintf(stderr, "Error lexico. Variable invalida: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); }
 
 [0-9]+(\.[0-9]+)?       { 
                             yylval.num = atof(yytext); 
-                            printf("Token: %s → Línea %d, Columna %d\n", yytext, yylineno, yylloc.first_column);
+                            printf("Token: %s → Linea %d, Columna %d\n", yytext, yylineno, yylloc.first_column);
                             return NUMBER; 
                         }
 \"(?:\\.|[^"])*\"       {
                             std::string raw = yytext;
                             yylval.str = new std::string(raw.substr(1, raw.size() - 2));
-                            printf("String: %s  → Línea %d, Columna %d\n", yytext, yylineno, yylloc.first_column);
+                            printf("String: %s  → Linea %d, Columna %d\n", yytext, yylineno, yylloc.first_column);
                             return STRING;
                         }
                         
 "True"                  {
                             yylval.boolean = true;
-                            printf("Boolean: %s  → Línea %d, Columna %d\n", yytext, yylineno, yylloc.first_column);
+                            printf("Boolean: %s  → Linea %d, Columna %d\n", yytext, yylineno, yylloc.first_column);
                             return BOOL;
                         }
 "False"                 {
                             yylval.boolean = false;
-                            printf("Boolean: %s  → Línea %d, Columna %d\n", yytext, yylineno, yylloc.first_column);
+                            printf("Boolean: %s  → Linea %d, Columna %d\n", yytext, yylineno, yylloc.first_column);
                             return BOOL;
                         }
 "Null"                  { 
-                            printf("Null value → Línea %d, Columna %d\n", yylineno, yylloc.first_column);
+                            printf("Null value → Linea %d, Columna %d\n", yylineno, yylloc.first_column);
                             return NULL_VAL; 
                         }
 [+]                     { printf(" + \n"); return ADD; }
@@ -76,7 +76,7 @@ int yycolumn = 1;
 "print"                 { printf("print\n"); return PRINT; }
 "PI"                    { printf("PI\n"); return PI; }
 "E"                     { printf("E\n"); return E; }
-"function"              { printf("definir nueva función\n"); return FUNC; }
+"function"              { printf("definir nueva funcion\n"); return FUNC; }
 "=>"                    { printf("lambda \n"); return LAMBDA; }
 "let"                   { printf("definir nueva variable\n"); return LET; }
 "in"                    { printf("definir scope\n"); return IN; }
@@ -101,18 +101,18 @@ int yycolumn = 1;
 ","                     { printf(" , \n"); return ','; }          
 [a-zA-Z_][a-zA-Z0-9_]*  {
                             yylval.str = new std::string(yytext);
-                            printf("ID: %s  → Línea %d, Columna %d\n", yytext, yylineno, yylloc.first_column);
+                            printf("ID: %s  → Linea %d, Columna %d\n", yytext, yylineno, yylloc.first_column);
                             return ID;
                         }
 ";"                     { 
-                            printf("';' symbol  → Línea %d, Columna %d\n", yylineno, yylloc.first_column);
+                            printf("';' symbol  → Linea %d, Columna %d\n", yylineno, yylloc.first_column);
                             return ';'; 
                         }
 
 
 [ \t]+                  { /* Whitespace handled by YY_USER_ACTION */ }  // Ignorar espacios
-\n                      { yycolumn = 1; }        // Resetear columna al salto de línea
+\n                      { yycolumn = 1; }        // Resetear columna al salto de linea
 .                       { 
-                            fprintf(stderr, "Error léxico: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); 
+                            fprintf(stderr, "Error lexico: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); 
                         }
 %%

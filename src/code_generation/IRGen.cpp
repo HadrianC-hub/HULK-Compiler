@@ -409,7 +409,7 @@ void IRGenerator::visit(BuiltInFunc &node)
     }
     else
     {
-        throw std::runtime_error("Función Built-In no soportada: " + name);
+        throw std::runtime_error("Funcion Built-In no soportada: " + name);
     }
 
     if (result)
@@ -424,7 +424,7 @@ void IRGenerator::visit(Block &node)
 {
     if (node.expressions.empty())
     {
-        throw std::runtime_error("[ERROR] El bloque debe contener al menos una expresión: (line " + std::to_string(node.line()) + ")");
+        throw std::runtime_error("[ERROR] El bloque debe contener al menos una expresion: (line " + std::to_string(node.line()) + ")");
     }
 
     std::cout << "🔍 BlockNode - Stack size before: " << context.valueStack.size() << std::endl;
@@ -492,7 +492,7 @@ void IRGenerator::visit(Block &node)
 
     if (!lastValidResult)
     {
-        throw std::runtime_error("[ERROR] El bloque no tiene valor retornable en su última expresión: (line " + std::to_string(node.line()) + ")");
+        throw std::runtime_error("[ERROR] El bloque no tiene valor retornable en su ultima expresion: (line " + std::to_string(node.line()) + ")");
     }
 
     std::cout << "[EMITIDO] Bloque completado - Tamaño final: " << context.valueStack.size() << "\n";
@@ -522,7 +522,7 @@ void IRGenerator::visit(VarFuncName &node)
         if (!val)
         {
             throw std::runtime_error("[ERROR] Variable indefinida '" + node.name +
-                                     "' en línea " + std::to_string(node.line()));
+                                     "' en linea " + std::to_string(node.line()));
         }
     }
 
@@ -538,7 +538,7 @@ void IRGenerator::visit(FuncDeclaration &node)
     const auto &params = *node.params;
     if (params.size() > context.valueStack.size())
     {
-        throw std::runtime_error("[ERROR] No hay argumentos suficientes para la función: " + node.name + "");
+        throw std::runtime_error("[ERROR] No hay argumentos suficientes para la funcion: " + node.name + "");
     }
 
     for (int i = params.size() - 1; i >= 0; --i)
@@ -570,7 +570,7 @@ void IRGenerator::visit(FuncCall &node)
     auto *decl = context.lookupFuncDecl(node.funcName);
     if (!decl)
     {
-        throw std::runtime_error("[ERROR] Función no declarada: " + node.funcName);
+        throw std::runtime_error("[ERROR] Funcion no declarada: " + node.funcName);
     }
 
     decl->accept(*this);
@@ -584,6 +584,10 @@ void IRGenerator::visit(LetExpression &node)
     // Procesar declaraciones
     for (const LetDeclaration &decl : *node.declarations)
     {
+        // Push the variable name and type onto the placeholder stack before processing its value
+        context.typeSystem.pushPlaceholder(decl.name, "var");
+        std::cout << "  📝 Added placeholder: " << decl.name << " of type var" << std::endl;
+
         // Procesar el inicializador
         decl.initializer->accept(*this);
         llvm::Value *initValue = context.valueStack.back();
@@ -591,6 +595,9 @@ void IRGenerator::visit(LetExpression &node)
 
         // Agregar variables al scope
         context.addLocal(decl.name, initValue);
+
+        // Pop the placeholder after processingAdd commentMore actions
+        context.typeSystem.popPlaceholder();
     }
 
     // Procesar el cuerpo
@@ -613,7 +620,7 @@ void IRGenerator::visit(Assignment &node)
         const std::string &varName = idNode->name;
         bool found = false;
 
-        // Buscar a través de los scope (desde adentro hacia afuera)
+        // Buscar a traves de los scope (desde adentro hacia afuera)
         for (auto it = context.localScopes.rbegin(); it != context.localScopes.rend(); ++it)
         {
             auto foundVar = it->find(varName);
@@ -633,7 +640,7 @@ void IRGenerator::visit(Assignment &node)
         if (!found)
         {
             throw std::runtime_error("[ERROR] Variable indefinida '" + varName +
-                                     "' en línea: " + std::to_string(node.line()));
+                                     "' en linea: " + std::to_string(node.line()));
         }
 
         // 5. Push the assigned value onto the stack
@@ -642,7 +649,7 @@ void IRGenerator::visit(Assignment &node)
     }
     else
     {
-        throw std::runtime_error("[ERROR] La parte izquerda debe ser un asignador. Línea: " +
+        throw std::runtime_error("[ERROR] La parte izquerda debe ser un asignador. Linea: " +
                                  std::to_string(node.line()));
     }
 }
@@ -652,30 +659,30 @@ void IRGenerator::visit(IfExpression &node)
     // Procesar cada rama if y elif
     for (const IfBranch &branch : *node.branches)
     {
-        // Condición de evaluación
+        // Condicion de evaluacion
         branch.condition->accept(*this);
         llvm::Value *condition = context.valueStack.back();
         context.valueStack.pop_back();
 
-        // Comparación directa con true (1)
+        // Comparacion directa con true (1)
         if (auto *constInt = llvm::dyn_cast<llvm::ConstantInt>(condition))
         {
             if (constInt->getZExtValue() == 1)
             {
-                // Condición true, evaluar cuerpo
+                // Condicion true, evaluar cuerpo
                 branch.body->accept(*this);
                 return;
             }
         }
     }
 
-    // Si llegamos aquí, ninguna condición fue true, evaluando cuerpo de else
+    // Si llegamos aqui, ninguna condicion fue true, evaluando cuerpo de else
     if (node.elseBody)
     {
         node.elseBody->accept(*this);
     }
 
-    std::cout << "[CHECK] Expresión IF completada - Tamaño de pila: " << context.valueStack.size() << std::endl;
+    std::cout << "[CHECK] Expresion IF completada - Tamaño de pila: " << context.valueStack.size() << std::endl;
 }
 
 void IRGenerator::visit(WhileLoop &node)
@@ -690,18 +697,18 @@ void IRGenerator::visit(WhileLoop &node)
     // Comenzar ciclo
     while (true)
     {
-        // Evaluar condición
+        // Evaluar condicion
         node.condition->accept(*this);
         llvm::Value *condition = context.valueStack.back();
         context.valueStack.pop_back();
 
-        // Comparación directa con true (1)
+        // Comparacion directa con true (1)
         if (auto *constInt = llvm::dyn_cast<llvm::ConstantInt>(condition))
         {
             if (constInt->getZExtValue() == 1)
             {
-                // Condición es true, evaluar cuerpo
-                std::cout << "Iteración " << ++iteration << std::endl;
+                // Condicion es true, evaluar cuerpo
+                std::cout << "Iteracion " << ++iteration << std::endl;
                 node.body->accept(*this);
 
                 // Si el cuerpo produjo un valor, almacenarlo
@@ -714,7 +721,7 @@ void IRGenerator::visit(WhileLoop &node)
             }
             else
             {
-                // Condición es falsa, salir del loop
+                // Condicion es falsa, salir del loop
                 break;
             }
         }
@@ -730,8 +737,8 @@ void IRGenerator::visit(WhileLoop &node)
             {
                 if (boolVal->getZExtValue() == 1)
                 {
-                    // Condición es true, evaluar cuerpo
-                    std::cout << "Iteración " << ++iteration << std::endl;
+                    // Condicion es true, evaluar cuerpo
+                    std::cout << "Iteracion " << ++iteration << std::endl;
                     node.body->accept(*this);
 
                     // Si el cuerpo produjo un valor, almacenarlo
@@ -744,16 +751,16 @@ void IRGenerator::visit(WhileLoop &node)
                 }
                 else
                 {
-                    // Condición es falsa, salir del loop
+                    // Condicion es falsa, salir del loop
                     break;
                 }
             }
         }
     }
 
-    std::cout << "[CHECK] Ciclo WHILE terminado después de " << iteration << " iteraciones" << std::endl;
+    std::cout << "[CHECK] Ciclo WHILE terminado despues de " << iteration << " iteraciones" << std::endl;
 
-    // Después del ciclo, enviar el último valor del cuerpo a la stack global (si hay algún valor devuelto)
+    // Despues del ciclo, enviar el ultimo valor del cuerpo a la stack global (si hay algun valor devuelto)
     // NOTA: ARREGLAR VALOR DEVUELTO
     if (!loopBodyValues.empty())
     {
@@ -793,7 +800,7 @@ void IRGenerator::visit(ForLoop &node)
         // Obtener valor actual de la variable del ciclo for
         llvm::Value *currentValue = context.lookupLocal(node.varName);
 
-        // Comparación de la variable con el valor final
+        // Comparacion de la variable con el valor final
         llvm::Value *condition = context.builder.CreateFCmpULT(
             currentValue,
             endValue,
@@ -804,7 +811,7 @@ void IRGenerator::visit(ForLoop &node)
         {
             if (constInt->getZExtValue() == 1)
             {
-                // Evaluar el cuerpo del ciclo para esta iteración
+                // Evaluar el cuerpo del ciclo para esta iteracion
                 node.body->accept(*this);
 
                 // Almacenar valor del cuerpo si existe
@@ -821,7 +828,7 @@ void IRGenerator::visit(ForLoop &node)
 
                     if (isPrint)
                     {
-                        // Para caso de imprimir, mantener el valor en la stack global y además meter en la stack local
+                        // Para caso de imprimir, mantener el valor en la stack global y ademas meter en la stack local
                         loopBodyValues.push_back(bodyValue);
                     }
                     else
@@ -855,8 +862,8 @@ void IRGenerator::visit(ForLoop &node)
             {
                 if (boolVal->getZExtValue() == 1)
                 {
-                    // Evaluar cuerpo para esta iteración
-                    std::cout << "Iteración " << ++iteration << std::endl;
+                    // Evaluar cuerpo para esta iteracion
+                    std::cout << "Iteracion " << ++iteration << std::endl;
                     node.body->accept(*this);
 
                     // Almacenar valor del cuerpo si existe
@@ -873,7 +880,7 @@ void IRGenerator::visit(ForLoop &node)
 
                         if (isPrint)
                         {
-                            // Para caso de imprimir, mantener el valor en la stack global y además meter en la stack local
+                            // Para caso de imprimir, mantener el valor en la stack global y ademas meter en la stack local
                             loopBodyValues.push_back(bodyValue);
                         }
                         else
@@ -898,7 +905,7 @@ void IRGenerator::visit(ForLoop &node)
         }
     }
 
-    std::cout << "[CHECK] Ciclo FOR terminado después de " << iteration << " iteraciones" << std::endl;
+    std::cout << "[CHECK] Ciclo FOR terminado despues de " << iteration << " iteraciones" << std::endl;
 
     // 7. Push the last body value to global stack if any
     if (!loopBodyValues.empty())
@@ -910,4 +917,261 @@ void IRGenerator::visit(ForLoop &node)
     context.PopVar();
 
     std::cout << "[CHECK] Ciclo for terminado - Tamaño de pila: " << context.valueStack.size() << std::endl;
+}
+
+void IRGenerator::visit(TypeDeclaration &node)
+{
+    std::cout << "🔍 TypeDeclaration: " << node.name << std::endl;
+
+    // Register the type
+    auto &typeDef = context.typeSystem.registerType(node.name, node.baseType);
+
+    // Set constructor parameters and base argsAdd commentMore actions
+    typeDef.constructorParams.clear();
+    if (node.constructorParams)
+    {
+        for (const auto &param : *node.constructorParams)
+        {
+            typeDef.constructorParams.push_back(param.name);
+        }
+    }
+    typeDef.baseArgs = node.baseArgs;
+
+    // Set current type for processing attributes and methods
+    context.typeSystem.setCurrentType(node.name);
+
+    // Process attributes
+    if (node.body->attributes)
+    {
+        for (const auto &attr : *node.body->attributes)
+        {
+            context.typeSystem.addAttribute(attr.name, node.name, attr.initializer);
+            std::cout << "  📝 Added attribute: " << attr.name << std::endl;
+        }
+    }
+
+    // Process methods
+    if (node.body->methods)
+    {
+        for (const auto &method : *node.body->methods)
+        {
+            context.typeSystem.addMethod(node.name, method.name, method.params, method.body, method.returnType);
+            std::cout << "  📝 Added method: " << method.name << std::endl;
+        }
+    }
+
+    std::cout << "✅ Type " << node.name << " processed" << std::endl;
+}
+
+void IRGenerator::visit(InitInstance &node)
+{
+    std::cout << "🔍 NewInstance: " << node.typeName << std::endl;
+
+    // Check if we're inside a let declaration
+    std::string varName = context.typeSystem.getCurrentPlaceholder().name;
+    if (!varName.empty())
+    {
+        std::cout << "  📝 Using placeholder variable: " << varName << std::endl;
+    }
+
+    // 1. Initialize instance variables map and set current type
+    std::map<std::pair<std::string, std::string>, llvm::Value *> instanceVars;
+    std::string currType = node.typeName;
+    context.typeSystem.setCurrentType(currType);
+
+    // 2. Start a new variable scope without inheritance
+    context.PushVar(false);
+
+    // Process constructor arguments first
+    std::vector<llvm::Value *> args;
+    for (ASTNode *arg : node.args)
+    {
+        arg->accept(*this);
+        args.push_back(context.valueStack.back());
+        context.valueStack.pop_back();
+    }
+
+    // Process type hierarchy
+    while (!currType.empty())
+    {
+        std::cout << "  🔄 Processing type: " << currType << std::endl;
+
+        // Get type information
+        const auto &typeConst = context.typeSystem.getConstructorParams(currType);
+        const auto &fatherArgs = context.typeSystem.getBaseArgs(currType);
+        const auto &attrType = context.typeSystem.getAttributes(currType);
+        const auto &father = context.typeSystem.getParentType(currType);
+
+        // Process constructor parameters
+        if (!typeConst.empty())
+        {
+            for (size_t i = 0; i < typeConst.size() && i < args.size(); ++i)
+            {
+                context.addLocal(typeConst[i], args[i]);
+                std::cout << "    📝 Added constructor param: " << typeConst[i] << std::endl;
+            }
+            // Remove processed args
+            args.erase(args.begin(), args.begin() + std::min(typeConst.size(), args.size()));
+        }
+
+        // Process parent constructor parameters
+        if (father)
+        {
+            const auto &fatherConst = context.typeSystem.getConstructorParams(*father);
+
+            // Process base args first
+            if (!fatherArgs.empty())
+            {
+                for (size_t i = 0; i < fatherArgs.size() && i < fatherConst.size(); ++i)
+                {
+                    fatherArgs[i]->accept(*this);
+                    context.addLocal(fatherConst[i], context.valueStack.back());
+                    context.valueStack.pop_back();
+                    std::cout << "    📝 Added base arg: " << fatherConst[i] << std::endl;
+                }
+            }
+
+            // Process remaining args with remaining parent constructor params
+            size_t startIdx = fatherArgs.size();
+            for (size_t i = 0; i < fatherConst.size() - startIdx && i < args.size(); ++i)
+            {
+                context.addLocal(fatherConst[startIdx + i], args[i]);
+                std::cout << "    📝 Added remaining parent param: " << fatherConst[startIdx + i] << std::endl;
+            }
+            // Remove processed args
+            args.erase(args.begin(), args.begin() + std::min(fatherConst.size() - startIdx, args.size()));
+        }
+
+        // Process attributes
+        for (const auto &[attrName, attr] : attrType)
+        {
+            if (attr.initializer)
+            {
+                attr.initializer->accept(*this);
+                instanceVars[{attrName, attr.TypeName}] = context.valueStack.back();
+                context.valueStack.pop_back();
+                std::cout << "    📝 Added attribute: " << attrName << " of type " << attr.TypeName << std::endl;
+            }
+        }
+
+        // Move to parent type
+        if (father)
+        {
+            currType = *father;
+            context.typeSystem.setCurrentType(currType);
+        }
+    }
+
+    // Clean up
+    context.PopVar();
+    context.typeSystem.setCurrentType("");
+
+    // Create the instance with its variablesAdd commentMore actions
+    context.typeSystem.createInstance(varName, node.typeName, instanceVars);
+
+    std::cout << "✅ Instance created: " << varName << std::endl;
+}
+
+void IRGenerator::visit(MethodCall &node)
+{
+    std::cout << "🔍 MethodCall: " << node.instanceName << "." << node.methodName << std::endl;
+
+    // 1. Get instance type and set currentType
+    std::string typeName = context.typeSystem.getInstanceType(node.instanceName);
+    if (typeName.empty())
+    {
+        throw std::runtime_error("❌ Instance '" + node.instanceName + "' not found at line " + std::to_string(node.line()));
+    }
+
+    context.typeSystem.setCurrentType(typeName);
+
+    // 2. Push instance variables onto the stackAdd commentMore actions
+    try
+    {
+        context.typeSystem.pushCurrentInstanceVars(context.typeSystem.getInstanceVars(node.instanceName));
+    }
+    catch (const std::runtime_error &e)
+    {
+        throw std::runtime_error("❌ " + std::string(e.what()) + " at line " + std::to_string(node.line()));
+    }
+
+    // 3. Create new Scope without inheritance
+    context.PushVar(false);
+
+    // 4. Set method name in placeholderStack
+    context.typeSystem.pushPlaceholder(node.methodName, "method");
+
+    // 5. Find method in type hierarchy
+    TypeMethod *method = nullptr;
+    std::string currType = typeName;
+    while (!currType.empty() && !method)
+    {
+        method = context.typeSystem.findMethod(currType, node.methodName);
+        if (!method)
+        {
+            currType = context.typeSystem.getParentType(currType).value_or("");
+        }
+    }
+
+    if (!method)
+    {
+        throw std::runtime_error("❌ Method '" + node.methodName + "' not found in type hierarchy starting from '" +
+                                 typeName + "' at line " + std::to_string(node.line()));
+    }
+
+    // 6. Process method arguments and parametersAdd commentMore actions
+    std::vector<llvm::Value *> args;
+    for (ASTNode *arg : node.args)
+    {
+        arg->accept(*this);
+        args.push_back(context.valueStack.back());
+        context.valueStack.pop_back();
+    }
+
+    // Associate parameters with argument values
+    if (method->params)
+    {
+        for (size_t i = 0; i < method->params->size() && i < args.size(); ++i)
+        {
+            context.addLocal((*method->params)[i].name, args[i]);
+            std::cout << "  📝 Bound param " << (*method->params)[i].name << std::endl;
+        }
+    }
+
+    // 7. Evaluate method body
+    method->body->accept(*this);
+
+    // 8. Clean up
+    context.typeSystem.setCurrentType("");
+    context.typeSystem.popPlaceholder();
+    context.PopVar();
+    context.typeSystem.popCurrentInstanceVars();
+
+    std::cout << "✅ Method call processed" << std::endl;
+}
+
+void IRGenerator::visit(SelfCall &node)
+{
+    std::cout << "🔍 SelfCall: " << node.varName << std::endl;
+
+    // Get current type
+    std::string currentType = context.typeSystem.getCurrentType();
+    if (currentType.empty())
+    {
+        throw std::runtime_error("❌ 'self' access outside of type context at line " + std::to_string(node.line()));
+    }
+
+    // Handle self variables
+    llvm::Value *val = context.typeSystem.getCurrentInstanceVar(node.varName, currentType);
+
+    if (!val)
+    {
+        throw std::runtime_error("❌ Undefined variable '" + node.varName +
+                                 "' in type '" + currentType +
+                                 "' at line " + std::to_string(node.line()));
+    }
+
+    context.valueStack.push_back(val);
+
+    std::cout << "✅ Self access processed" << std::endl;
 }

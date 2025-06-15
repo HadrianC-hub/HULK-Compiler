@@ -4,6 +4,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Value.h"
+#include "TypeSystem.hpp"
 
 #include <string>
 #include <map>
@@ -22,6 +23,8 @@ public:
     std::map<std::string, llvm::Value *> locals;
     std::vector<llvm::Value *> valueStack;
 
+    TypeSystem typeSystem;
+
     Context();
 
     void Generate(std::vector<ASTNode *> &root);
@@ -39,7 +42,7 @@ public:
         }
         else
         {
-            // Create scope vacío (no herencia - funciones)
+            // Create scope vacio (no herencia - funciones)
             localScopes.emplace_back();
         }
     }

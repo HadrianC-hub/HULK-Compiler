@@ -4,13 +4,13 @@
 #include <vector>
 #include <iostream>
 
-// Declaración anticipada para evitar incluir todo el AST
+// Declaracion anticipada para evitar incluir todo el AST
 class ASTNode;
 
 /**
- * Verifica si un AST es válido.
+ * Verifica si un AST es valido.
  * @param nodes Vector de punteros a nodos del AST.
- * @return true si todos los nodos son no nulos y el vector no está vacío.
+ * @return true si todos los nodos son no nulos y el vector no esta vacio.
  */
 bool is_valid_ast(const std::vector<ASTNode*>& nodes);
 

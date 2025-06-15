@@ -12,20 +12,45 @@ Context::Context()
 void Context::Generate(std::vector<ASTNode *> &root)
 {
 
-    PushFunc();
-
+    // Separate type declarations, function declarations, and expressions
+    std::vector<ASTNode *> typeDecls;
+    std::vector<ASTNode *> funcDecls;
     std::vector<ASTNode *> exprs;
+
     for (ASTNode *node : root)
     {
-        if (auto *fn = dynamic_cast<FuncDeclaration *>(node))
+        if (auto *typeDecl = dynamic_cast<TypeDeclaration *>(node))
         {
-            addFuncDecl(fn->name, fn);
+            typeDecls.push_back(node);
+        }
+        else if (auto *fn = dynamic_cast<FuncDeclaration *>(node))
+        {
+            funcDecls.push_back(node);
         }
         else
         {
             exprs.push_back(node);
         }
     }
+
+    // Process type declarations first
+    PushFunc(); // Global function registry
+    IRGenerator generator(*this);
+    for (ASTNode *node : typeDecls)
+    {
+        node->accept(generator);
+    }
+
+    // Then process function declarations
+    for (ASTNode *node : funcDecls)
+    {
+        if (auto *fn = dynamic_cast<FuncDeclaration *>(node))
+        {
+            addFuncDecl(fn->name, fn);
+        }
+    }
+
+    // Finally process expressions
     root = std::move(exprs);
 
     llvm::FunctionType *printfType = llvm::FunctionType::get(
@@ -47,7 +72,7 @@ void Context::Generate(std::vector<ASTNode *> &root)
     llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", mainFunc);
     builder.SetInsertPoint(entry);
 
-    IRGenerator generator(*this);
+    // Generate code for all remaining nodes
     for (ASTNode *node : root)
     {
         node->accept(generator);
@@ -93,5 +118,5 @@ void Context::WriteDownCode(const std::string &filename)
 
     module.print(out, nullptr);
     out.flush();
-    std::cout << "[IRCODE] Representación intermedia: " << filename << std::endl;
+    std::cout << "[IRCODE] Representacion intermedia: " << filename << std::endl;
 }

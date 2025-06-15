@@ -21,13 +21,13 @@ std::string SemanticValidation::inferParamUsageType(const std::string &paramName
     if (usageTypes.empty())
         return "Unknown";
 
-    // Si solo hay un tipo, ese es el tipo más específico
+    // Si solo hay un tipo, ese es el tipo mas especifico
     if (usageTypes.size() == 1)
     {
         return *usageTypes.begin();
     }
 
-    // Si hay múltiples tipos, necesitamos encontrar el más específico común
+    // Si hay multiples tipos, necesitamos encontrar el mas especifico comun
     std::vector<std::string> types(usageTypes.begin(), usageTypes.end());
 
     // Si todos los tipos son Unknown, asumimos Number
@@ -52,7 +52,7 @@ std::string SemanticValidation::inferParamUsageType(const std::string &paramName
                        { return t == "Unknown"; }),
         types.end());
 
-    // Si después de filtrar Unknown no quedan tipos, asumimos Number
+    // Si despues de filtrar Unknown no quedan tipos, asumimos Number
     if (types.empty())
     {
         return "Number";
@@ -60,7 +60,7 @@ std::string SemanticValidation::inferParamUsageType(const std::string &paramName
 
     std::string commonType = symbolTable.lowestCommonAncestor(types);
 
-    // Verificar si hay ambigüedad en la jerarquía de tipos
+    // Verificar si hay ambigüedad en la jerarquia de tipos
     bool hasAmbiguity = false;
     for (const auto &type : types)
     {
@@ -71,7 +71,7 @@ std::string SemanticValidation::inferParamUsageType(const std::string &paramName
         }
     }
 
-    // Si hay ambigüedad, intentamos ser más específicos
+    // Si hay ambigüedad, intentamos ser mas especificos
     if (hasAmbiguity)
     {
         // Si hay Number entre los tipos, preferimos Number
@@ -89,7 +89,7 @@ std::string SemanticValidation::inferParamUsageType(const std::string &paramName
         {
             return "Boolean";
         }
-        return "Object"; // Si no podemos ser más específicos, usamos Object
+        return "Object"; // Si no podemos ser mas especificos, usamos Object
     }
 
     return commonType;
@@ -100,7 +100,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
     if (!node)
         return;
 
-    // Identificador que referencia el parámetro
+    // Identificador que referencia el parametro
     if (auto *id = dynamic_cast<VarFuncName *>(node))
     {
         if (id->name == paramName && id->type() != "Unknown" && id->type() != "Error")
@@ -115,10 +115,10 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
         collectParamUsages(bin->left, paramName, types);
         collectParamUsages(bin->right, paramName, types);
 
-        // Verificar restricciones de tipo para operaciones específicas
+        // Verificar restricciones de tipo para operaciones especificas
         if (bin->op == "+" || bin->op == "-" || bin->op == "*" || bin->op == "/" || bin->op == "^" || bin->op == "%")
         {
-            // Operaciones aritméticas requieren Number
+            // Operaciones aritmeticas requieren Number
             auto *leftId = dynamic_cast<VarFuncName *>(bin->left);
             auto *rightId = dynamic_cast<VarFuncName *>(bin->right);
             if ((leftId && leftId->name == paramName) || (rightId && rightId->name == paramName))
@@ -128,7 +128,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
         }
         else if (bin->op == ">" || bin->op == "<" || bin->op == ">=" || bin->op == "<=")
         {
-            // Operaciones de comparación requieren Number
+            // Operaciones de comparacion requieren Number
             auto *leftId = dynamic_cast<VarFuncName *>(bin->left);
             auto *rightId = dynamic_cast<VarFuncName *>(bin->right);
             if ((leftId && leftId->name == paramName) || (rightId && rightId->name == paramName))
@@ -138,7 +138,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
         }
         else if (bin->op == "&" || bin->op == "|")
         {
-            // Operaciones lógicas requieren Boolean
+            // Operaciones logicas requieren Boolean
             auto *leftId = dynamic_cast<VarFuncName *>(bin->left);
             auto *rightId = dynamic_cast<VarFuncName *>(bin->right);
             if ((leftId && leftId->name == paramName) || (rightId && rightId->name == paramName))
@@ -148,7 +148,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
         }
         else if (bin->op == "@" || bin->op == "@@")
         {
-            // Operaciones de concatenación requieren String o Number
+            // Operaciones de concatenacion requieren String o Number
             auto *leftId = dynamic_cast<VarFuncName *>(bin->left);
             auto *rightId = dynamic_cast<VarFuncName *>(bin->right);
 
@@ -185,7 +185,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
         }
         else if (bin->op == "==" || bin->op == "!=")
         {
-            // Operaciones de comparación requieren tipos compatibles
+            // Operaciones de comparacion requieren tipos compatibles
             auto *leftId = dynamic_cast<VarFuncName *>(bin->left);
             auto *rightId = dynamic_cast<VarFuncName *>(bin->right);
             if (leftId && leftId->name == paramName)
@@ -219,7 +219,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
         for (auto *arg : call->args)
             collectParamUsages(arg, paramName, types);
 
-        // Si el parámetro es uno de los argumentos, inferir del tipo esperado por la función
+        // Si el parametro es uno de los argumentos, inferir del tipo esperado por la funcion
         Symbol *funcSym = symbolTable.lookup(call->funcName);
         if (funcSym && funcSym->kind == "function")
         {
@@ -229,7 +229,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
                 {
                     if (id->name == paramName)
                     {
-                        // Si el tipo del parámetro de la función es Unknown, intentar inferirlo del cuerpo
+                        // Si el tipo del parametro de la funcion es Unknown, intentar inferirlo del cuerpo
                         if (funcSym->params[i] == "Unknown" && funcSym->body)
                         {
                             std::set<std::string> paramTypes;
@@ -264,7 +264,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
         {
             collectParamUsages(arg, paramName, types);
 
-            // Si este argumento es el parámetro que estamos inferiendo y la función requiere Number, inferir Number
+            // Si este argumento es el parametro que estamos inferiendo y la funcion requiere Number, inferir Number
             if (auto *id = dynamic_cast<VarFuncName *>(arg))
             {
                 if (id->name == paramName)
@@ -283,7 +283,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
     // Method call
     else if (auto *method = dynamic_cast<MethodCall *>(node))
     {
-        // Analizar todos los argumentos de la llamada al método
+        // Analizar todos los argumentos de la llamada al metodo
         for (auto *arg : method->args)
         {
             collectParamUsages(arg, paramName, types);
@@ -292,7 +292,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
         // Obtener el tipo del objeto (instanceName se refiere al nombre de la instancia)
         std::string objType;
 
-        // Buscamos el símbolo de la instancia para obtener su tipo
+        // Buscamos el simbolo de la instancia para obtener su tipo
         Symbol *instanceSym = symbolTable.lookup(method->instanceName);
         if (!instanceSym)
             return; // si no se encuentra, abortamos esta rama
@@ -319,7 +319,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
                     }
                 }
 
-                break; // método encontrado, no seguimos subiendo en herencia
+                break; // metodo encontrado, no seguimos subiendo en herencia
             }
 
             if (typeSym->parentType.empty())
@@ -336,7 +336,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
         {
             collectParamUsages(decl.initializer, paramName, types);
 
-            // Si el parámetro es usado en el inicializador, su tipo debe ser compatible
+            // Si el parametro es usado en el inicializador, su tipo debe ser compatible
             if (auto *id = dynamic_cast<VarFuncName *>(decl.initializer))
             {
                 if (id->name == paramName)
@@ -351,7 +351,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
     // If expression
     else if (auto *ifn = dynamic_cast<IfExpression *>(node))
     {
-        // Analizar condición
+        // Analizar condicion
         collectParamUsages(ifn->branches->front().condition, paramName, types);
 
         // Analizar todas las ramas
@@ -421,7 +421,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
         {
             collectParamUsages(decl->initializer, paramName, types);
 
-            // Si el parámetro es usado en el inicializador, su tipo debe ser compatible
+            // Si el parametro es usado en el inicializador, su tipo debe ser compatible
             if (auto *id = dynamic_cast<VarFuncName *>(decl->initializer))
             {
                 if (id->name == paramName)
@@ -445,7 +445,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
         for (auto *arg : inst->args)
             collectParamUsages(arg, paramName, types);
 
-        // Si el parámetro es uno de los argumentos, inferir del tipo esperado por el constructor
+        // Si el parametro es uno de los argumentos, inferir del tipo esperado por el constructor
         TypeSymbol *typeSym = symbolTable.lookupType(inst->typeName);
         if (typeSym)
         {
@@ -474,7 +474,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
             }
         }
 
-        // Recolectar tipos desde cuerpos de métodos
+        // Recolectar tipos desde cuerpos de metodos
         if (typeDecl->body && typeDecl->body->methods)
         {
             for (const auto &method : *typeDecl->body->methods)
@@ -496,10 +496,10 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
         return;
     }
 
-    // Otro nodo no manejado explícitamente
+    // Otro nodo no manejado explicitamente
     else
     {
-        // Opcional: log de depuración
+        // Opcional: log de depuracion
         // std::cerr << "Nodo no manejado en collectParamUsages: " << typeid(*node).name() << "\n";
     }
 }
@@ -548,46 +548,46 @@ void SemanticValidation::validate(const std::vector<ASTNode *> &nodes)
         node->accept(collector);
     }
 
-    std::cout << "Fase de recolección completada." << std::endl;
+    std::cout << "Fase de recoleccion completada." << std::endl;
 
     for (ASTNode *node : nodes)
     {
         try
         {
-            std::cout << "Análisis semántico de: " << typeid(*node).name() << std::endl;
+            std::cout << "Analisis semantico de: " << typeid(*node).name() << std::endl;
             node->accept(*this);
         }
         catch (const std::exception &e)
         {
-            std::cerr << "Error durante análisis semántico: " << e.what() << std::endl;
+            std::cerr << "Error durante analisis semantico: " << e.what() << std::endl;
         }
     }
 
     if (!errors.empty())
     {
-        std::cerr << "Errores semánticos encontrados:\n";
+        std::cerr << "Errores semanticos encontrados:\n";
         for (const auto &e : errors)
         {
-            std::cerr << "- Línea " << e.line << ": " << e.message << "\n";
+            std::cerr << "- Linea " << e.line << ": " << e.message << "\n";
         }
     }
     else
     {
-        std::cout << "No se encontraron errores semánticos.\n";
+        std::cout << "No se encontraron errores semanticos.\n";
     }
 
     if (!errors.empty())
     {
-        std::cerr << "Errores semánticos presentes. Abortando ejecución.\n";
+        std::cerr << "Errores semanticos presentes. Abortando ejecucion.\n";
         exit(1);
     }
 
-    std::cout << "Análisis semántico completado." << std::endl;
+    std::cout << "Analisis semantico completado." << std::endl;
 }
 
 void SemanticValidation::visit(ASTNode &node) {}
 
-// Implementación de visitas a nodos
+// Implementacion de visitas a nodos
 
 void SemanticValidation::visit(UnaryOperation &node)
 {
@@ -605,7 +605,7 @@ void SemanticValidation::visit(UnaryOperation &node)
     }
     else if (node.op == "!")
     {
-        // Para negación lógica, si el operando es Unknown, asumimos Boolean
+        // Para negacion logica, si el operando es Unknown, asumimos Boolean
         if (operandType == "Unknown")
             operandType = "Boolean";
 
@@ -645,7 +645,7 @@ void SemanticValidation::visit(BuiltInFunc &node)
     {
         if (arity != 1)
         {
-            errors.emplace_back("La función 'print' requiere exactamente 1 argumento", node.line());
+            errors.emplace_back("La funcion 'print' requiere exactamente 1 argumento", node.line());
             node._type = "Error";
             return;
         }
@@ -655,7 +655,7 @@ void SemanticValidation::visit(BuiltInFunc &node)
     {
         if (node.args.size() != 1)
         {
-            errors.emplace_back("Función " + fn + " requiere 1 argumento", node.line());
+            errors.emplace_back("Funcion " + fn + " requiere 1 argumento", node.line());
             node._type = "Error";
         }
         if (node.args[0]->type() == "Unknown")
@@ -666,7 +666,7 @@ void SemanticValidation::visit(BuiltInFunc &node)
 
         else if (node.args[0]->type() != "Number")
         {
-            errors.emplace_back("El argumento de '" + fn + "' debe ser un número", node.line());
+            errors.emplace_back("El argumento de '" + fn + "' debe ser un numero", node.line());
             node._type = "Error";
         }
         else
@@ -678,7 +678,7 @@ void SemanticValidation::visit(BuiltInFunc &node)
     {
         if (arity != 2)
         {
-            errors.emplace_back("La función 'log' requiere 2 argumentos", node.line());
+            errors.emplace_back("La funcion 'log' requiere 2 argumentos", node.line());
             node._type = "Error";
         }
         if (node.args[0]->type() == "Unknown")
@@ -690,7 +690,7 @@ void SemanticValidation::visit(BuiltInFunc &node)
 
         else if (node.args[0]->type() != "Number" || node.args[1]->type() != "Number")
         {
-            errors.emplace_back("Los argumentos de 'log' deben ser numéricos", node.line());
+            errors.emplace_back("Los argumentos de 'log' deben ser numericos", node.line());
             node._type = "Error";
         }
         else
@@ -702,7 +702,7 @@ void SemanticValidation::visit(BuiltInFunc &node)
     {
         if (arity != 0)
         {
-            errors.emplace_back("La función 'rand' no acepta argumentos", node.line());
+            errors.emplace_back("La funcion 'rand' no acepta argumentos", node.line());
             node._type = "Error";
         }
         else
@@ -714,7 +714,7 @@ void SemanticValidation::visit(BuiltInFunc &node)
     {
         if (arity != 2)
         {
-            errors.emplace_back("La función '" + fn + "' requiere 2 argumentos", node.line());
+            errors.emplace_back("La funcion '" + fn + "' requiere 2 argumentos", node.line());
             node._type = "Error";
         }
         if (node.args[0]->type() == "Unknown")
@@ -725,7 +725,7 @@ void SemanticValidation::visit(BuiltInFunc &node)
             node.args[1]->type() = "Number";
         else if (node.args[0]->type() != "Number" || node.args[1]->type() != "Number")
         {
-            errors.emplace_back("Los argumentos de '" + fn + "' deben ser numéricos", node.line());
+            errors.emplace_back("Los argumentos de '" + fn + "' deben ser numericos", node.line());
             node._type = "Error";
         }
         else
@@ -735,14 +735,14 @@ void SemanticValidation::visit(BuiltInFunc &node)
     }
     else
     {
-        errors.emplace_back("Función builtin '" + fn + "' no reconocida", node.line());
+        errors.emplace_back("Funcion builtin '" + fn + "' no reconocida", node.line());
         node._type = "Error";
     }
 }
 
 void SemanticValidation::visit(FuncDeclaration &node)
 {
-    std::cout << "\n=== Iniciando análisis de función: " << node.name << " ===\n";
+    std::cout << "\n=== Iniciando analisis de funcion: " << node.name << " ===\n";
     std::vector<std::string> paramTypes;
     for (const auto &param : *node.params)
         paramTypes.push_back(param.type.empty() ? "Unknown" : param.type);
@@ -753,28 +753,28 @@ void SemanticValidation::visit(FuncDeclaration &node)
 
     std::unordered_map<std::string, bool> paramSeen;
 
-    std::cout << "Paso 1: Registrando parámetros\n";
+    std::cout << "Paso 1: Registrando parametros\n";
     for (const auto &param : *node.params)
     {
         if (paramSeen.count(param.name))
         {
-            errors.emplace_back("Parámetro duplicado '" + param.name + "'", node.line());
+            errors.emplace_back("Parametro duplicado '" + param.name + "'", node.line());
             node._type = "Error";
             continue;
         }
 
         paramSeen[param.name] = true;
         std::string paramType = param.type.empty() ? "Unknown" : param.type;
-        std::cout << "  - Parámetro: " << param.name << " con tipo inicial: " << paramType << "\n";
+        std::cout << "  - Parametro: " << param.name << " con tipo inicial: " << paramType << "\n";
         symbolTable.addSymbol(param.name, paramType, false);
     }
 
-    std::cout << "Paso 2: Analizando cuerpo de la función\n";
+    std::cout << "Paso 2: Analizando cuerpo de la funcion\n";
     node.body->accept(*this);
     std::string bodyType = node.body->type();
     std::cout << "  - Tipo del cuerpo: " << bodyType << "\n";
 
-    std::cout << "DEBUG: Iniciando inferencia de tipos para parámetros\n";
+    std::cout << "DEBUG: Iniciando inferencia de tipos para parametros\n";
     for (auto &param : *node.params)
     {
         if (!param.type.empty())
@@ -782,7 +782,7 @@ void SemanticValidation::visit(FuncDeclaration &node)
             continue;
         }
 
-        std::cout << "  - Intentando inferir tipo para parámetro: " << param.name << "\n";
+        std::cout << "  - Intentando inferir tipo para parametro: " << param.name << "\n";
 
         if (auto *call = dynamic_cast<FuncCall *>(node.body))
         {
@@ -800,7 +800,7 @@ void SemanticValidation::visit(FuncDeclaration &node)
                             {
                                 param.type = expectedType;
                                 symbolTable.updateSymbolType(param.name, expectedType);
-                                std::cout << "    - Tipo inferido de llamada a función: " << expectedType << "\n";
+                                std::cout << "    - Tipo inferido de llamada a funcion: " << expectedType << "\n";
                                 continue;
                             }
                         }
@@ -811,7 +811,7 @@ void SemanticValidation::visit(FuncDeclaration &node)
 
         if (auto *bin = dynamic_cast<BinaryOperation *>(node.body))
         {
-            std::cout << "    - Cuerpo es una operación binaria con operador: " << bin->op << "\n";
+            std::cout << "    - Cuerpo es una operacion binaria con operador: " << bin->op << "\n";
             if (bin->op == "+" || bin->op == "-" || bin->op == "*" || bin->op == "/")
             {
                 auto *leftId = dynamic_cast<VarFuncName *>(bin->left);
@@ -826,23 +826,56 @@ void SemanticValidation::visit(FuncDeclaration &node)
                 if ((leftId && leftId->name == param.name) ||
                     (rightId && rightId->name == param.name))
                 {
-                    std::cout << "    - Parámetro usado en operación aritmética, asignando tipo Number\n";
+                    std::cout << "    - Parametro usado en operacion aritmetica, asignando tipo Number\n";
                     param.type = "Number";
                     symbolTable.updateSymbolType(param.name, "Number");
                     continue;
                 }
             }
+            else if (bin->op == "@" || bin->op == "@@")
+            {
+                auto *leftId = dynamic_cast<VarFuncName *>(bin->left);
+                auto *rightId = dynamic_cast<VarFuncName *>(bin->right);
+
+                if ((leftId && leftId->name == param.name) ||
+                    (rightId && rightId->name == param.name))
+                {
+                    // Si el otro operando es un literal, usar su tipoAdd commentMore actions
+                    if (auto *otherLit = dynamic_cast<DataType *>(leftId ? bin->right : bin->left))
+                    {
+                        param.type = otherLit->type();
+                    }
+                    else
+                    {
+                        // Si no podemos inferir el tipo del otro operando,
+                        // permitir tanto String como Number
+                        param.type = "String";
+                    }
+                    symbolTable.updateSymbolType(param.name, param.type);
+                    std::cout << "    - Parametro usado en concatenacion, asignando tipo: " << param.type << "\n";
+                    continue;
+                }
+            }
         }
 
-        std::cout << "    - Usando método general de inferencia\n";
+        std::cout << "    - Usando metodo general de inferencia\n";
         std::string inferredType = inferParamUsageType(param.name, node.body);
         std::cout << "    - Tipo inferido: " << inferredType << "\n";
 
         if (inferredType == "Unknown")
         {
-            errors.emplace_back("No se pudo inferir el tipo del parámetro '" + param.name + "'", node.line());
-            node._type = "Error";
-            continue;
+            // Si no se pudo inferir, intentar inferir del tipo de retorno
+            if (bodyType != "Unknown" && bodyType != "Error")
+            {
+                inferredType = bodyType;
+                std::cout << "    - Usando tipo de retorno como tipo inferido: " << inferredType << "\n";
+            }
+            else
+            {
+                errors.emplace_back("No se pudo inferir el tipo del parametro '" + param.name + "'", node.line());
+                node._type = "Error";
+                continue;
+            }
         }
 
         param.type = inferredType;
@@ -852,12 +885,12 @@ void SemanticValidation::visit(FuncDeclaration &node)
     std::cout << "Paso 4: Verificando tipo de retorno\n";
     if (!node.returnType.empty() && !conformsTo(bodyType, node.returnType))
     {
-        errors.emplace_back("Tipo de retorno incorrecto en función '" + node.name + "'", node.line());
+        errors.emplace_back("Tipo de retorno incorrecto en funcion '" + node.name + "'", node.line());
         node._type = "Error";
     }
 
     node._type = node.returnType.empty() ? bodyType : node.returnType;
-    std::cout << "  - Tipo final de la función: " << node._type << "\n";
+    std::cout << "  - Tipo final de la funcion: " << node._type << "\n";
 
     Symbol *funcSym = symbolTable.lookup(node.name);
     if (funcSym)
@@ -865,7 +898,7 @@ void SemanticValidation::visit(FuncDeclaration &node)
         funcSym->type = node._type;
     }
 
-    std::cout << "=== Fin del análisis de función ===\n\n";
+    std::cout << "=== Fin del analisis de funcion ===\n\n";
 
     symbolTable.exitScope();
 }
@@ -877,7 +910,7 @@ void SemanticValidation::visit(FuncCall &node)
         Symbol *self = symbolTable.lookup("self");
         if (!self)
         {
-            errors.emplace_back("'base' solo puede usarse dentro de métodos", node.line());
+            errors.emplace_back("'base' solo puede usarse dentro de metodos", node.line());
             node._type = "Error";
             return;
         }
@@ -907,14 +940,14 @@ void SemanticValidation::visit(FuncCall &node)
     Symbol *symbol = symbolTable.lookup(node.funcName);
     if (!symbol || symbol->kind != "function")
     {
-        errors.emplace_back("Función '" + node.funcName + "' no definida", node.line());
+        errors.emplace_back("Funcion '" + node.funcName + "' no definida", node.line());
         node._type = "Error";
         return;
     }
 
     if (node.args.size() != symbol->params.size())
     {
-        errors.emplace_back("Número incorrecto de argumentos para '" + node.funcName + "'", node.line());
+        errors.emplace_back("Numero incorrecto de argumentos para '" + node.funcName + "'", node.line());
         node._type = "Error";
         return;
     }
@@ -936,13 +969,43 @@ void SemanticValidation::visit(FuncCall &node)
             }
         }
 
+        // Si el tipo del argumento es Unknown, intentar inferirlo del tipo esperadoAdd commentMore actions
+        if (argType == "Unknown" && expectedType != "Unknown")
+        {
+            argType = expectedType;
+            node.args[i]->type() = expectedType;
+        }
+
+        // Si ambos tipos son Unknown, intentar inferir del uso en el cuerpo
+        if (argType == "Unknown" && expectedType == "Unknown" && symbol->body)
+        {
+            std::set<std::string> paramTypes;
+            collectParamUsages(symbol->body, symbol->params[i], paramTypes);
+            if (!paramTypes.empty())
+            {
+                expectedType = *paramTypes.begin();
+                symbol->params[i] = expectedType;
+                argType = expectedType;
+                node.args[i]->type() = expectedType;
+            }
+        }
+
+        // Verificar compatibilidad de tipos
         if (!conformsTo(argType, expectedType))
         {
-            errors.emplace_back("Tipo incorrecto para argumento " + std::to_string(i + 1) +
-                                    " en '" + node.funcName + "': esperado '" + expectedType + "', obtenido '" + argType + "'",
-                                node.line());
-            node._type = "Error";
-            return;
+            // Si el tipo esperado es Unknown, intentar inferir del argumento
+            if (expectedType == "Unknown" && argType != "Unknown")
+            {
+                symbol->params[i] = argType;
+            }
+            else
+            {
+                errors.emplace_back("Tipo incorrecto para argumento " + std::to_string(i + 1) +
+                                        " en '" + node.funcName + "': esperado '" + expectedType + "', obtenido '" + argType + "'",
+                                    node.line());
+                node._type = "Error";
+                return;
+            }
         }
     }
 
@@ -1007,7 +1070,7 @@ void SemanticValidation::visit(BinaryOperation &node)
 
             if (leftType != "Number" || rightType != "Number")
             {
-                errors.emplace_back("Operandos de " + node.op + " deben ser números", node.line());
+                errors.emplace_back("Operandos de " + node.op + " deben ser numeros", node.line());
                 node._type = "Error";
             }
             else
@@ -1033,7 +1096,7 @@ void SemanticValidation::visit(BinaryOperation &node)
 
         if (leftType != "Number" || rightType != "Number")
         {
-            errors.emplace_back("Operandos de " + node.op + " deben ser números", node.line());
+            errors.emplace_back("Operandos de " + node.op + " deben ser numeros", node.line());
             node._type = "Error";
         }
         else
@@ -1114,17 +1177,40 @@ void SemanticValidation::visit(DataType &node)
 
 void SemanticValidation::visit(Block &node)
 {
-    symbolTable.enterScope();
-
-    std::string lastType = "Null";
-    for (auto expr : node.expressions)
+    if (node.expressions.empty())
     {
-        expr->accept(*this);
-        lastType = expr->type();
+        node._type = "Null";
+        return;
     }
 
+    symbolTable.enterScope();
+
+    // Analizar todas las expresiones
+    for (auto *expr : node.expressions)
+    {
+        expr->accept(*this);
+    }
+
+    // Obtener la ultima expresionAdd commentMore actions
+    ASTNode *lastExpr = node.expressions.back();
+
+    // Si la ultima expresion es una declaracion de funcion o un bloque que termina con una declaracion de funcion
+    if (dynamic_cast<FuncDeclaration *>(lastExpr) ||
+        (dynamic_cast<Block *>(lastExpr) &&
+         !dynamic_cast<Block *>(lastExpr)->expressions.empty() &&
+         dynamic_cast<FuncDeclaration *>(dynamic_cast<Block *>(lastExpr)->expressions.back())))
+    {
+        node._type = "Null";
+    }
+    else
+    {
+        // En caso contrario, el tipo del bloque es el tipo de su ultima expresion
+        node._type = lastExpr->type();
+    }
+
+    // node._type = node.expressions.back()->type();
+
     symbolTable.exitScope();
-    node._type = lastType;
 }
 
 void SemanticValidation::visit(VarDeclaration &node)
@@ -1197,14 +1283,14 @@ void SemanticValidation::visit(LetExpression &node)
 
         if (!isValidIdentifier(decl.name))
         {
-            errors.emplace_back("Nombre inválido: '" + decl.name + "'", node.line());
+            errors.emplace_back("Nombre invalido: '" + decl.name + "'", node.line());
             node._type = "Error";
             continue;
         }
 
         if (symbolTable.existsInCurrentScope(decl.name))
         {
-            errors.emplace_back("Variable '" + decl.name + "' ya declarada en este ámbito", node.line());
+            errors.emplace_back("Variable '" + decl.name + "' ya declarada en este ambito", node.line());
             node._type = "Error";
             continue;
         }
@@ -1277,7 +1363,7 @@ void SemanticValidation::visit(Assignment &node)
     }
     else if (!conformsTo(rhsType, symbol->type))
     {
-        errors.emplace_back("Tipo incorrecto en asignación: esperado '" + symbol->type + "', obtenido '" + rhsType + "'", node.line());
+        errors.emplace_back("Tipo incorrecto en asignacion: esperado '" + symbol->type + "', obtenido '" + rhsType + "'", node.line());
         node._type = "Error";
     }
     else
@@ -1299,7 +1385,7 @@ void SemanticValidation::visit(IfExpression &node)
         std::string condType = branch.condition->type();
         if (condType != "Boolean")
         {
-            errors.emplace_back("Condición debe ser booleana", branch.condition->line());
+            errors.emplace_back("Condicion debe ser booleana", branch.condition->line());
             hasErrors = true;
         }
 
@@ -1337,12 +1423,12 @@ void SemanticValidation::visit(IfExpression &node)
 
 void SemanticValidation::visit(WhileLoop &node)
 {
-    // Verificar condición es booleana
+    // Verificar condicion es booleana
     node.condition->accept(*this);
     std::string condType = node.condition->type();
     if (condType != "Boolean")
     {
-        errors.emplace_back("Condición del while debe ser booleana", node.line());
+        errors.emplace_back("Condicion del while debe ser booleana", node.line());
         node._type = "Error";
         std::cout << condType << std::endl;
     }
@@ -1359,7 +1445,7 @@ void SemanticValidation::visit(ForLoop &node)
 
     if (node.init_range->type() != "Number" || node.end_range->type() != "Number")
     {
-        errors.emplace_back("Los límites del 'for' deben ser de tipo Number", node.line());
+        errors.emplace_back("Los limites del 'for' deben ser de tipo Number", node.line());
         node._type = "Error";
         return;
     }
@@ -1377,10 +1463,10 @@ void SemanticValidation::visit(TypeDeclaration &node)
 {
     std::cout << "Analizando tipo: " << node.name << "\n";
 
-    // 1. Verificar redefinición
+    // 1. Verificar redefinicion
     if (symbolTable.lookupType(node.name))
     {
-        errors.emplace_back("Tipo '" + node.name + "' ya está definido", node.line());
+        errors.emplace_back("Tipo '" + node.name + "' ya esta definido", node.line());
         return;
     }
 
@@ -1388,7 +1474,7 @@ void SemanticValidation::visit(TypeDeclaration &node)
     const std::set<std::string> builtinTypes = {"Number", "String", "Boolean"};
     if (node.baseType.has_value() && builtinTypes.count(*node.baseType))
     {
-        errors.emplace_back("No se puede heredar de tipo básico '" + *node.baseType + "'", node.line());
+        errors.emplace_back("No se puede heredar de tipo basico '" + *node.baseType + "'", node.line());
         return;
     }
 
@@ -1407,25 +1493,25 @@ void SemanticValidation::visit(TypeDeclaration &node)
         return;
     }
 
-    // 4. Si hereda y no declara baseArgs, asumir que se pasa los parámetros propios al padre
+    // 4. Si hereda y no declara baseArgs, asumir que se pasa los parametros propios al padre
     if (node.baseType.has_value() && node.baseArgs.empty())
     {
         TypeSymbol *parentSym = symbolTable.lookupType(*node.baseType);
         if (!parentSym)
         {
-            std::cerr << "[DEBUG] No se encontró el tipo base '" << *node.baseType << "'\n";
+            std::cerr << "[DEBUG] No se encontro el tipo base '" << *node.baseType << "'\n";
             errors.emplace_back("Tipo base '" + *node.baseType + "' no encontrado", node.line());
             return;
         }
 
-        // Herencia sin constructor explícito => heredar del padre
+        // Herencia sin constructor explicito => heredar del padre
         if (node.baseType.has_value() && node.constructorParams->empty() && node.baseArgs.empty())
         {
             TypeSymbol *parentSym = symbolTable.lookupType(*node.baseType);
             if (parentSym)
             {
                 std::cerr << "[DEBUG] Tipo '" << node.name << "' hereda de '" << *node.baseType
-                          << "' sin constructor explícito. Heredando parámetros del padre...\n";
+                          << "' sin constructor explicito. Heredando parametros del padre...\n";
 
                 for (const std::string &paramName : parentSym->typeParams)
                 {
@@ -1441,7 +1527,7 @@ void SemanticValidation::visit(TypeDeclaration &node)
         {
             std::cerr << "[DEBUG] Tipo padre '" << parentSym->name
                       << "' espera " << parentSym->typeParams.size()
-                      << " parámetros, pero se encontraron "
+                      << " parametros, pero se encontraron "
                       << node.constructorParams->size()
                       << " en el tipo hijo '" << node.name << "'\n";
             errors.emplace_back("Cantidad incorrecta de argumentos para constructor del padre", node.line());
@@ -1495,7 +1581,7 @@ void SemanticValidation::visit(TypeDeclaration &node)
 
     symbolTable.exitScope();
 
-    // 7. Analizar métodos
+    // 7. Analizar metodos
     TypeSymbol *typeSym = symbolTable.lookupType(node.name);
 
     for (const auto &method : *node.body->methods)
@@ -1503,7 +1589,7 @@ void SemanticValidation::visit(TypeDeclaration &node)
         symbolTable.enterScope();
         symbolTable.addSymbol("self", node.name, true);
 
-        currentMethodContext = method.name; // ⭐ guardar el nombre actual del método
+        currentMethodContext = method.name; // ⭐ guardar el nombre actual del metodo
 
         for (const auto &param : *method.params)
         {
@@ -1512,11 +1598,11 @@ void SemanticValidation::visit(TypeDeclaration &node)
 
         method.body->accept(*this);
 
-        // Verificación de tipo de retorno
+        // Verificacion de tipo de retorno
         if (!method.returnType.empty() &&
             !conformsTo(method.body->type(), method.returnType))
         {
-            errors.emplace_back("El cuerpo del método '" + method.name +
+            errors.emplace_back("El cuerpo del metodo '" + method.name +
                                     "' no conforma al tipo de retorno declarado",
                                 method.body->line());
         }
@@ -1529,7 +1615,7 @@ void SemanticValidation::visit(TypeDeclaration &node)
 
         symbolTable.addTypeMethod(node.name, method.name, method.returnType, paramTypes);
 
-        // 🔍 Verificación de firma heredada si aplica
+        // 🔍 Verificacion de firma heredada si aplica
         if (!typeSym->parentType.empty())
         {
             TypeSymbol *parentSym = symbolTable.lookupType(typeSym->parentType);
@@ -1541,7 +1627,7 @@ void SemanticValidation::visit(TypeDeclaration &node)
                     const Symbol &inherited = it->second;
                     if (inherited.params != paramTypes || inherited.type != method.returnType)
                     {
-                        errors.emplace_back("Firma de método '" + method.name +
+                        errors.emplace_back("Firma de metodo '" + method.name +
                                                 "' no coincide con la del tipo padre '" + typeSym->parentType + "'",
                                             method.body->line());
                     }
@@ -1549,7 +1635,7 @@ void SemanticValidation::visit(TypeDeclaration &node)
             }
         }
 
-        currentMethodContext.clear(); // 🧼 Limpiar al salir del método
+        currentMethodContext.clear(); // 🧼 Limpiar al salir del metodo
         symbolTable.exitScope();
     }
 
@@ -1576,7 +1662,7 @@ void SemanticValidation::visit(InitInstance &node)
     for (ASTNode *arg : node.args)
     {
         arg->accept(*this);
-        // Aquí podrías validar tipos si se almacenan los tipos de parámetros
+        // Aqui podrias validar tipos si se almacenan los tipos de parametros
     }
 
     node._type = node.typeName;
@@ -1600,7 +1686,7 @@ void SemanticValidation::visit(MethodCall &node)
         return;
     }
 
-    // Búsqueda jerárquica del método en la cadena de herencia
+    // Busqueda jerarquica del metodo en la cadena de herencia
     const Symbol *method = nullptr;
     while (typeSym)
     {
@@ -1617,7 +1703,7 @@ void SemanticValidation::visit(MethodCall &node)
 
     if (!method)
     {
-        errors.emplace_back("Método '" + node.methodName + "' no existe en tipo '" + instSym->type + "'", node.line());
+        errors.emplace_back("Metodo '" + node.methodName + "' no existe en tipo '" + instSym->type + "'", node.line());
         node._type = "Error";
         return;
     }
@@ -1625,7 +1711,7 @@ void SemanticValidation::visit(MethodCall &node)
     // Validar cantidad de argumentos
     if (node.args.size() != method->params.size())
     {
-        errors.emplace_back("Cantidad incorrecta de argumentos en método '" + node.methodName + "'", node.line());
+        errors.emplace_back("Cantidad incorrecta de argumentos en metodo '" + node.methodName + "'", node.line());
         node._type = "Error";
         return;
     }
@@ -1659,7 +1745,7 @@ void SemanticValidation::visit(OriginCall &node)
     Symbol *self = symbolTable.lookup("self");
     if (!self)
     {
-        errors.emplace_back("'base' solo puede usarse dentro de métodos", node.line());
+        errors.emplace_back("'base' solo puede usarse dentro de metodos", node.line());
         node._type = "Error";
         return;
     }
@@ -1672,16 +1758,16 @@ void SemanticValidation::visit(OriginCall &node)
         return;
     }
 
-    // Necesitamos saber en qué método estamos
+    // Necesitamos saber en que metodo estamos
     std::string currentMethodName = currentMethodContext;
     if (currentMethodName.empty())
     {
-        errors.emplace_back("'base' solo puede usarse dentro de un método con nombre", node.line());
+        errors.emplace_back("'base' solo puede usarse dentro de un metodo con nombre", node.line());
         node._type = "Error";
         return;
     }
 
-    // Buscar en el padre el método con el mismo nombre
+    // Buscar en el padre el metodo con el mismo nombre
     TypeSymbol *parentSym = symbolTable.lookupType(typeSym->parentType);
     if (!parentSym)
     {
@@ -1693,7 +1779,7 @@ void SemanticValidation::visit(OriginCall &node)
     auto it = parentSym->methods.find(currentMethodName);
     if (it == parentSym->methods.end())
     {
-        errors.emplace_back("Método '" + currentMethodName + "' no existe en el padre '" + parentSym->name + "'", node.line());
+        errors.emplace_back("Metodo '" + currentMethodName + "' no existe en el padre '" + parentSym->name + "'", node.line());
         node._type = "Error";
         return;
     }
@@ -1706,7 +1792,7 @@ void SemanticValidation::visit(SelfCall &node)
     Symbol *self = symbolTable.lookup("self");
     if (!self)
     {
-        errors.emplace_back("'self' solo puede usarse dentro de métodos", node.line());
+        errors.emplace_back("'self' solo puede usarse dentro de metodos", node.line());
         node._type = "Error";
         return;
     }
@@ -1732,7 +1818,7 @@ void SemanticValidation::visit(SelfCall &node)
 
 Symbol *SemanticValidation::lookupMethodInHierarchy(const std::string &typeName, const std::string &methodName)
 {
-    std::cout << "[DEBUG] Buscando método '" << methodName << "' en jerarquía de tipo '" << typeName << "'\n";
+    std::cout << "[DEBUG] Buscando metodo '" << methodName << "' en jerarquia de tipo '" << typeName << "'\n";
 
     TypeSymbol *typeSym = symbolTable.lookupType(typeName);
     while (typeSym)
@@ -1741,7 +1827,7 @@ Symbol *SemanticValidation::lookupMethodInHierarchy(const std::string &typeName,
         auto it = typeSym->methods.find(methodName);
         if (it != typeSym->methods.end())
         {
-            std::cout << "    [ENCONTRADO] Método '" << methodName << "' en tipo '" << typeSym->name << "'\n";
+            std::cout << "    [ENCONTRADO] Metodo '" << methodName << "' en tipo '" << typeSym->name << "'\n";
             return &it->second;
         }
         if (typeSym->parentType.empty())
@@ -1749,6 +1835,6 @@ Symbol *SemanticValidation::lookupMethodInHierarchy(const std::string &typeName,
         typeSym = symbolTable.lookupType(typeSym->parentType);
     }
 
-    std::cout << "    [NO ENCONTRADO] Método '" << methodName << "' no existe en jerarquía\n";
+    std::cout << "    [NO ENCONTRADO] Metodo '" << methodName << "' no existe en jerarquia\n";
     return nullptr;
 }

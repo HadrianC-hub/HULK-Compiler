@@ -23,7 +23,7 @@ void FunctionCollector::visit(FuncDeclaration &node)
 {
     if (symbolTable.existsInCurrentScope(node.name))
     {
-        errors.emplace_back("Función '" + node.name + "' ya declarada", node.line());
+        errors.emplace_back("Funcion '" + node.name + "' ya declarada", node.line());
     }
     else
     {
