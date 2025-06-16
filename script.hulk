@@ -177,3 +177,47 @@ let p = new Knight("Phil", "Collins") in
 let x: Number = 42 in print(x);
 
 function tan2(x: Number): Number => sin(x) / cos(x);
+
+
+type Vehicle {
+    move() => "Moving generically";
+}
+
+type Car inherits Vehicle {
+    move() => base() @@ " with wheels";
+}
+
+let c = new Car() in print(c.move());
+
+
+function f(x) => x + 1;
+
+function factorial(n) => 
+    if (n <= 1) 1 else n * factorial(n - 1);
+
+for (i in range(1, 6)) {
+    print("Factorial of " @ i @ " is " @ factorial(i));
+}
+
+let x = 1,
+    y = 2,
+    z = x + y in
+        print(z);
+
+type Box(w, h) {
+    w = w;
+    h = h;
+    area() => self.w * self.h;
+}
+
+let b = new Box(5, 6) in print(b.area());
+
+
+let x = 10 in {
+    x := x + 1;
+    {
+        x := x * 2;
+        print(x);
+    }
+    print(x);
+}
