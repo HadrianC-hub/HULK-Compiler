@@ -9,14 +9,16 @@
 Context::Context()
     : builder(context), module("hulk_module", context) {}
 
+// Función para generar el código de la representación intermedia
 void Context::Generate(std::vector<ASTNode *> &root)
 {
 
-    // Separate type declarations, function declarations, and expressions
+    // Separa declaraciones de tipos, declaraciones de funciones y expresiones
     std::vector<ASTNode *> typeDecls;
     std::vector<ASTNode *> funcDecls;
     std::vector<ASTNode *> exprs;
 
+    // Por cada nodo del AST, si es una de las 3 anteriores, se guardan
     for (ASTNode *node : root)
     {
         if (auto *typeDecl = dynamic_cast<TypeDeclaration *>(node))
@@ -33,15 +35,16 @@ void Context::Generate(std::vector<ASTNode *> &root)
         }
     }
 
-    // Process type declarations first
-    PushFunc(); // Global function registry
+    // Procesando primero declaraciones de tipos
+    PushFunc(); // Función de registrar globalmente
+
     IRGenerator generator(*this);
     for (ASTNode *node : typeDecls)
     {
         node->accept(generator);
     }
 
-    // Then process function declarations
+    // Procesando luego declaraciones de funciones
     for (ASTNode *node : funcDecls)
     {
         if (auto *fn = dynamic_cast<FuncDeclaration *>(node))
@@ -50,7 +53,7 @@ void Context::Generate(std::vector<ASTNode *> &root)
         }
     }
 
-    // Finally process expressions
+    // Finalmente procesando expresiones
     root = std::move(exprs);
 
     llvm::FunctionType *printfType = llvm::FunctionType::get(
@@ -72,7 +75,7 @@ void Context::Generate(std::vector<ASTNode *> &root)
     llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", mainFunc);
     builder.SetInsertPoint(entry);
 
-    // Generate code for all remaining nodes
+    // Generar el código por cada nodo restante
     for (ASTNode *node : root)
     {
         node->accept(generator);
@@ -80,12 +83,13 @@ void Context::Generate(std::vector<ASTNode *> &root)
 
     for (llvm::Value *val : valueStack)
     {
+        // Escribir el código según el tipo de dato
         if (val->getType()->isDoubleTy())
         {
             llvm::Value *format = builder.CreateGlobalStringPtr("%g\n");
             builder.CreateCall(module.getFunction("printf"), {format, val});
         }
-        else if (val->getType()->isIntegerTy(1))
+        else if (val->getType()->isIntegerTy(1)) // Booleanos
         {
             llvm::Value *str = builder.CreateSelect(
                 val,
@@ -105,6 +109,7 @@ void Context::Generate(std::vector<ASTNode *> &root)
     llvm::verifyFunction(*mainFunc);
 }
 
+// Funcion para escribir el código de la representación intermedia
 void Context::WriteDownCode(const std::string &filename)
 {
     std::error_code EC;

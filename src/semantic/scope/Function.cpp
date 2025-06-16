@@ -6,6 +6,7 @@
 FunctionCollector::FunctionCollector(SymbolTable &symTable, std::vector<SemanticError> &err)
     : symbolTable(symTable), errors(err) {}
 
+// Agregando funciones built-in de HULK
 void FunctionCollector::addBuiltins()
 {
     symbolTable.addFunction("sin", "Number", {"Number"});
@@ -19,6 +20,7 @@ void FunctionCollector::addBuiltins()
     symbolTable.addFunction("print", "Null", {"Object"});
 }
 
+// Implementado el método de visita a una declaración de función para su recolección
 void FunctionCollector::visit(FuncDeclaration &node)
 {
     if (symbolTable.existsInCurrentScope(node.name))

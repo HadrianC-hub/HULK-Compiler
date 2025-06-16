@@ -1,5 +1,6 @@
 #include "Symbol.hpp"
 
+// Agregados tipos de hulk
 SymbolTable::SymbolTable()
 {
     enterScope();
@@ -12,31 +13,35 @@ SymbolTable::SymbolTable()
     addType("Null", "");
 }
 
+// Funcion para insertar un scope
 void SymbolTable::enterScope()
 {
     scopes.push_back({});
 }
 
+// Funcion para salir de un scope (quita el scope de la pila)
 void SymbolTable::exitScope()
 {
     if (!scopes.empty())
         scopes.pop_back();
 }
 
+// Agregar un símbolo a la lista
 bool SymbolTable::addSymbol(const std::string &name, const std::string &type, bool is_const, const std::vector<std::string> &params)
 {
     if (scopes.empty())
-        return false;
+        return false;   // No se puede agregar un símbolo a un scope vacío
     auto &current = scopes.back();
-    if (current.find(name) != current.end())
-        return false;
+    if (current.find(name) != current.end())    // Busca el símbolo en el scope, si no está se agrega, si está no se agrega
+        return false;   // Si la busqueda no llega al final, es porque el símbolo está en el scope. No se puede agregar
     current[name] = Symbol{"variable", type, is_const, params};
     return true;
 }
 
+// Buscar un símbolo en un scope
 Symbol *SymbolTable::lookup(const std::string &name)
 {
-    // Buscar en ambitos locales
+    // Buscar en scopes locales, si está se devuelve, si no está se retorna un puntero nulo.
     for (auto it = scopes.rbegin(); it != scopes.rend(); ++it)
     {
         auto entry = it->find(name);
@@ -46,18 +51,16 @@ Symbol *SymbolTable::lookup(const std::string &name)
     return nullptr;
 }
 
+// Verifica si un símbolo está en el scope actual
 bool SymbolTable::existsInCurrentScope(const std::string &name)
 {
     if (scopes.empty())
         return false;
-    return scopes.back().find(name) != scopes.back().end();
+    return scopes.back().find(name) != scopes.back().end(); // Si se llega al final y no se encuentra, es pq no está
 }
 
-bool SymbolTable::addFunction(
-    const std::string &name,
-    const std::string &returnType,
-    const std::vector<std::string> &params,
-    ASTNode *body)
+// Agregar función (sigue la misma lógica que AddSymbol)
+bool SymbolTable::addFunction(const std::string &name, const std::string &returnType, const std::vector<std::string> &params, ASTNode *body)
 {
     if (scopes.empty())
         return false;
@@ -65,27 +68,20 @@ bool SymbolTable::addFunction(
     if (current.find(name) != current.end())
         return false;
 
-    current[name] = Symbol{"function", returnType, false, params, body}; // incluye cuerpo
+    current[name] = Symbol{"function", returnType, false, params, body}; 
     return true;
 }
 
-bool SymbolTable::addType(
-    const std::string &name,
-    const std::string &parentType,
-    const std::vector<std::string> &typeParams)
+// Agregar tipo definido por el usuario a la tabla de símbolos
+bool SymbolTable::addType(const std::string &name, const std::string &parentType, const std::vector<std::string> &typeParams)
 {
     if (types.find(name) != types.end())
         return false;
-    types[name] = TypeSymbol{
-        name,
-        parentType,
-        typeParams,
-        {},
-        {}
-    };
+    types[name] = TypeSymbol{name, parentType, typeParams, {}, {}};
     return true;
 }
 
+// Buscar el tipo definido por el usuario
 TypeSymbol *SymbolTable::lookupType(const std::string &name)
 {
     auto it = types.find(name);
@@ -94,6 +90,7 @@ TypeSymbol *SymbolTable::lookupType(const std::string &name)
     return &it->second;
 }
 
+// Buscar el tipo definido por el usuario (constante)
 const TypeSymbol *SymbolTable::lookupType(const std::string &name) const
 {
     auto it = types.find(name);
@@ -102,6 +99,7 @@ const TypeSymbol *SymbolTable::lookupType(const std::string &name) const
     return &it->second;
 }
 
+// Agregar atributo de un tipo definido por el usuario a la tabla
 bool SymbolTable::addTypeAttribute(const std::string &typeName, const std::string &attrName, const std::string &attrType)
 {
     TypeSymbol *type = lookupType(typeName);
@@ -113,11 +111,8 @@ bool SymbolTable::addTypeAttribute(const std::string &typeName, const std::strin
     return true;
 }
 
-bool SymbolTable::addTypeMethod(
-    const std::string &typeName,
-    const std::string &methodName,
-    const std::string &returnType,
-    const std::vector<std::string> &params)
+// Agregar método de un tipo definido por el usuario a la tabla
+bool SymbolTable::addTypeMethod(const std::string &typeName, const std::string &methodName, const std::string &returnType, const std::vector<std::string> &params)
 {
     TypeSymbol *type = lookupType(typeName);
     if (!type)
@@ -128,6 +123,7 @@ bool SymbolTable::addTypeMethod(
     return true;
 }
 
+// Obtener funciones definidas por el usuario
 std::vector<Symbol> SymbolTable::getUserDefinedFunctions() const
 {
     std::vector<Symbol> functions;
@@ -145,6 +141,7 @@ std::vector<Symbol> SymbolTable::getUserDefinedFunctions() const
     return functions;
 }
 
+// Actualizar tabla de símbolos de tipos del usuario con nuevo tipo
 bool SymbolTable::updateSymbolType(const std::string &name, const std::string &newType)
 {
     for (auto it = scopes.rbegin(); it != scopes.rend(); ++it)
@@ -159,6 +156,7 @@ bool SymbolTable::updateSymbolType(const std::string &name, const std::string &n
     return false;
 }
 
+// Verifica si un tipo es descendiente de otro
 bool SymbolTable::isSubtype(const std::string &subtype, const std::string &supertype)
 {
     if (subtype == supertype)
@@ -174,6 +172,7 @@ bool SymbolTable::isSubtype(const std::string &subtype, const std::string &super
     return false;
 }
 
+// Devuelve el tipo ancestro más cercano entre dos tipos. Si no existe, es Object (supertipo máximo, todo es un object)
 std::string SymbolTable::lowestCommonAncestor(const std::vector<std::string> &types)
 {
     if (types.empty())
@@ -215,6 +214,7 @@ std::string SymbolTable::lowestCommonAncestor(const std::vector<std::string> &ty
     return candidate;
 }
 
+// Actualizar los parámetros de un tipo definido por el usuario.
 void SymbolTable::updateTypeParams(const std::string &typeName, const std::vector<std::string> &params)
 {
     auto it = types.find(typeName);

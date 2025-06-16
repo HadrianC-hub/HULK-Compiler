@@ -11,11 +11,11 @@ const std::set<std::string> BUILTIN_TYPES = {"Object", "Number", "String", "Bool
 
 struct Symbol
 {
-    std::string kind;
-    std::string type;
-    bool is_const;
-    std::vector<std::string> params;
-    ASTNode *body = nullptr;
+    std::string kind;                   // Si es variable, función, etc
+    std::string type;                   // Que tipo de dato representa o devuelve (String, Number...)
+    bool is_const;                      // Es constante o no
+    std::vector<std::string> params;    // Parámetros
+    ASTNode *body = nullptr;            // Puntero al nodo que contiene el cuerpo
 
     Symbol(std::string kind, std::string type, bool is_const, std::vector<std::string> params, ASTNode *body = nullptr)
         : kind(std::move(kind)), type(std::move(type)), is_const(is_const), params(std::move(params)), body(body) {}
@@ -26,7 +26,7 @@ struct Symbol
     Symbol() = default;
 };
 
-struct TypeSymbol
+struct TypeSymbol   // Usado para representar tipos declarados por el usuario (cada parametro es una tabla)
 {
     std::string name;
     std::string parentType;
@@ -35,7 +35,7 @@ struct TypeSymbol
     std::unordered_map<std::string, Symbol> methods;
 };
 
-class SymbolTable
+class SymbolTable   // Tabla de símbolos que se usará durante el análisis semántico para llevar registros
 {
 private:
     std::vector<std::unordered_map<std::string, Symbol>> scopes;

@@ -478,12 +478,7 @@ void IRGenerator::visit(Block &node)
 
             if (i == bodyExprs.size() - 1)
             {
-                if (isPrint)
-                {
-                    context.valueStack.push_back(val);
-                    lastValidResult = val;
-                }
-                else
+                if (!isPrint)
                 {
                     lastValidResult = val;
                 }
@@ -494,10 +489,6 @@ void IRGenerator::visit(Block &node)
                 {
                     context.valueStack.pop_back();
                 }
-                else
-                {
-                    lastValidResult = val;
-                }
             }
         }
     }
@@ -506,8 +497,10 @@ void IRGenerator::visit(Block &node)
 
     if (!lastValidResult)
     {
-        throw std::runtime_error("[ERROR] El bloque no tiene valor retornable en su ultima expresion: (line " + std::to_string(node.line()) + ")");
+        std::cout << "[ADVERTENCIA] Bloque sin valor final: se usará 0 (line " << node.line() << ")\n";
+        lastValidResult = llvm::ConstantInt::get(context.builder.getInt32Ty(), 0);
     }
+
 
     std::cout << "[EMITIDO] Bloque completado - T-PILA: " << context.valueStack.size() << "\n";
 }
@@ -668,7 +661,7 @@ void IRGenerator::visit(Assignment &node)
     }
     else
     {
-        // Handle instance variable assignmentAdd commentMore actions
+        // Handle instance variable assignment
         std::string varName;
         
         // 1. Get the variable name
@@ -685,6 +678,13 @@ void IRGenerator::visit(Assignment &node)
         if (!context.typeSystem.isInstanceVarsStackEmpty()) {
             // 3. Change its value for newValue
             context.typeSystem.setCurrentInstanceVar(varName, "var", newValue);
+            // llvm::Value* addr = context.typeSystem.getCurrentInstanceVar(varName, "var");
+            // if (!addr) {
+            //     throw std::runtime_error("Variable de instancia '" + varName + "' no encontrada en objeto actual.");
+            // }
+
+            // // Escribe en la posición de memoria del atributo:
+            // context.builder.CreateStore(newValue, addr);
             std::cout << "  [CHECK] Variable de instancia '" << varName << "' asignada - T-PILA: " << context.valueStack.size() << std::endl;
         } else {
             throw std::runtime_error("[ERROR] No se puede asignar a una variable de instancia fuera del contexto del tipo en linea " + 
@@ -804,10 +804,10 @@ void IRGenerator::visit(WhileLoop &node)
 
     // Despues del ciclo, enviar el ultimo valor del cuerpo a la stack global (si hay algun valor devuelto)
     // NOTA: ARREGLAR VALOR DEVUELTO
-    if (!loopBodyValues.empty())
-    {
-        context.valueStack.push_back(loopBodyValues.back());
-    }
+    // if (!loopBodyValues.empty())
+    // {
+    //     context.valueStack.push_back(loopBodyValues.back());
+    // }
 
     // Limpiar scope
     context.PopVar();
@@ -949,11 +949,11 @@ void IRGenerator::visit(ForLoop &node)
 
     std::cout << "[CHECK] Ciclo FOR terminado despues de " << iteration << " iteraciones" << std::endl;
 
-    // 7. Push the last body value to global stack if any
-    if (!loopBodyValues.empty())
-    {
-        context.valueStack.push_back(loopBodyValues.back());
-    }
+    // // 7. Push the last body value to global stack if any
+    // if (!loopBodyValues.empty())
+    // {
+    //     context.valueStack.push_back(loopBodyValues.back());
+    // }
 
     // Clean up loop scope
     context.PopVar();

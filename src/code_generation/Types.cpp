@@ -39,8 +39,7 @@ void TypeSystem::addAttribute(const std::string &attrName, const std::string &ty
     it->second.attributes.emplace(attrName, TypeAttribute(attrName, typeName, initializer));
 }
 
-void TypeSystem::addMethod(const std::string &typeName, const std::string &methodName,
-                           std::vector<Parameter> *params, ASTNode *body, const std::string &returnType)
+void TypeSystem::addMethod(const std::string &typeName, const std::string &methodName, std::vector<Parameter> *params, ASTNode *body, const std::string &returnType)
 {
     auto it = typeTable.find(typeName);
     if (it == typeTable.end())
@@ -57,8 +56,7 @@ void TypeSystem::addMethod(const std::string &typeName, const std::string &metho
     it->second.methods.emplace(methodName, TypeMethod(params, body, returnType));
 }
 
-void TypeSystem::createInstance(const std::string &varName, const std::string &typeName,
-                                const std::map<std::pair<std::string, std::string>, llvm::Value *> &vars)
+void TypeSystem::createInstance(const std::string &varName, const std::string &typeName, const std::map<std::pair<std::string, std::string>, llvm::Value *> &vars)
 {
     if (!typeExists(typeName))
     {

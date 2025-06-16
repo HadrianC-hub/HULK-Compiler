@@ -506,6 +506,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
 
 bool SemanticValidation::conformsTo(const std::string &subtype, const std::string &supertype)
 {
+    // Verificar tipos y supertipos de objetos básicos
     if (subtype == "Error" || supertype == "Error")
         return false;
     if (subtype == supertype)
@@ -532,10 +533,12 @@ void SemanticValidation::validate(const std::vector<ASTNode *> &nodes)
 {
     std::cout << "Entra en analyze." << std::endl;
 
+    // Agregar funciones predeterminadas de Hulk
     FunctionCollector collector(symbolTable, errors);
     collector.addBuiltins();
     std::cout << "Builtins agregados." << std::endl;
 
+    // Echar a andar un recolector de funciones
     for (ASTNode *node : nodes)
     {
         if (!node)
@@ -545,17 +548,19 @@ void SemanticValidation::validate(const std::vector<ASTNode *> &nodes)
         }
 
         std::cout << "Recolectando funciones para nodo tipo: " << typeid(*node).name() << std::endl;
-        node->accept(collector);
+        // Por cada nodo, se recolectan las funciones definidas (accept llama a visit)
+        node->accept(collector); // Aceptar el colector de funciones, que es un tipo de analizador semántico
     }
 
     std::cout << "Fase de recoleccion completada." << std::endl;
 
+    // Echar a andar análisis semántico
     for (ASTNode *node : nodes)
     {
         try
         {
             std::cout << "Analisis semantico de: " << typeid(*node).name() << std::endl;
-            node->accept(*this);
+            node->accept(*this); // Aceptar esta instancia de analizador semántico
         }
         catch (const std::exception &e)
         {
@@ -563,6 +568,7 @@ void SemanticValidation::validate(const std::vector<ASTNode *> &nodes)
         }
     }
 
+    // Mostrar errores encontrados
     if (!errors.empty())
     {
         std::cerr << "Errores semanticos encontrados:\n";
@@ -576,6 +582,7 @@ void SemanticValidation::validate(const std::vector<ASTNode *> &nodes)
         std::cout << "No se encontraron errores semanticos.\n";
     }
 
+    // En caso de errores, se detiene la ejecución y no se lleva a IR
     if (!errors.empty())
     {
         std::cerr << "Errores semanticos presentes. Abortando ejecucion.\n";
@@ -1799,6 +1806,7 @@ void SemanticValidation::visit(SelfCall &node)
     node._type = it->second.type;
 }
 
+// Buscar un método específico de un tipo en su familia (empezando por él)
 Symbol *SemanticValidation::lookupMethodInHierarchy(const std::string &typeName, const std::string &methodName)
 {
     std::cout << "[DEBUG] Buscando metodo '" << methodName << "' en jerarquia de tipo '" << typeName << "'\n";
