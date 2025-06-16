@@ -4,7 +4,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Value.h"
-#include "TypeSystem.hpp"
+#include "Types.hpp"
 
 #include <string>
 #include <map>

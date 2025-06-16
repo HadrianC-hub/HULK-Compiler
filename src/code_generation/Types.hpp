@@ -366,6 +366,20 @@ public:
     }
 
     /**
+     * @brief Gets all instance names
+     * @return Vector of instance names
+     */
+    std::vector<std::string> getAllInstanceNames() const
+    {
+        std::vector<std::string> names;
+        for (const auto &[name, _] : instanceTable)
+        {
+            names.push_back(name);
+        }
+        return names;
+    }
+
+    /**
      * @brief Checks if the instance variables stack is empty
      * @return true if stack is empty, false otherwise
      */
@@ -373,4 +387,5 @@ public:
     {
         return currentInstanceVarsStack.empty();
     }
+    
 };

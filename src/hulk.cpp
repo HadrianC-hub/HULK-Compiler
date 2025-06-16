@@ -19,24 +19,24 @@ int main(int argc, char **argv) {
 
     FILE *input_file = fopen(filename, "r");
     if (!input_file) {
-        perror("Error opening file");
+        perror("Error abriendo el archivo");
         return 1;
     }
 
     yyin = input_file;
     if (yyparse() != 0) {
-        std::cerr << "Error: Fallo el analisis sintactico." << std::endl;
+        std::cerr << "[SYNTAX ERROR] Fallo el analisis sintactico." << std::endl;
         fclose(input_file);
         return 1;
     }
     fclose(input_file);
 
     if (!is_valid_ast(root)) {
-        std::cerr << "Error: No se genero un AST valido." << std::endl;
+        std::cerr << "[SYNTAX ERROR] No se genero un AST valido." << std::endl;
         return 1;
     }
 
-    std::cout << "AST terminado." << std::endl;
+    std::cout << "[DONE] AST terminado." << std::endl;
 
     for (auto node : root) {
         std::cout << "Tipo de nodo raiz: " << node->type() 
@@ -45,17 +45,17 @@ int main(int argc, char **argv) {
 
     SemanticValidation semantic;
     semantic.validate(root);
-    std::cout << "Analisis semantico completado exitosamente." << std::endl;
+    std::cout << "[DONE] Analisis semantico completado exitosamente." << std::endl;
 
     Context cg;    
     try {
         cg.Generate(root);
     } catch (const std::exception& e) {
-        std::cerr << "Error during code generation: " << e.what() << std::endl;
+        std::cerr << "[CODE GENERATION ERROR]: " << e.what() << std::endl;
         return 1;
     }
 
-    std::cout << "Generacion de codigo completada." << std::endl;
+    std::cout << "[DONE] Generacion de codigo completada." << std::endl;
     cg.WriteDownCode("Hulk/Hulk-IR.ll");
     delete_ast(root);
 

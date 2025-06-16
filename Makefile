@@ -56,7 +56,7 @@ CODE := $(OUTPUT_DIR)/Hulk.exe
 all: build
 
 build: $(BUILD_DIR) $(EXEC)
-	@echo "✅ Build completo. Ejecutable en $(EXEC)"
+	@echo "[CHECK] Build completo. Ejecutable en $(EXEC)"
 
 run: build $(LLVM_IR) $(CODE)
 
@@ -130,7 +130,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 
 $(EXEC): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(LLVM_CXXFLAGS) -o $(EXEC) $(OBJS) $(LLVM_LDFLAGS)
-	@echo "✅ Compilacion completa. Ejecutable en $(EXEC)"
+	@echo "[CHECK] Compilacion completa. Ejecutable en $(EXEC)"
 
 # === META ===
 .PHONY: all build run compile execute clean

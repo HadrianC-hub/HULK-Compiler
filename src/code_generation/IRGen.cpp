@@ -103,12 +103,19 @@ void IRGenerator::visit(DataType &node)
 
 void IRGenerator::visit(BinaryOperation &node)
 {
+    std::cout << "[GENERANDO]: " << node.op << " - T-Pila: " << context.valueStack.size() << std::endl;
+
     node.left->accept(*this);
     llvm::Value *left = context.valueStack.back();
     context.valueStack.pop_back();
+
+    std::cout << "  - Operando izquierdo - T-Pila: " << context.valueStack.size() << std::endl;
+
     node.right->accept(*this);
     llvm::Value *right = context.valueStack.back();
     context.valueStack.pop_back();
+
+    std::cout << "  - Operando derecho - T-Pila: " << context.valueStack.size() << std::endl;
 
     llvm::Value *result = nullptr;
     llvm::IRBuilder<> &builder = context.builder;
@@ -221,7 +228,7 @@ void IRGenerator::visit(BinaryOperation &node)
     {
         const char *funcName = (op == "@") ? "hulk_str_concat" : "hulk_str_concat_space";
 
-        std::cout << "🔍 String concatenation with " << funcName << std::endl;
+        std::cout << "- Concatenando STRING con " << funcName << std::endl;
 
         // Convertir numeros a string
         llvm::Value *leftStr = left;
@@ -286,7 +293,8 @@ void IRGenerator::visit(BinaryOperation &node)
     }
 
     context.valueStack.push_back(result);
-    std::cout << "[EMITIDO]" << op << "operador binario.\n";
+    std::cout << "  - Resultado enviado a la pila - T-Pila: " << context.valueStack.size() << std::endl;
+    std::cout << "[EMITIDO] Operacion binaria '" << op << "' procesada" << std::endl;
 }
 
 void IRGenerator::visit(UnaryOperation &node)
@@ -324,11 +332,14 @@ void IRGenerator::visit(BuiltInFunc &node)
     llvm::IRBuilder<> &builder = context.builder;
     std::vector<llvm::Value *> args;
 
+    std::cout << "- Funcion Built-In: " << node.name << " - T-Pila: " << context.valueStack.size() << std::endl;
+
     for (ASTNode *arg : node.args)
     {
         arg->accept(*this);
         args.push_back(context.valueStack.back());
         context.valueStack.pop_back();
+        std::cout << "  - Argumento evaluado - T-Pila: " << context.valueStack.size() << std::endl;
     }
 
     llvm::Value *result = nullptr;
@@ -350,7 +361,9 @@ void IRGenerator::visit(BuiltInFunc &node)
 
     if (name == "print")
     {
+        std::cout << "  - Procesando funcion PRINT" << std::endl;
         result = args[0];
+        std::cout << "  - Valor de PRINT obtenido - T-PILA: " << context.valueStack.size() << std::endl;
     }
     else if (name == "sin" || name == "cos" || name == "sqrt" || name == "exp")
     {
@@ -415,6 +428,7 @@ void IRGenerator::visit(BuiltInFunc &node)
     if (result)
     {
         context.valueStack.push_back(result);
+        std::cout << "  - Resultado enviado a la pila - T-PILA: " << context.valueStack.size() << std::endl;
     }
 
     std::cout << "[EMITIDO] " << name << "' Built-In.\n";
@@ -427,7 +441,7 @@ void IRGenerator::visit(Block &node)
         throw std::runtime_error("[ERROR] El bloque debe contener al menos una expresion: (line " + std::to_string(node.line()) + ")");
     }
 
-    std::cout << "🔍 BlockNode - Stack size before: " << context.valueStack.size() << std::endl;
+    std::cout << "- Analizando bloque - T-PILA: " << context.valueStack.size() << std::endl;
     context.PushFunc();
 
     std::vector<ASTNode *> bodyExprs;
@@ -436,7 +450,7 @@ void IRGenerator::visit(Block &node)
         if (auto *decl = dynamic_cast<FuncDeclaration *>(expr))
         {
             context.addFuncDecl(decl->name, decl);
-            std::cout << "  📝 Registered function: " << decl->name << std::endl;
+            std::cout << "  - Funcion registrada: " << decl->name << std::endl;
         }
         else
         {
@@ -449,7 +463,7 @@ void IRGenerator::visit(Block &node)
     for (size_t i = 0; i < bodyExprs.size(); ++i)
     {
         ASTNode *expr = bodyExprs[i];
-        std::cout << "  🔄 Evaluating expression " << i + 1 << "/" << bodyExprs.size() << " - Stack size: " << context.valueStack.size() << std::endl;
+        std::cout << "  - Evaluando expresion " << i + 1 << "/" << bodyExprs.size() << " - T-PILA: " << context.valueStack.size() << std::endl;
         expr->accept(*this);
 
         bool isPrint = false;
@@ -495,7 +509,7 @@ void IRGenerator::visit(Block &node)
         throw std::runtime_error("[ERROR] El bloque no tiene valor retornable en su ultima expresion: (line " + std::to_string(node.line()) + ")");
     }
 
-    std::cout << "[EMITIDO] Bloque completado - Tamaño final: " << context.valueStack.size() << "\n";
+    std::cout << "[EMITIDO] Bloque completado - T-PILA: " << context.valueStack.size() << "\n";
 }
 
 void IRGenerator::visit(VarFuncName &node)
@@ -586,17 +600,22 @@ void IRGenerator::visit(LetExpression &node)
     {
         // Push the variable name and type onto the placeholder stack before processing its value
         context.typeSystem.pushPlaceholder(decl.name, "var");
-        std::cout << "  📝 Added placeholder: " << decl.name << " of type var" << std::endl;
+        std::cout << "  - Agregada reservacion: " << decl.name << " de tipo variable" << std::endl;
 
         // Procesar el inicializador
         decl.initializer->accept(*this);
+        if (auto *newInstance = dynamic_cast<InitInstance *>(decl.initializer))
+        {
+            context.typeSystem.popPlaceholder();
+            continue;
+        }
         llvm::Value *initValue = context.valueStack.back();
         context.valueStack.pop_back();
 
         // Agregar variables al scope
         context.addLocal(decl.name, initValue);
 
-        // Pop the placeholder after processingAdd commentMore actions
+        // Pop the placeholder after processing
         context.typeSystem.popPlaceholder();
     }
 
@@ -682,7 +701,7 @@ void IRGenerator::visit(IfExpression &node)
         node.elseBody->accept(*this);
     }
 
-    std::cout << "[CHECK] Expresion IF completada - Tamaño de pila: " << context.valueStack.size() << std::endl;
+    std::cout << "[CHECK] Expresion IF completada - T-PILA: " << context.valueStack.size() << std::endl;
 }
 
 void IRGenerator::visit(WhileLoop &node)
@@ -770,7 +789,7 @@ void IRGenerator::visit(WhileLoop &node)
     // Limpiar scope
     context.PopVar();
 
-    std::cout << "[CHECK] Ciclo while completado - Tamaño de pila: " << context.valueStack.size() << std::endl;
+    std::cout << "[CHECK] Ciclo while completado - T-PILA: " << context.valueStack.size() << std::endl;
 }
 
 void IRGenerator::visit(ForLoop &node)
@@ -916,17 +935,24 @@ void IRGenerator::visit(ForLoop &node)
     // Clean up loop scope
     context.PopVar();
 
-    std::cout << "[CHECK] Ciclo for terminado - Tamaño de pila: " << context.valueStack.size() << std::endl;
+    std::cout << "[CHECK] Ciclo for terminado - T-PILA: " << context.valueStack.size() << std::endl;
 }
 
 void IRGenerator::visit(TypeDeclaration &node)
 {
-    std::cout << "🔍 TypeDeclaration: " << node.name << std::endl;
+    std::cout << "- Declaracion de tipo: " << node.name << std::endl;
+
+    // Check if type is already registered
+    if (context.typeSystem.typeExists(node.name))
+    {
+        std::cout << "  [WARNING] Tipo " << node.name << " ya registrado, saltando..." << std::endl;
+        return;
+    }
 
     // Register the type
     auto &typeDef = context.typeSystem.registerType(node.name, node.baseType);
 
-    // Set constructor parameters and base argsAdd commentMore actions
+    // Set constructor parameters and base args
     typeDef.constructorParams.clear();
     if (node.constructorParams)
     {
@@ -946,7 +972,7 @@ void IRGenerator::visit(TypeDeclaration &node)
         for (const auto &attr : *node.body->attributes)
         {
             context.typeSystem.addAttribute(attr.name, node.name, attr.initializer);
-            std::cout << "  📝 Added attribute: " << attr.name << std::endl;
+            std::cout << "  - Agregado atributo: " << attr.name << " del tipo " << node.name << std::endl;
         }
     }
 
@@ -956,22 +982,22 @@ void IRGenerator::visit(TypeDeclaration &node)
         for (const auto &method : *node.body->methods)
         {
             context.typeSystem.addMethod(node.name, method.name, method.params, method.body, method.returnType);
-            std::cout << "  📝 Added method: " << method.name << std::endl;
+            std::cout << "  - Agregado metodo: " << method.name << std::endl;
         }
     }
 
-    std::cout << "✅ Type " << node.name << " processed" << std::endl;
+    std::cout << "[CHECK] Tipo " << node.name << " procesado" << std::endl;
 }
 
 void IRGenerator::visit(InitInstance &node)
 {
-    std::cout << "🔍 NewInstance: " << node.typeName << std::endl;
+    std::cout << "- Nueva instancia: " << node.typeName << std::endl;
 
     // Check if we're inside a let declaration
     std::string varName = context.typeSystem.getCurrentPlaceholder().name;
     if (!varName.empty())
     {
-        std::cout << "  📝 Using placeholder variable: " << varName << std::endl;
+        std::cout << "  - Usando variable reservada: " << varName << std::endl;
     }
 
     // 1. Initialize instance variables map and set current type
@@ -994,7 +1020,7 @@ void IRGenerator::visit(InitInstance &node)
     // Process type hierarchy
     while (!currType.empty())
     {
-        std::cout << "  🔄 Processing type: " << currType << std::endl;
+        std::cout << "  - Procesando tipo: " << currType << std::endl;
 
         // Get type information
         const auto &typeConst = context.typeSystem.getConstructorParams(currType);
@@ -1008,7 +1034,7 @@ void IRGenerator::visit(InitInstance &node)
             for (size_t i = 0; i < typeConst.size() && i < args.size(); ++i)
             {
                 context.addLocal(typeConst[i], args[i]);
-                std::cout << "    📝 Added constructor param: " << typeConst[i] << std::endl;
+                std::cout << "    - Agregado parametro de constructor: " << typeConst[i] << std::endl;
             }
             // Remove processed args
             args.erase(args.begin(), args.begin() + std::min(typeConst.size(), args.size()));
@@ -1027,7 +1053,7 @@ void IRGenerator::visit(InitInstance &node)
                     fatherArgs[i]->accept(*this);
                     context.addLocal(fatherConst[i], context.valueStack.back());
                     context.valueStack.pop_back();
-                    std::cout << "    📝 Added base arg: " << fatherConst[i] << std::endl;
+                    std::cout << "    - Agregados argumentos de la base: " << fatherConst[i] << std::endl;
                 }
             }
 
@@ -1036,7 +1062,7 @@ void IRGenerator::visit(InitInstance &node)
             for (size_t i = 0; i < fatherConst.size() - startIdx && i < args.size(); ++i)
             {
                 context.addLocal(fatherConst[startIdx + i], args[i]);
-                std::cout << "    📝 Added remaining parent param: " << fatherConst[startIdx + i] << std::endl;
+                std::cout << "    - Agregando parametros del padre: " << fatherConst[startIdx + i] << std::endl;
             }
             // Remove processed args
             args.erase(args.begin(), args.begin() + std::min(fatherConst.size() - startIdx, args.size()));
@@ -1048,9 +1074,13 @@ void IRGenerator::visit(InitInstance &node)
             if (attr.initializer)
             {
                 attr.initializer->accept(*this);
+                if (context.valueStack.empty())
+                {
+                    break;
+                }
                 instanceVars[{attrName, attr.TypeName}] = context.valueStack.back();
                 context.valueStack.pop_back();
-                std::cout << "    📝 Added attribute: " << attrName << " of type " << attr.TypeName << std::endl;
+                std::cout << "    - Agregado atributo: " << attrName << " de tipo " << attr.TypeName << std::endl;
             }
         }
 
@@ -1060,48 +1090,70 @@ void IRGenerator::visit(InitInstance &node)
             currType = *father;
             context.typeSystem.setCurrentType(currType);
         }
+        else
+        {
+            currType = "";
+        }
     }
 
     // Clean up
     context.PopVar();
     context.typeSystem.setCurrentType("");
 
-    // Create the instance with its variablesAdd commentMore actions
+    // Create the instance with its variables
     context.typeSystem.createInstance(varName, node.typeName, instanceVars);
 
-    std::cout << "✅ Instance created: " << varName << std::endl;
+    std::cout << "[CHECK] Instancia creada: " << varName << std::endl;
 }
 
 void IRGenerator::visit(MethodCall &node)
 {
-    std::cout << "🔍 MethodCall: " << node.instanceName << "." << node.methodName << std::endl;
+    std::cout << "- Llamada a metodo: " << node.instanceName << "." << node.methodName << std::endl;
+
+    std::string instanceName = node.instanceName;
 
     // 1. Get instance type and set currentType
-    std::string typeName = context.typeSystem.getInstanceType(node.instanceName);
+    if (instanceName == "self")
+    {
+        // Get all instance names and use the last one
+        auto instanceNames = context.typeSystem.getAllInstanceNames();
+        if (!instanceNames.empty())
+        {
+            std::string lastInstanceName = instanceNames.back();
+            instanceName = lastInstanceName;
+            // Push the last instance's variables as current
+            context.typeSystem.pushCurrentInstanceVars(context.typeSystem.getInstanceVars(lastInstanceName));
+            std::cout << "[CHECK] Variables agregadas." << std::endl;
+        }
+    }
+    else
+    {
+        // Push instance variables onto the stack
+        try
+        {
+            context.typeSystem.pushCurrentInstanceVars(context.typeSystem.getInstanceVars(node.instanceName));
+        }
+        catch (const std::runtime_error &e)
+        {
+            throw std::runtime_error("[ERROR] " + std::string(e.what()) + " en linea " + std::to_string(node.line()));
+        }
+    }
+    std::string typeName = context.typeSystem.getInstanceType(instanceName);
+
     if (typeName.empty())
     {
-        throw std::runtime_error("❌ Instance '" + node.instanceName + "' not found at line " + std::to_string(node.line()));
+        throw std::runtime_error("[ERROR] Instancia '" + instanceName + "' no encontrada en linea " + std::to_string(node.line()));
     }
 
     context.typeSystem.setCurrentType(typeName);
 
-    // 2. Push instance variables onto the stackAdd commentMore actions
-    try
-    {
-        context.typeSystem.pushCurrentInstanceVars(context.typeSystem.getInstanceVars(node.instanceName));
-    }
-    catch (const std::runtime_error &e)
-    {
-        throw std::runtime_error("❌ " + std::string(e.what()) + " at line " + std::to_string(node.line()));
-    }
-
-    // 3. Create new Scope without inheritance
+    // 2. Create new varScope without inheritance
     context.PushVar(false);
 
-    // 4. Set method name in placeholderStack
+    // 3. Set method name in placeholderStack
     context.typeSystem.pushPlaceholder(node.methodName, "method");
 
-    // 5. Find method in type hierarchy
+    // 4. Find method in type hierarchy
     TypeMethod *method = nullptr;
     std::string currType = typeName;
     while (!currType.empty() && !method)
@@ -1115,11 +1167,11 @@ void IRGenerator::visit(MethodCall &node)
 
     if (!method)
     {
-        throw std::runtime_error("❌ Method '" + node.methodName + "' not found in type hierarchy starting from '" +
-                                 typeName + "' at line " + std::to_string(node.line()));
+        throw std::runtime_error("[ERROR] Metodo '" + node.methodName + "' no encontrado en la jerarquia de tipos empezando por '" +
+                                 typeName + "' en linea " + std::to_string(node.line()));
     }
 
-    // 6. Process method arguments and parametersAdd commentMore actions
+    // 5. Process method arguments and parameters
     std::vector<llvm::Value *> args;
     for (ASTNode *arg : node.args)
     {
@@ -1134,44 +1186,167 @@ void IRGenerator::visit(MethodCall &node)
         for (size_t i = 0; i < method->params->size() && i < args.size(); ++i)
         {
             context.addLocal((*method->params)[i].name, args[i]);
-            std::cout << "  📝 Bound param " << (*method->params)[i].name << std::endl;
+            std::cout << "  - Vinculando parametros a valores " << (*method->params)[i].name << std::endl;
         }
     }
 
-    // 7. Evaluate method body
+    // 6. Evaluate method body
     method->body->accept(*this);
 
-    // 8. Clean up
+    // 7. Clean up
     context.typeSystem.setCurrentType("");
     context.typeSystem.popPlaceholder();
     context.PopVar();
     context.typeSystem.popCurrentInstanceVars();
 
-    std::cout << "✅ Method call processed" << std::endl;
+    std::cout << "[CHECK] Llamada al metodo procesada" << std::endl;
 }
 
 void IRGenerator::visit(SelfCall &node)
 {
-    std::cout << "🔍 SelfCall: " << node.varName << std::endl;
+    std::cout << "- Llamada self: " << node.varName << " - T-PILA: " << context.valueStack.size() << std::endl;
 
     // Get current type
     std::string currentType = context.typeSystem.getCurrentType();
     if (currentType.empty())
     {
-        throw std::runtime_error("❌ 'self' access outside of type context at line " + std::to_string(node.line()));
+        throw std::runtime_error("[ERROR] Acceso a 'self' fuera del contexto del tipo en linea " + std::to_string(node.line()));
     }
 
-    // Handle self variables
-    llvm::Value *val = context.typeSystem.getCurrentInstanceVar(node.varName, currentType);
+    // Search for variable in type hierarchy
+    std::string currType = currentType;
+    llvm::Value* val = nullptr;
 
-    if (!val)
-    {
-        throw std::runtime_error("❌ Undefined variable '" + node.varName +
-                                 "' in type '" + currentType +
-                                 "' at line " + std::to_string(node.line()));
+    while (!currType.empty() && !val) {
+        // Try to get variable from current type
+        val = context.typeSystem.getCurrentInstanceVar(node.varName, currType);
+        
+        // If not found and has parent, try parent type
+        if (!val) {
+            currType = context.typeSystem.getParentType(currType).value_or("");
+            if (currType.empty()) {
+                throw std::runtime_error("[ERROR] Variable indefinida '" + node.varName + 
+                                        "' en jerarquia de tipos empezando en '" + currentType + 
+                                        "' en linea " + std::to_string(node.line()));   
+                break;
+            }
+        }
+        else break;
     }
 
     context.valueStack.push_back(val);
 
-    std::cout << "✅ Self access processed" << std::endl;
+    std::cout << "  - Valor self enviado a la pila - T-PILA: " << context.valueStack.size() << std::endl;
+    std::cout << "[CHECK] Acceso a self procesado" << std::endl;
+}
+
+void IRGenerator::visit(OriginCall &node)
+{
+    std::cout << "- Llamada a origen - T-PILA: " << context.valueStack.size() << std::endl;
+
+    // 1. Get current placeholder and split into name and elemType
+    PlaceholderEntry currentPlaceholder = context.typeSystem.getCurrentPlaceholder();
+    std::string name = currentPlaceholder.name;
+    std::string elemType = currentPlaceholder.type;
+
+    if (name.empty() || elemType.empty())
+    {
+        throw std::runtime_error("[ERROR] Reserva invalida para llamada a origen en linea " + std::to_string(node.line()));
+    }
+
+    // 2. Get current type and its parent
+    std::string currentType = context.typeSystem.getCurrentType();
+    if (currentType.empty())
+    {
+        throw std::runtime_error("[ERROR] Llamada a origen fuera del contexto del tipo en linea " + std::to_string(node.line()));
+    }
+
+    std::optional<std::string> parentType = context.typeSystem.getParentType(currentType);
+    if (!parentType)
+    {
+        throw std::runtime_error("[ERROR] No se ha encontrado un padre para el tipo '" + currentType +
+                                 "' en linea " + std::to_string(node.line()));
+    }
+
+    // 3. Handle variable access
+    if (elemType == "var")
+    {
+        llvm::Value *val = context.typeSystem.getCurrentInstanceVar(name, *parentType);
+        if (!val)
+        {
+            throw std::runtime_error("[ERROR] Variable indefinida '" + name +
+                                     "' en tipo padre '" + *parentType +
+                                     "' en linea " + std::to_string(node.line()));
+        }
+        context.valueStack.push_back(val);
+        std::cout << "  - Valor de variable origen enviado a la pila - T-PILA: " << context.valueStack.size() << std::endl;
+        std::cout << "[CHECK] Acceso a variable de origen procesado" << std::endl;
+        return;
+    }
+
+    // 4. Handle method call
+    if (elemType == "method")
+    {
+        std::cout << "  - Procesando llamada a metodo de origen" << std::endl;
+        // 4.1 Update current type to parent type
+        context.typeSystem.setCurrentType(*parentType);
+
+        // 4.3 Create new varScope without inheritance
+        context.PushVar(false);
+
+        // 4.4 Set method name in placeholderStack
+        context.typeSystem.pushPlaceholder(name, "method");
+
+        // 4.5 Find method in type hierarchy
+        TypeMethod *method = nullptr;
+        std::string currType = *parentType;
+        while (!currType.empty() && !method)
+        {
+            method = context.typeSystem.findMethod(currType, name);
+            if (!method)
+            {
+                currType = context.typeSystem.getParentType(currType).value_or("");
+            }
+        }
+
+        if (!method)
+        {
+            throw std::runtime_error("[ERROR] Metodo '" + name + "' no encontrado en la jerarquia de tipos empezando en '" +
+                                     *parentType + "' en linea " + std::to_string(node.line()));
+        }
+
+        // 4.6 Process method arguments and parameters
+        std::vector<llvm::Value *> args;
+        for (ASTNode *arg : node.args)
+        {
+            arg->accept(*this);
+            args.push_back(context.valueStack.back());
+            context.valueStack.pop_back();
+        }
+
+        // Associate parameters with argument values
+        if (method->params)
+        {
+            for (size_t i = 0; i < method->params->size() && i < args.size(); ++i)
+            {
+                context.addLocal((*method->params)[i].name, args[i]);
+                std::cout << "  - Parametro vinculado " << (*method->params)[i].name << std::endl;
+            }
+        }
+
+        // 4.7 Evaluate method body
+        method->body->accept(*this);
+
+        // 4.8 Clean up
+        context.typeSystem.setCurrentType(currentType); // Restore original type
+        context.typeSystem.popPlaceholder();
+        context.PopVar();
+
+        std::cout << "  - Resultado del metodo de origen enviado a la pila - T-PILA: " << context.valueStack.size() << std::endl;
+        std::cout << "[CHECK] Procesada llamada a metodo de origen" << std::endl;
+        return;
+    }
+
+    throw std::runtime_error("[ERROR] Tipo de elemento invalido '" + elemType +
+                             "' para llamada a origen en linea " + std::to_string(node.line()));
 }

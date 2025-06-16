@@ -1,4 +1,4 @@
-#include "TypeSystem.hpp"
+#include "Types.hpp"
 
 TypeDefinition &TypeSystem::registerType(const std::string &name, std::optional<std::string> parent)
 {

@@ -840,7 +840,7 @@ void SemanticValidation::visit(FuncDeclaration &node)
                 if ((leftId && leftId->name == param.name) ||
                     (rightId && rightId->name == param.name))
                 {
-                    // Si el otro operando es un literal, usar su tipoAdd commentMore actions
+                    // Si el otro operando es un literal, usar su tipo
                     if (auto *otherLit = dynamic_cast<DataType *>(leftId ? bin->right : bin->left))
                     {
                         param.type = otherLit->type();
@@ -969,7 +969,7 @@ void SemanticValidation::visit(FuncCall &node)
             }
         }
 
-        // Si el tipo del argumento es Unknown, intentar inferirlo del tipo esperadoAdd commentMore actions
+        // Si el tipo del argumento es Unknown, intentar inferirlo del tipo esperado
         if (argType == "Unknown" && expectedType != "Unknown")
         {
             argType = expectedType;
@@ -1191,7 +1191,7 @@ void SemanticValidation::visit(Block &node)
         expr->accept(*this);
     }
 
-    // Obtener la ultima expresionAdd commentMore actions
+    // Obtener la ultima expresion
     ASTNode *lastExpr = node.expressions.back();
 
     // Si la ultima expresion es una declaracion de funcion o un bloque que termina con una declaracion de funcion
@@ -1615,7 +1615,7 @@ void SemanticValidation::visit(TypeDeclaration &node)
 
         symbolTable.addTypeMethod(node.name, method.name, method.returnType, paramTypes);
 
-        // 🔍 Verificacion de firma heredada si aplica
+        // - Verificacion de firma heredada si aplica
         if (!typeSym->parentType.empty())
         {
             TypeSymbol *parentSym = symbolTable.lookupType(typeSym->parentType);

@@ -1,17 +1,17 @@
-type A {
+
+type Point (x,y) {
+    x = 0;
+    y = 0;
+
+    getX() => self.x;
+    getY() => self.y;
+
+    setX(x) => self.x := x;
+    setY(y) => self.y := y;
 }
 
-type B inherits A {
+let pt = new Point(3,4) in
+{
+    print("x: " @ pt.getX() @ "; y: " @ pt.getY());
 }
-
-type C inherits A {
-}
-
-let x : A = if (rand() < 0.5) new B() else new C() in
-    if (x is B)
-        let y : B = x as B in {
-            print("uuu");
-        }
-    else {
-        print("ooo");
-    }
+    
