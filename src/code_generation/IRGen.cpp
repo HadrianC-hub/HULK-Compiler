@@ -668,8 +668,31 @@ void IRGenerator::visit(Assignment &node)
     }
     else
     {
-        throw std::runtime_error("[ERROR] La parte izquerda debe ser un asignador. Linea: " +
-                                 std::to_string(node.line()));
+        // Handle instance variable assignmentAdd commentMore actions
+        std::string varName;
+        
+        // 1. Get the variable name
+        if (auto* idNode = dynamic_cast<VarFuncName*>(node.name)) {
+            varName = idNode->name;
+        } else if (auto* selfNode = dynamic_cast<SelfCall*>(node.name)) {
+            varName = selfNode->varName;
+        } else {
+            throw std::runtime_error("[ERROR] El miembro izquierdo de la asignación debe ser un asignador o un acceso a self el linea " + 
+                                   std::to_string(node.line()));
+        }
+
+        // 2. Look for the variable in currentInstanceVars
+        if (!context.typeSystem.isInstanceVarsStackEmpty()) {
+            // 3. Change its value for newValue
+            context.typeSystem.setCurrentInstanceVar(varName, "var", newValue);
+            std::cout << "  [CHECK] Variable de instancia '" << varName << "' asignada - T-PILA: " << context.valueStack.size() << std::endl;
+        } else {
+            throw std::runtime_error("[ERROR] No se puede asignar a una variable de instancia fuera del contexto del tipo en linea " + 
+                                   std::to_string(node.line()));
+        }
+
+        // Push the assigned value onto the stack
+        context.valueStack.push_back(newValue);
     }
 }
 
@@ -1240,7 +1263,7 @@ void IRGenerator::visit(SelfCall &node)
     std::cout << "[CHECK] Acceso a self procesado" << std::endl;
 }
 
-void IRGenerator::visit(OriginCall &node)
+void IRGenerator::visit(BaseCall &node)
 {
     std::cout << "- Llamada a origen - T-PILA: " << context.valueStack.size() << std::endl;
 

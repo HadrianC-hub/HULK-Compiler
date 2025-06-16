@@ -21,7 +21,7 @@ class BuiltInFunc;
 class AttributeDeclaration;
 class MethodDeclaration;
 class MethodCall;
-class OriginCall;
+class BaseCall;
 class SelfCall;
 
 class NodeVisitor
@@ -46,7 +46,7 @@ public:
     virtual void visit(AttributeDeclaration &node) = 0;
     virtual void visit(MethodDeclaration &node) = 0;
     virtual void visit(MethodCall &node) = 0;
-    virtual void visit(OriginCall &node) = 0;
+    virtual void visit(BaseCall &node) = 0;
     virtual void visit(SelfCall &node) = 0;
     virtual void visit(UnaryOperation &node) = 0;
     virtual void visit(BuiltInFunc &node) = 0;

@@ -29,7 +29,7 @@ public:
     void visit(class InitInstance& node) override;
     void visit(class MethodCall& node) override;
     void visit(class SelfCall& node) override; 
-    void visit(class OriginCall& node) override;
+    void visit(class BaseCall& node) override;
 
     //Faltan por implementar
     void visit(ASTNode&) override {}

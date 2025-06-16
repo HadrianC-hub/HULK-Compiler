@@ -31,7 +31,8 @@ std::vector<ASTNode*> vectorize(ASTNode* arg1, ASTNode* arg2, int n) {
 
 %}
 
-%code requires {
+%code requires 
+{
     #include <string>
     #include <iostream>
     #include <cmath>
@@ -41,7 +42,8 @@ std::vector<ASTNode*> vectorize(ASTNode* arg1, ASTNode* arg2, int n) {
 
 %locations
 
-%union {
+%union 
+{
     double num;
     std::string* str; 
     bool boolean;
@@ -55,9 +57,9 @@ std::vector<ASTNode*> vectorize(ASTNode* arg1, ASTNode* arg2, int n) {
     TypeBody* type_body;
 }
 
-// --------------------------------------/* Definicion de Tokens */------------------------------------------- //
+// DEFINICIONES
 
-// Literales 
+// Literales
 %token <num> NUMBER
 %token <str> STRING
 %token <boolean> BOOL
@@ -152,9 +154,10 @@ std::vector<ASTNode*> vectorize(ASTNode* arg1, ASTNode* arg2, int n) {
 %%
 
 
-//Producciones
+// PRODUCCIONES
+
 program:
-    /* vacio */
+    /* nada */
     | program statement             { root.push_back($2); }
     | program error ';'             { yyerrok; }
 ;
@@ -357,13 +360,13 @@ statement:
         ;
 
         block_body:
-            /* empty */                     { $$ = new std::vector<ASTNode*>(); }
+            /* nada */                     { $$ = new std::vector<ASTNode*>(); }
             | statement                     { $$ = new std::vector<ASTNode*>(); $$->push_back($1); }
             | block_body statement          { $1->push_back($2); $$ = $1; }
         ;
 
         params:
-            /* empty */         { $$ = new std::vector<Parameter>(); }
+            /* nada */         { $$ = new std::vector<Parameter>(); }
             | ID                { 
                                     Parameter p;
                                     p.name = *$1;
@@ -397,7 +400,7 @@ statement:
         ;
 
         args: 
-            /* empty */                 { $$ = new std::vector<ASTNode*>(); }
+            /* nada */                 { $$ = new std::vector<ASTNode*>(); }
             | expression                { $$ = new std::vector<ASTNode*>(); $$->push_back($1); }
             | args ',' expression       { $1->push_back($3); $$ = $1; }
         ;
@@ -505,7 +508,7 @@ statement:
         ;
         
         type_body
-            : /* empty */ {
+            : /* nada */ {
                 $$ = new TypeBody(new std::vector<AttributeDeclaration>(), new std::vector<MethodDeclaration>());
             }
             | attribute_decl {
@@ -588,7 +591,7 @@ statement:
 
         base_call:
             BASE '(' args ')' {
-                $$ = new OriginCall(*$3, yylloc.first_line);
+                $$ = new BaseCall(*$3, yylloc.first_line);
             }
         ;
 

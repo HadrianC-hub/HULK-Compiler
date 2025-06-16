@@ -660,7 +660,6 @@ void SemanticValidation::visit(BuiltInFunc &node)
         }
         if (node.args[0]->type() == "Unknown")
         {
-            std::cout << "Entra en DDD" << std::endl;
             node.args[0]->type() = "Number";
         }
 
@@ -1082,13 +1081,6 @@ void SemanticValidation::visit(BinaryOperation &node)
     else if (arithmeticOps.count(node.op))
     {
 
-        if (node.op == "+")
-        {
-            std::cout << leftType << std::endl;
-            std::cout << "Hola" << std::endl;
-            std::cout << rightType << std::endl;
-        }
-
         if (leftType == "Unknown" || leftType == "")
             leftType = "Number";
         if (rightType == "Unknown" || rightType == "")
@@ -1124,14 +1116,6 @@ void SemanticValidation::visit(BinaryOperation &node)
     }
     else if (node.op == "@" || node.op == "@@")
     {
-
-        if (node.op == "@")
-        {
-            std::cout << leftType << std::endl;
-            std::cout << "Ho" << std::endl;
-            std::cout << rightType << std::endl;
-        }
-
         if (leftType == "Unknown" || leftType == "")
         {
             if (rightType == "String" || rightType == "Number")
@@ -1412,8 +1396,7 @@ void SemanticValidation::visit(IfExpression &node)
         {
             errors.emplace_back("Tipos incompatibles en ramas del 'if'", node.line());
             node._type = "Error";
-            std::cout << t << std::endl;
-            std::cout << commonType << std::endl;
+
             return;
         }
     }
@@ -1589,7 +1572,7 @@ void SemanticValidation::visit(TypeDeclaration &node)
         symbolTable.enterScope();
         symbolTable.addSymbol("self", node.name, true);
 
-        currentMethodContext = method.name; // ⭐ guardar el nombre actual del metodo
+        currentMethodContext = method.name;
 
         for (const auto &param : *method.params)
         {
@@ -1635,7 +1618,7 @@ void SemanticValidation::visit(TypeDeclaration &node)
             }
         }
 
-        currentMethodContext.clear(); // 🧼 Limpiar al salir del metodo
+        currentMethodContext.clear();
         symbolTable.exitScope();
     }
 
@@ -1740,7 +1723,7 @@ void SemanticValidation::visit(MethodDeclaration &node)
 {
 }
 
-void SemanticValidation::visit(OriginCall &node)
+void SemanticValidation::visit(BaseCall &node)
 {
     Symbol *self = symbolTable.lookup("self");
     if (!self)

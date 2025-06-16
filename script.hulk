@@ -1,3 +1,142 @@
+42;
+
+
+
+print(42);
+
+
+
+print((((1 + 2) ^ 3) * 4) / 5);
+
+
+
+print("Hello World");
+
+
+
+print("The message is \"Hello World\"");
+
+
+
+print("The meaning of life is " @ 42);
+
+
+
+print(sin(2 * PI) ^ 2 + cos(3 * PI / log(4, 64)));
+
+
+
+{
+    print(42);
+    print(sin(PI/2));
+    print("Hello World");
+}
+
+
+
+function cot(x) => 1 / tan(x);
+function tan(x) => sin(x) / cos(x);
+print(tan(PI) ** 2 + cot(PI) ** 2);
+
+
+
+function operate(x, y) 
+{
+    print(x + y);
+    print(x - y);
+    print(x * y);
+    print(x / y);
+    0;
+}
+print(operate(5,2));
+
+
+
+let msg = "Hello World" in print(msg);
+
+let number = 42, text = "The meaning of life is" in
+    print(text @@ number);
+
+let number = 42 in
+    let text = "The meaning of life is" in
+        print(text @@ number);
+
+let a = 6, b = a * 7 in print(b);
+
+let a = 6 in
+    let b = a * 7 in
+        print(b);
+
+let a = 5, b = 10, c = 20 in {
+    print(a+b);
+    print(b*c);
+    print(c/a);
+}
+
+let a = (let b = 6 in b * 7) in print(a);
+
+let a = 20 in {
+    let a = 42 in print(a);
+    print(a);
+}
+
+let a = 7, let a = 7 * 6 in print(a);
+
+
+
+let a = 0 in {
+    print(a);
+    a := 1;
+    print(a);
+}
+
+let a = 0 in
+    let b = a := 1 in print(a @@ b);
+
+
+
+let a = 42 in if (a % 2 == 0) print("Even") else print("odd");
+
+
+
+let a = 42 in print(if (a % 2 == 0) "even" else "odd");
+
+
+
+let a = 42 in
+    if (a % 2 == 0) {
+        print(a);
+        print("Even");
+    }
+    else print("Odd");
+
+
+
+let a = 40, let mod = a % 3 in
+    print(
+        if (mod == 0) "Magic"
+        elif (mod % 3 == 1) "Woke"
+        else "Dumb"
+    );
+
+
+
+print("Starting loop :\)");
+let a = 10 in while (a >= 0) {
+    print(a);
+    a := a - 1;
+}
+
+
+function gcd(a, b) => while (a > 0)
+    let m = a % b in {
+        b := a;
+        a := m;
+    };
+
+
+for (x in range(0, 10)) print(x);
+
 
 type Point (x,y) {
     x = 0;
@@ -11,7 +150,30 @@ type Point (x,y) {
 }
 
 let pt = new Point(3,4) in
-{
     print("x: " @ pt.getX() @ "; y: " @ pt.getY());
+
+
+type PolarPoint(phi, rho) inherits Point(rho * sin(phi), rho * cos(phi)) {
+    rho() => sqrt(self.getX() ^ 2 + self.getY() ^ 2);
 }
-    
+
+
+type Person(firstname, lastname) {
+    firstname = firstname;
+    lastname = lastname;
+
+    name() => self.firstname @@ self.lastname;
+}
+
+
+type Knight inherits Person {
+    name() => "Sir" @@ base();
+}
+
+let p = new Knight("Phil", "Collins") in
+    print(p.name());
+
+
+let x: Number = 42 in print(x);
+
+function tan2(x: Number): Number => sin(x) / cos(x);

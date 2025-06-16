@@ -98,7 +98,7 @@ int yycolumn = 1;
 ")"                     { printf("TOKEN ) \n"); return ')'; }
 "{"                     { printf("TOKEN { \n"); return '{'; }
 "}"                     { printf("TOKEN } \n"); return '}'; }
-","                     { printf("TOKEN , \n"); return ','; }          
+","                     { printf("TOKEN , \n"); return ','; }
 [a-zA-Z_][a-zA-Z0-9_]*  {
                             yylval.str = new std::string(yytext);
                             printf("ID: %s  → Linea %d, Columna %d\n", yytext, yylineno, yylloc.first_column);

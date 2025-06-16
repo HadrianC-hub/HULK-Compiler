@@ -36,6 +36,6 @@ public:
     void visit(AttributeDeclaration &node) override {}
     void visit(MethodDeclaration &node) override {}
     void visit(MethodCall &node) override {}
-    void visit(OriginCall &node) override {}
+    void visit(BaseCall &node) override {}
     void visit(SelfCall &node) override {}
 };

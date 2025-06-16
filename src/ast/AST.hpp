@@ -412,14 +412,14 @@ public:
     std::string type() const override { return _type; }
 };
 
-class OriginCall : public ASTNode
+class BaseCall : public ASTNode
 {
 public:
     std::vector<ASTNode *> args;
     int _line;
     std::string _type;
 
-    OriginCall(std::vector<ASTNode *> args, int line)
+    BaseCall(std::vector<ASTNode *> args, int line)
         : args(std::move(args)), _line(line), _type("") {}
 
     void accept(NodeVisitor &v) override { v.visit(*this); }
