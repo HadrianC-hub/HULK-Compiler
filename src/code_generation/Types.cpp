@@ -1,123 +1,123 @@
 #include "Types.hpp"
 
-TypeDefinition &TypeSystem::registerType(const std::string &name, std::optional<std::string> parent)
+type_definition &TypeSystem::reg_type(const std::string &name, std::optional<std::string> parent)
 {
-    // Check if parent type exists if specified
-    if (parent && !typeExists(*parent))
+    // Comprobar si el padre existe en caso que sea especificado
+    if (parent && !type_exists(*parent))
     {
-        throw std::runtime_error("Parent type '" + *parent + "' not found for type '" + name + "'");
+        throw std::runtime_error("Tipo padre '" + *parent + "' no encontrado para tipo '" + name + "'");
     }
 
-    // Create and store the type definition
+    // Crear y almacenar definición de tipo
     auto [it, inserted] = typeTable.try_emplace(name, name, parent);
     if (!inserted)
     {
-        throw std::runtime_error("Type '" + name + "' already exists");
+        throw std::runtime_error("Tipo '" + name + "' ya existe");
     }
 
-    // Initialize constructor parameters and base args
+    // Inicializar constructor y parámetros
     it->second.constructorParams = std::vector<std::string>();
     it->second.baseArgs = std::vector<ASTNode *>();
 
     return it->second;
 }
 
-void TypeSystem::addAttribute(const std::string &attrName, const std::string &typeName, ASTNode *initializer)
+void TypeSystem::add_attribute(const std::string &attrName, const std::string &typeName, ASTNode *initializer)
 {
     auto it = typeTable.find(typeName);
     if (it == typeTable.end())
     {
-        throw std::runtime_error("Type '" + typeName + "' not found");
+        throw std::runtime_error("Tipo '" + typeName + "' no encontrado");
     }
 
-    // Check if attribute already exists
+    // Comprobar si el atributo ya existe
     if (it->second.attributes.find(attrName) != it->second.attributes.end())
     {
-        throw std::runtime_error("Attribute '" + attrName + "' already exists in type '" + typeName + "'");
+        throw std::runtime_error("Atributo '" + attrName + "' ya existe en tipo '" + typeName + "'");
     }
 
-    it->second.attributes.emplace(attrName, TypeAttribute(attrName, typeName, initializer));
+    it->second.attributes.emplace(attrName, type_attribute(attrName, typeName, initializer));
 }
 
-void TypeSystem::addMethod(const std::string &typeName, const std::string &methodName, std::vector<Parameter> *params, ASTNode *body, const std::string &returnType)
+void TypeSystem::add_method(const std::string &typeName, const std::string &methodName, std::vector<Parameter> *params, ASTNode *body, const std::string &returnType)
 {
     auto it = typeTable.find(typeName);
     if (it == typeTable.end())
     {
-        throw std::runtime_error("Type '" + typeName + "' not found");
+        throw std::runtime_error("Tipo '" + typeName + "' no encontrado");
     }
 
-    // Check if method already exists
+    // Comprobar si el método ya existe
     if (it->second.methods.find(methodName) != it->second.methods.end())
     {
-        throw std::runtime_error("Method '" + methodName + "' already exists in type '" + typeName + "'");
+        throw std::runtime_error("Metodo '" + methodName + "' ya existe en tipo '" + typeName + "'");
     }
 
-    it->second.methods.emplace(methodName, TypeMethod(params, body, returnType));
+    it->second.methods.emplace(methodName, type_method(params, body, returnType));
 }
 
-void TypeSystem::createInstance(const std::string &varName, const std::string &typeName, const std::map<std::pair<std::string, std::string>, llvm::Value *> &vars)
+void TypeSystem::new_instance(const std::string &varName, const std::string &typeName, const std::map<std::pair<std::string, std::string>, llvm::Value *> &vars)
 {
-    if (!typeExists(typeName))
+    if (!type_exists(typeName))
     {
-        throw std::runtime_error("Type '" + typeName + "' not found");
+        throw std::runtime_error("Tipo '" + typeName + "' no encontrado");
     }
 
-    // Check if instance already exists
+    // Comprobar si la instancia ya existe
     if (instanceTable.find(varName) != instanceTable.end())
     {
-        throw std::runtime_error("Instance '" + varName + "' already exists");
+        throw std::runtime_error("Instancia '" + varName + "' ya existe");
     }
 
     instanceTable[varName] = typeName;
     instanceVars[varName] = vars;
 }
 
-std::string TypeSystem::getInstanceType(const std::string &varName) const
+std::string TypeSystem::get_instance_type(const std::string &varName) const
 {
     auto it = instanceTable.find(varName);
     return it != instanceTable.end() ? it->second : "";
 }
 
-TypeMethod *TypeSystem::findMethod(const std::string &typeName, const std::string &methodName)
+type_method *TypeSystem::find_method(const std::string &typeName, const std::string &methodName)
 {
     auto it = typeTable.find(typeName);
     if (it == typeTable.end())
         return nullptr;
 
-    // Look for method in current type
+    // Buscar al método en el tipo actual
     auto methodIt = it->second.methods.find(methodName);
     if (methodIt != it->second.methods.end())
     {
         return &methodIt->second;
     }
 
-    // If not found and has parent, look in parent type
+    // Si no fue encontrado y tiene un padre, buscar en el padre
     if (it->second.parentType)
     {
-        return findMethod(*it->second.parentType, methodName);
+        return find_method(*it->second.parentType, methodName);
     }
 
     return nullptr;
 }
 
-TypeAttribute *TypeSystem::findAttribute(const std::string &typeName, const std::string &attrName)
+type_attribute *TypeSystem::find_attribute(const std::string &typeName, const std::string &attrName)
 {
     auto it = typeTable.find(typeName);
     if (it == typeTable.end())
         return nullptr;
 
-    // Look for attribute in current type
+    // Buscar un atributo en el tipo actual
     auto attrIt = it->second.attributes.find(attrName);
     if (attrIt != it->second.attributes.end())
     {
         return &attrIt->second;
     }
 
-    // If not found and has parent, look in parent type
+    // Si no fue encontrado y tiene un padre, buscar en el padre
     if (it->second.parentType)
     {
-        return findAttribute(*it->second.parentType, attrName);
+        return find_attribute(*it->second.parentType, attrName);
     }
 
     return nullptr;

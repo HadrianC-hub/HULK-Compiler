@@ -9,100 +9,81 @@
 #include "../ast/AST.hpp"
 #include <llvm/IR/Value.h>
 
-/**
- * @brief Represents a placeholder entry with name and type
- */
-struct PlaceholderEntry
+// Representa un espacio de memoria reservado para una variable o metodo
+struct placeholder
 {
     std::string name;
-    std::string type; // "var" or "method"
+    std::string type; // "var" o "method"
 
-    PlaceholderEntry(std::string n, std::string t) : name(std::move(n)), type(std::move(t)) {}
+    placeholder(std::string n, std::string t) : name(std::move(n)), type(std::move(t)) {}
 };
 
-/**
- * @brief Represents a type's method with its parameters and body
- */
-struct TypeMethod
+// Representa al metodo de un tipo definido por el usuario, con parámetros y cuerpo
+struct type_method
 {
     std::vector<Parameter> *params;
     ASTNode *body;
     std::string returnType;
 
-    TypeMethod(std::vector<Parameter> *p, ASTNode *b, std::string ret = "")
+    type_method(std::vector<Parameter> *p, ASTNode *b, std::string ret = "")
         : params(p), body(b), returnType(std::move(ret)) {}
 };
 
-/**
- * @brief Represents a type's attribute with its name, type and initialization
- */
-struct TypeAttribute
+// Representa los atributos de un tipo definido por el usuario, con su inicializador
+struct type_attribute
 {
-    std::string AttrName; // Attribute name
-    std::string TypeName; // Attribute type (Number, String, Boolean, etc.)
-    ASTNode *initializer; // Initializer AST node
+    std::string AttrName;
+    std::string TypeName;
+    ASTNode *initializer;
 
-    TypeAttribute(std::string attrName, std::string attrType, ASTNode *init)
+    type_attribute(std::string attrName, std::string attrType, ASTNode *init)
         : AttrName(std::move(attrName)), TypeName(std::move(attrType)), initializer(init) {}
 };
 
-/**
- * @brief Represents a type definition with its attributes, methods and inheritance
- */
-struct TypeDefinition
+// Representa un tipo definido por el usuario, con sus atributos e inicializador
+struct type_definition
 {
     std::string name;
     std::optional<std::string> parentType;
-    std::map<std::string, TypeAttribute> attributes;
-    std::map<std::string, TypeMethod> methods;
+    std::map<std::string, type_attribute> attributes;
+    std::map<std::string, type_method> methods;
     std::vector<std::string> constructorParams; // List of parameter names
     std::vector<ASTNode *> baseArgs;            // Arguments for base constructor
 
-    TypeDefinition(std::string n, std::optional<std::string> parent = std::nullopt)
+    type_definition(std::string n, std::optional<std::string> parent = std::nullopt)
         : name(std::move(n)), parentType(std::move(parent)),
           constructorParams(),
           baseArgs() {}
 };
 
-/**
- * @brief Manages the type system including type definitions and instances
- */
+// Maneja el sistema de tipos, incluyendo definiciones e instancias
 class TypeSystem
 {
 private:
-    // Maps type names to their definitions
-    std::map<std::string, TypeDefinition> typeTable;
+    // Mapa de nombres de tipos a definiciones
+    std::map<std::string, type_definition> typeTable;
 
-    // Maps instance variable names to their type names
+    // Mapa de instancias de tipos a sus tipos
     std::map<std::string, std::string> instanceTable;
 
-    // Maps instance names to their attribute values with type information
+    // Mapa de instancias de tipos a sus valores de atributos con información de tipo
     std::map<std::string, std::map<std::pair<std::string, std::string>, llvm::Value *>> instanceVars;
 
-    // Current type being processed (for self and base calls)
+    // Tipo actual siendo procesado (para llamadas a self y base)
     std::string currentType;
 
-    // Stack to track variables being processed with their types
-    std::vector<PlaceholderEntry> placeholderStack;
+    // Pila para rastrear variables siendo procesadas con sus tipos 
+    std::vector<placeholder> placeholderStack;
 
-    // Stack to track current instance variables with type information
+    // Pila para rastrear la instancia actual de variable con su información de tipo
     std::vector<std::map<std::pair<std::string, std::string>, llvm::Value *>> currentInstanceVarsStack;
 
 public:
-    /**
-     * @brief Registers a new type definition
-     * @param name Type name
-     * @param parent Optional parent type name
-     * @return Reference to the created type definition
-     */
-    TypeDefinition &registerType(const std::string &name, std::optional<std::string> parent = std::nullopt);
+    // Registra la nueva definición de un tipo
+    type_definition &reg_type(const std::string &name, std::optional<std::string> parent = std::nullopt);
 
-    /**
-     * @brief Gets a type definition by name
-     * @param typeName Type name
-     * @return Reference to the type definition
-     */
-    TypeDefinition &getTypeDefinition(const std::string &typeName)
+    // Obtiene la definición de un tipo por su nombre
+    type_definition &get_type_definition(const std::string &typeName)
     {
         auto it = typeTable.find(typeName);
         if (it == typeTable.end())
@@ -112,87 +93,44 @@ public:
         return it->second;
     }
 
-    /**
-     * @brief Gets the constructor parameters for a type
-     * @param typeName Type name
-     * @return Vector of constructor parameter names
-     */
-    const std::vector<std::string> &getConstructorParams(const std::string &typeName)
+    // Obtiene los parámetros del constructor de un tipo
+    const std::vector<std::string> &get_constructor_params(const std::string &typeName)
     {
-        return getTypeDefinition(typeName).constructorParams;
+        return get_type_definition(typeName).constructorParams;
     }
 
-    /**
-     * @brief Gets the base arguments for a type
-     * @param typeName Type name
-     * @return Vector of base argument AST nodes
-     */
-    const std::vector<ASTNode *> &getBaseArgs(const std::string &typeName)
+    // Obtiene los argumentos base para un tipo
+    const std::vector<ASTNode *> &get_base_args(const std::string &typeName)
     {
-        return getTypeDefinition(typeName).baseArgs;
+        return get_type_definition(typeName).baseArgs;
     }
 
-    /**
-     * @brief Gets the attributes for a type
-     * @param typeName Type name
-     * @return Map of attribute names to their definitions
-     */
-    const std::map<std::string, TypeAttribute> &getAttributes(const std::string &typeName)
+    // Obtiene los atributos para un tipo
+    const std::map<std::string, type_attribute> &get_attributes(const std::string &typeName)
     {
-        return getTypeDefinition(typeName).attributes;
+        return get_type_definition(typeName).attributes;
     }
 
-    /**
-     * @brief Gets the parent type name for a type
-     * @param typeName Type name
-     * @return Optional parent type name
-     */
-    std::optional<std::string> getParentType(const std::string &typeName)
+    // Obtiene el nombre del tipo padre para un tipo
+    std::optional<std::string> get_parent_type(const std::string &typeName)
     {
-        return getTypeDefinition(typeName).parentType;
+        return get_type_definition(typeName).parentType;
     }
 
-    /**
-     * @brief Adds an attribute to a type
-     * @param attrName Attribute name
-     * @param typeName Type name
-     * @param initializer Attribute initializer AST node
-     */
-    void addAttribute(const std::string &attrName, const std::string &typeName, ASTNode *initializer);
+    // Agrega un atributo a un tipo
+    void add_attribute(const std::string &attrName, const std::string &typeName, ASTNode *initializer);
 
-    /**
-     * @brief Adds a method to a type
-     * @param typeName Type name
-     * @param methodName Method name
-     * @param params Method parameters
-     * @param body Method body AST node
-     * @param returnType Method return type
-     */
-    void addMethod(const std::string &typeName, const std::string &methodName,
-                   std::vector<Parameter> *params, ASTNode *body, const std::string &returnType = "");
+    // Agrega un método a un tipo
+    void add_method(const std::string &typeName, const std::string &methodName, std::vector<Parameter> *params, ASTNode *body, const std::string &returnType = "");
 
-    /**
-     * @brief Creates a new instance of a type
-     * @param varName Variable name for the instance
-     * @param typeName Type name
-     * @param vars Map of attribute names and their types to their values
-     */
-    void createInstance(const std::string &varName, const std::string &typeName,
-                        const std::map<std::pair<std::string, std::string>, llvm::Value *> &vars = {});
+    // Crea una nueva instancia del tipo
+    void new_instance(const std::string &varName, const std::string &typeName, const std::map<std::pair<std::string, std::string>, llvm::Value *> &vars = {});
 
-    /**
-     * @brief Gets the type name for an instance variable
-     * @param varName Variable name
-     * @return Type name if found, empty string otherwise
-     */
-    std::string getInstanceType(const std::string &varName) const;
+    // Obtiene el nombre del tipo de una instancia
+    std::string get_instance_type(const std::string &varName) const;
 
-    /**
-     * @brief Gets the attribute values for an instance
-     * @param instanceName Instance name
-     * @return Map of attribute names and types to their values
-     */
-    const std::map<std::pair<std::string, std::string>, llvm::Value *> &getInstanceVars(const std::string &instanceName) const
+    // Obtiene los valores de los atributos de una instancia
+    const std::map<std::pair<std::string, std::string>, llvm::Value *> &get_instance_vars(const std::string &instanceName) const
     {
         auto it = instanceVars.find(instanceName);
         if (it == instanceVars.end())
@@ -202,28 +140,14 @@ public:
         return it->second;
     }
 
-    /**
-     * @brief Sets an attribute value for an instance
-     * @param instanceName Instance name
-     * @param attrName Attribute name
-     * @param attrType Attribute type
-     * @param value Attribute value
-     */
-    void setInstanceVar(const std::string &instanceName, const std::string &attrName,
-                        const std::string &attrType, llvm::Value *value)
+    // Asigna un valor a un atributo de una instancia
+    void set_instance_var(const std::string &instanceName, const std::string &attrName, const std::string &attrType, llvm::Value *value)
     {
         instanceVars[instanceName][{attrName, attrType}] = value;
     }
 
-    /**
-     * @brief Gets an attribute value for an instance
-     * @param instanceName Instance name
-     * @param attrName Attribute name
-     * @param attrType Attribute type
-     * @return Attribute value if found, nullptr otherwise
-     */
-    llvm::Value *getInstanceVar(const std::string &instanceName, const std::string &attrName,
-                                const std::string &attrType) const
+    // Obtiene el valor de un atributo de una instancia
+    llvm::Value *get_instance_var(const std::string &instanceName, const std::string &attrName, const std::string &attrType) const
     {
         auto it = instanceVars.find(instanceName);
         if (it == instanceVars.end())
@@ -233,100 +157,56 @@ public:
         return attrIt != it->second.end() ? attrIt->second : nullptr;
     }
 
-    /**
-     * @brief Sets the current type being processed
-     * @param typeName Type name
-     */
-    void setCurrentType(const std::string &typeName) { currentType = typeName; }
+    // Define al tipo actual siendo procesado
+    void set_current_type(const std::string &typeName) { currentType = typeName; }
 
-    /**
-     * @brief Gets the current type being processed
-     * @return Current type name
-     */
-    std::string getCurrentType() const { return currentType; }
+    // Obtiene al tipo actual siendo procesado
+    std::string get_current_type() const { return currentType; }
 
-    /**
-     * @brief Finds a method in a type or its parent types
-     * @param typeName Type name
-     * @param methodName Method name
-     * @return Pointer to the method if found, nullptr otherwise
-     */
-    TypeMethod *findMethod(const std::string &typeName, const std::string &methodName);
+    // Encuentra un método en un tipo o en sus padres
+    type_method *find_method(const std::string &typeName, const std::string &methodName);
 
-    /**
-     * @brief Finds an attribute in a type or its parent types
-     * @param typeName Type name
-     * @param attrName Attribute name
-     * @return Pointer to the attribute if found, nullptr otherwise
-     */
-    TypeAttribute *findAttribute(const std::string &typeName, const std::string &attrName);
+    // Encuentra un atributo en un tipo o en sus padres
+    type_attribute *find_attribute(const std::string &typeName, const std::string &attrName);
 
-    /**
-     * @brief Checks if a type exists
-     * @param typeName Type name
-     * @return true if type exists, false otherwise
-     */
-    bool typeExists(const std::string &typeName) const
+    // Verifica que un tipo exista
+    bool type_exists(const std::string &typeName) const
     {
         return typeTable.find(typeName) != typeTable.end();
     }
 
-    /**
-     * @brief Pushes a variable name and type onto the placeholder stack
-     * @param varName Variable name to push
-     * @param varType Variable type to push
-     */
-    void pushPlaceholder(const std::string &varName, const std::string &varType)
+    // Envía una variable junto con su tipo a un espacio reservado en la pila (placeholder)
+    void push_placeholder(const std::string &varName, const std::string &varType)
     {
-        placeholderStack.push_back(PlaceholderEntry(varName, varType));
+        placeholderStack.push_back(placeholder(varName, varType));
     }
 
-    /**
-     * @brief Pops a variable name and type from the placeholder stack
-     * @return The popped PlaceholderEntry
-     */
-    PlaceholderEntry popPlaceholder()
+    // Extrae de la pila una variable junto con su tipo de la pila
+    placeholder pop_placeholder()
     {
         if (placeholderStack.empty())
         {
-            return PlaceholderEntry("", "");
+            return placeholder("", "");
         }
-        PlaceholderEntry entry = placeholderStack.back();
+        placeholder entry = placeholderStack.back();
         placeholderStack.pop_back();
         return entry;
     }
 
-    /**
-     * @brief Gets the current variable name and type being processed
-     * @return Current PlaceholderEntry, or empty entry if stack is empty
-     */
-    PlaceholderEntry getCurrentPlaceholder() const
+    // Obtiene la variable actual junto con su tipo que están siendo procesados
+    placeholder get_current_placeholder() const
     {
-        return placeholderStack.empty() ? PlaceholderEntry("", "") : placeholderStack.back();
+        return placeholderStack.empty() ? placeholder("", "") : placeholderStack.back();
     }
 
-    /**
-     * @brief Checks if the placeholder stack is empty
-     * @return true if stack is empty, false otherwise
-     */
-    bool isPlaceholderStackEmpty() const
-    {
-        return placeholderStack.empty();
-    }
-
-    /**
-     * @brief Pushes a new instance variables map onto the stack
-     * @param vars Map of instance variables to push
-     */
-    void pushCurrentInstanceVars(const std::map<std::pair<std::string, std::string>, llvm::Value *> &vars)
+    // Envía un nuevo mapa de variables de instancia a la pila
+    void push_current_instance_vars(const std::map<std::pair<std::string, std::string>, llvm::Value *> &vars)
     {
         currentInstanceVarsStack.push_back(vars);
     }
 
-    /**
-     * @brief Pops the top instance variables map from the stack
-     */
-    void popCurrentInstanceVars()
+    // Extrae de la pila un mapa de variables de instancia
+    void pop_current_instance_vars()
     {
         if (!currentInstanceVarsStack.empty())
         {
@@ -334,13 +214,8 @@ public:
         }
     }
 
-    /**
-     * @brief Sets a value in the current instance variables map
-     * @param varName Variable name to set
-     * @param varType Variable type to set
-     * @param value Value to set
-     */
-    void setCurrentInstanceVar(const std::string &varName, const std::string &varType, llvm::Value *value)
+    // Establece un valor en el mapa de variables de instancia actual
+    void set_current_instance_var(const std::string &varName, const std::string &varType, llvm::Value *value)
     {
         if (!currentInstanceVarsStack.empty())
         {
@@ -348,13 +223,8 @@ public:
         }
     }
 
-    /**
-     * @brief Gets a value from the current instance variables map
-     * @param varName Variable name to look up
-     * @param varType Variable type to look up
-     * @return Pointer to the value if found, nullptr otherwise
-     */
-    llvm::Value *getCurrentInstanceVar(const std::string &varName, const std::string &varType) const
+    // Obtiene un valor en el mapa de variables de instancia actual
+    llvm::Value *get_current_instance_var(const std::string &varName, const std::string &varType) const
     {
         if (currentInstanceVarsStack.empty())
         {
@@ -365,11 +235,8 @@ public:
         return it != currentVars.end() ? it->second : nullptr;
     }
 
-    /**
-     * @brief Gets all instance names
-     * @return Vector of instance names
-     */
-    std::vector<std::string> getAllInstanceNames() const
+    // Obtiene todos los nombres de instancias
+    std::vector<std::string> get_all_instances_names() const
     {
         std::vector<std::string> names;
         for (const auto &[name, _] : instanceTable)
@@ -379,13 +246,9 @@ public:
         return names;
     }
 
-    /**
-     * @brief Checks if the instance variables stack is empty
-     * @return true if stack is empty, false otherwise
-     */
-    bool isInstanceVarsStackEmpty() const
+    // Comprueba si la pila de variables de instancias está vacía (true)
+    bool is_instance_vars_stack_empty() const
     {
         return currentInstanceVarsStack.empty();
     }
-    
 };

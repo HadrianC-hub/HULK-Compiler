@@ -591,15 +591,15 @@ void IRGenerator::visit(LetExpression &node)
     // Procesar declaraciones
     for (const LetDeclaration &decl : *node.declarations)
     {
-        // Push the variable name and type onto the placeholder stack before processing its value
-        context.typeSystem.pushPlaceholder(decl.name, "var");
+        // Enviar el nombre y tipo de variable al reservado de memoria en pila antes de procesar su valor
+        context.typeSystem.push_placeholder(decl.name, "var");
         std::cout << "  - Agregada reservacion: " << decl.name << " de tipo variable" << std::endl;
 
         // Procesar el inicializador
         decl.initializer->accept(*this);
         if (auto *newInstance = dynamic_cast<InitInstance *>(decl.initializer))
         {
-            context.typeSystem.popPlaceholder();
+            context.typeSystem.pop_placeholder();
             continue;
         }
         llvm::Value *initValue = context.valueStack.back();
@@ -609,7 +609,7 @@ void IRGenerator::visit(LetExpression &node)
         context.addLocal(decl.name, initValue);
 
         // Pop the placeholder after processing
-        context.typeSystem.popPlaceholder();
+        context.typeSystem.pop_placeholder();
     }
 
     // Procesar el cuerpo
@@ -675,10 +675,10 @@ void IRGenerator::visit(Assignment &node)
         }
 
         // 2. Look for the variable in currentInstanceVars
-        if (!context.typeSystem.isInstanceVarsStackEmpty()) {
+        if (!context.typeSystem.is_instance_vars_stack_empty()) {
             // 3. Change its value for newValue
-            context.typeSystem.setCurrentInstanceVar(varName, "var", newValue);
-            // llvm::Value* addr = context.typeSystem.getCurrentInstanceVar(varName, "var");
+            context.typeSystem.set_current_instance_var(varName, "var", newValue);
+            // llvm::Value* addr = context.typeSystem.get_current_instance_var(varName, "var");
             // if (!addr) {
             //     throw std::runtime_error("Variable de instancia '" + varName + "' no encontrada en objeto actual.");
             // }
@@ -949,7 +949,7 @@ void IRGenerator::visit(ForLoop &node)
 
     std::cout << "[CHECK] Ciclo FOR terminado despues de " << iteration << " iteraciones" << std::endl;
 
-    // // 7. Push the last body value to global stack if any
+    // // Enviar el ultimo valor a la stack si existe
     // if (!loopBodyValues.empty())
     // {
     //     context.valueStack.push_back(loopBodyValues.back());
@@ -965,17 +965,17 @@ void IRGenerator::visit(TypeDeclaration &node)
 {
     std::cout << "- Declaracion de tipo: " << node.name << std::endl;
 
-    // Check if type is already registered
-    if (context.typeSystem.typeExists(node.name))
+    // Comprueba si el tipo ya está registrado
+    if (context.typeSystem.type_exists(node.name))
     {
         std::cout << "  [WARNING] Tipo " << node.name << " ya registrado, saltando..." << std::endl;
         return;
     }
 
-    // Register the type
-    auto &typeDef = context.typeSystem.registerType(node.name, node.baseType);
+    // Registra el tipo
+    auto &typeDef = context.typeSystem.reg_type(node.name, node.baseType);
 
-    // Set constructor parameters and base args
+    // Define los parametros del constructor y argumentos de la base
     typeDef.constructorParams.clear();
     if (node.constructorParams)
     {
@@ -986,25 +986,25 @@ void IRGenerator::visit(TypeDeclaration &node)
     }
     typeDef.baseArgs = node.baseArgs;
 
-    // Set current type for processing attributes and methods
-    context.typeSystem.setCurrentType(node.name);
+    // Establecer como tipo actual para procesar atributos y metodos
+    context.typeSystem.set_current_type(node.name);
 
-    // Process attributes
+    // Procesar atributos
     if (node.body->attributes)
     {
         for (const auto &attr : *node.body->attributes)
         {
-            context.typeSystem.addAttribute(attr.name, node.name, attr.initializer);
+            context.typeSystem.add_attribute(attr.name, node.name, attr.initializer);
             std::cout << "  - Agregado atributo: " << attr.name << " del tipo " << node.name << std::endl;
         }
     }
 
-    // Process methods
+    // Procesar metodos
     if (node.body->methods)
     {
         for (const auto &method : *node.body->methods)
         {
-            context.typeSystem.addMethod(node.name, method.name, method.params, method.body, method.returnType);
+            context.typeSystem.add_method(node.name, method.name, method.params, method.body, method.returnType);
             std::cout << "  - Agregado metodo: " << method.name << std::endl;
         }
     }
@@ -1016,22 +1016,22 @@ void IRGenerator::visit(InitInstance &node)
 {
     std::cout << "- Nueva instancia: " << node.typeName << std::endl;
 
-    // Check if we're inside a let declaration
-    std::string varName = context.typeSystem.getCurrentPlaceholder().name;
+    // Comprueba si estamos dentro de una declaración let
+    std::string varName = context.typeSystem.get_current_placeholder().name;
     if (!varName.empty())
     {
         std::cout << "  - Usando variable reservada: " << varName << std::endl;
     }
 
-    // 1. Initialize instance variables map and set current type
+    // Inicializando mapa de variables de instancia y estableciendo tipo actual
     std::map<std::pair<std::string, std::string>, llvm::Value *> instanceVars;
     std::string currType = node.typeName;
-    context.typeSystem.setCurrentType(currType);
+    context.typeSystem.set_current_type(currType);
 
-    // 2. Start a new variable scope without inheritance
+    // Crear un nuevo scope de variables sin herencia
     context.PushVar(false);
 
-    // Process constructor arguments first
+    // Procesar argumentos del constructor
     std::vector<llvm::Value *> args;
     for (ASTNode *arg : node.args)
     {
@@ -1040,18 +1040,18 @@ void IRGenerator::visit(InitInstance &node)
         context.valueStack.pop_back();
     }
 
-    // Process type hierarchy
+    // Procesar jerarquía de tipos
     while (!currType.empty())
     {
         std::cout << "  - Procesando tipo: " << currType << std::endl;
 
-        // Get type information
-        const auto &typeConst = context.typeSystem.getConstructorParams(currType);
-        const auto &fatherArgs = context.typeSystem.getBaseArgs(currType);
-        const auto &attrType = context.typeSystem.getAttributes(currType);
-        const auto &father = context.typeSystem.getParentType(currType);
+        // Obtener información de tipos
+        const auto &typeConst = context.typeSystem.get_constructor_params(currType);
+        const auto &fatherArgs = context.typeSystem.get_base_args(currType);
+        const auto &attrType = context.typeSystem.get_attributes(currType);
+        const auto &father = context.typeSystem.get_parent_type(currType);
 
-        // Process constructor parameters
+        // Procesar parámetros del constructor
         if (!typeConst.empty())
         {
             for (size_t i = 0; i < typeConst.size() && i < args.size(); ++i)
@@ -1059,16 +1059,16 @@ void IRGenerator::visit(InitInstance &node)
                 context.addLocal(typeConst[i], args[i]);
                 std::cout << "    - Agregado parametro de constructor: " << typeConst[i] << std::endl;
             }
-            // Remove processed args
+            // Remover argumentos procesados
             args.erase(args.begin(), args.begin() + std::min(typeConst.size(), args.size()));
         }
 
-        // Process parent constructor parameters
+        // Procesar parámetros del constructor padre
         if (father)
         {
-            const auto &fatherConst = context.typeSystem.getConstructorParams(*father);
+            const auto &fatherConst = context.typeSystem.get_constructor_params(*father);
 
-            // Process base args first
+            // Procesar argumentos de la base primero
             if (!fatherArgs.empty())
             {
                 for (size_t i = 0; i < fatherArgs.size() && i < fatherConst.size(); ++i)
@@ -1080,18 +1080,18 @@ void IRGenerator::visit(InitInstance &node)
                 }
             }
 
-            // Process remaining args with remaining parent constructor params
+            // Procesar argumentos restantes con los restantes parametros del constructor del padre
             size_t startIdx = fatherArgs.size();
             for (size_t i = 0; i < fatherConst.size() - startIdx && i < args.size(); ++i)
             {
                 context.addLocal(fatherConst[startIdx + i], args[i]);
                 std::cout << "    - Agregando parametros del padre: " << fatherConst[startIdx + i] << std::endl;
             }
-            // Remove processed args
+            // Remover argumentos procesados
             args.erase(args.begin(), args.begin() + std::min(fatherConst.size() - startIdx, args.size()));
         }
 
-        // Process attributes
+        // Procesar atributos
         for (const auto &[attrName, attr] : attrType)
         {
             if (attr.initializer)
@@ -1107,11 +1107,11 @@ void IRGenerator::visit(InitInstance &node)
             }
         }
 
-        // Move to parent type
+        // Moverse al procesamiento del padre
         if (father)
         {
             currType = *father;
-            context.typeSystem.setCurrentType(currType);
+            context.typeSystem.set_current_type(currType);
         }
         else
         {
@@ -1119,12 +1119,12 @@ void IRGenerator::visit(InitInstance &node)
         }
     }
 
-    // Clean up
+    // Limpiar scope
     context.PopVar();
-    context.typeSystem.setCurrentType("");
+    context.typeSystem.set_current_type("");
 
-    // Create the instance with its variables
-    context.typeSystem.createInstance(varName, node.typeName, instanceVars);
+    // Crear la instancia con sus variables
+    context.typeSystem.new_instance(varName, node.typeName, instanceVars);
 
     std::cout << "[CHECK] Instancia creada: " << varName << std::endl;
 }
@@ -1135,56 +1135,56 @@ void IRGenerator::visit(MethodCall &node)
 
     std::string instanceName = node.instanceName;
 
-    // 1. Get instance type and set currentType
+    // Obtener tipo de instancia y definir como tipo actual
     if (instanceName == "self")
     {
-        // Get all instance names and use the last one
-        auto instanceNames = context.typeSystem.getAllInstanceNames();
+        // Obtener todos los nombres de instancia y usar el último
+        auto instanceNames = context.typeSystem.get_all_instances_names();
         if (!instanceNames.empty())
         {
             std::string lastInstanceName = instanceNames.back();
             instanceName = lastInstanceName;
-            // Push the last instance's variables as current
-            context.typeSystem.pushCurrentInstanceVars(context.typeSystem.getInstanceVars(lastInstanceName));
+            // Enviar la ultima variable de instancia como actual
+            context.typeSystem.push_current_instance_vars(context.typeSystem.get_instance_vars(lastInstanceName));
             std::cout << "[CHECK] Variables agregadas." << std::endl;
         }
     }
     else
     {
-        // Push instance variables onto the stack
+        // Enviar variables de instancia al stack
         try
         {
-            context.typeSystem.pushCurrentInstanceVars(context.typeSystem.getInstanceVars(node.instanceName));
+            context.typeSystem.push_current_instance_vars(context.typeSystem.get_instance_vars(node.instanceName));
         }
         catch (const std::runtime_error &e)
         {
             throw std::runtime_error("[ERROR] " + std::string(e.what()) + " en linea " + std::to_string(node.line()));
         }
     }
-    std::string typeName = context.typeSystem.getInstanceType(instanceName);
+    std::string typeName = context.typeSystem.get_instance_type(instanceName);
 
     if (typeName.empty())
     {
         throw std::runtime_error("[ERROR] Instancia '" + instanceName + "' no encontrada en linea " + std::to_string(node.line()));
     }
 
-    context.typeSystem.setCurrentType(typeName);
+    context.typeSystem.set_current_type(typeName);
 
-    // 2. Create new varScope without inheritance
+    // Crear un nuevo scope de variables sin herencia
     context.PushVar(false);
 
-    // 3. Set method name in placeholderStack
-    context.typeSystem.pushPlaceholder(node.methodName, "method");
+    // Establecer el nombre del metodo en la memoria reservada
+    context.typeSystem.push_placeholder(node.methodName, "method");
 
-    // 4. Find method in type hierarchy
-    TypeMethod *method = nullptr;
+    // Encontrar método en la jerarquía
+    type_method *method = nullptr;
     std::string currType = typeName;
     while (!currType.empty() && !method)
     {
-        method = context.typeSystem.findMethod(currType, node.methodName);
+        method = context.typeSystem.find_method(currType, node.methodName);
         if (!method)
         {
-            currType = context.typeSystem.getParentType(currType).value_or("");
+            currType = context.typeSystem.get_parent_type(currType).value_or("");
         }
     }
 
@@ -1194,7 +1194,7 @@ void IRGenerator::visit(MethodCall &node)
                                  typeName + "' en linea " + std::to_string(node.line()));
     }
 
-    // 5. Process method arguments and parameters
+    // Procesar argumentos y parametros
     std::vector<llvm::Value *> args;
     for (ASTNode *arg : node.args)
     {
@@ -1203,7 +1203,7 @@ void IRGenerator::visit(MethodCall &node)
         context.valueStack.pop_back();
     }
 
-    // Associate parameters with argument values
+    // Asociar parametros con valores de argumentos
     if (method->params)
     {
         for (size_t i = 0; i < method->params->size() && i < args.size(); ++i)
@@ -1213,14 +1213,14 @@ void IRGenerator::visit(MethodCall &node)
         }
     }
 
-    // 6. Evaluate method body
+    // Evaluar cuerpo de metodo
     method->body->accept(*this);
 
-    // 7. Clean up
-    context.typeSystem.setCurrentType("");
-    context.typeSystem.popPlaceholder();
+    // Limpiar
+    context.typeSystem.set_current_type("");
+    context.typeSystem.pop_placeholder();
     context.PopVar();
-    context.typeSystem.popCurrentInstanceVars();
+    context.typeSystem.pop_current_instance_vars();
 
     std::cout << "[CHECK] Llamada al metodo procesada" << std::endl;
 }
@@ -1229,24 +1229,24 @@ void IRGenerator::visit(SelfCall &node)
 {
     std::cout << "- Llamada self: " << node.varName << " - T-PILA: " << context.valueStack.size() << std::endl;
 
-    // Get current type
-    std::string currentType = context.typeSystem.getCurrentType();
+    // Obtener tipo actual
+    std::string currentType = context.typeSystem.get_current_type();
     if (currentType.empty())
     {
         throw std::runtime_error("[ERROR] Acceso a 'self' fuera del contexto del tipo en linea " + std::to_string(node.line()));
     }
 
-    // Search for variable in type hierarchy
+    // Buscar variable en jerarquia de tipos
     std::string currType = currentType;
     llvm::Value* val = nullptr;
 
     while (!currType.empty() && !val) {
-        // Try to get variable from current type
-        val = context.typeSystem.getCurrentInstanceVar(node.varName, currType);
+        // Intentar obtener la variable del tipo actual
+        val = context.typeSystem.get_current_instance_var(node.varName, currType);
         
-        // If not found and has parent, try parent type
+        // No encontrada, pero tiene un padre, intentar en el padre
         if (!val) {
-            currType = context.typeSystem.getParentType(currType).value_or("");
+            currType = context.typeSystem.get_parent_type(currType).value_or("");
             if (currType.empty()) {
                 throw std::runtime_error("[ERROR] Variable indefinida '" + node.varName + 
                                         "' en jerarquia de tipos empezando en '" + currentType + 
@@ -1267,8 +1267,8 @@ void IRGenerator::visit(BaseCall &node)
 {
     std::cout << "- Llamada a origen - T-PILA: " << context.valueStack.size() << std::endl;
 
-    // 1. Get current placeholder and split into name and elemType
-    PlaceholderEntry currentPlaceholder = context.typeSystem.getCurrentPlaceholder();
+    // Obtener espacio de memoria reservado
+    placeholder currentPlaceholder = context.typeSystem.get_current_placeholder();
     std::string name = currentPlaceholder.name;
     std::string elemType = currentPlaceholder.type;
 
@@ -1277,24 +1277,24 @@ void IRGenerator::visit(BaseCall &node)
         throw std::runtime_error("[ERROR] Reserva invalida para llamada a origen en linea " + std::to_string(node.line()));
     }
 
-    // 2. Get current type and its parent
-    std::string currentType = context.typeSystem.getCurrentType();
+    // Obtener tipo actual y sus padres
+    std::string currentType = context.typeSystem.get_current_type();
     if (currentType.empty())
     {
         throw std::runtime_error("[ERROR] Llamada a origen fuera del contexto del tipo en linea " + std::to_string(node.line()));
     }
 
-    std::optional<std::string> parentType = context.typeSystem.getParentType(currentType);
+    std::optional<std::string> parentType = context.typeSystem.get_parent_type(currentType);
     if (!parentType)
     {
         throw std::runtime_error("[ERROR] No se ha encontrado un padre para el tipo '" + currentType +
                                  "' en linea " + std::to_string(node.line()));
     }
 
-    // 3. Handle variable access
+    // Manejar accesos a variables
     if (elemType == "var")
     {
-        llvm::Value *val = context.typeSystem.getCurrentInstanceVar(name, *parentType);
+        llvm::Value *val = context.typeSystem.get_current_instance_var(name, *parentType);
         if (!val)
         {
             throw std::runtime_error("[ERROR] Variable indefinida '" + name +
@@ -1307,28 +1307,28 @@ void IRGenerator::visit(BaseCall &node)
         return;
     }
 
-    // 4. Handle method call
+    // Manejar llamada a método
     if (elemType == "method")
     {
         std::cout << "  - Procesando llamada a metodo de origen" << std::endl;
-        // 4.1 Update current type to parent type
-        context.typeSystem.setCurrentType(*parentType);
+        // Actualizar tipo actual al padre
+        context.typeSystem.set_current_type(*parentType);
 
-        // 4.3 Create new varScope without inheritance
+        // Crear nuevo scope de variables sin herencia
         context.PushVar(false);
 
-        // 4.4 Set method name in placeholderStack
-        context.typeSystem.pushPlaceholder(name, "method");
+        // Reservar espacio en memoria para un metodo
+        context.typeSystem.push_placeholder(name, "method");
 
-        // 4.5 Find method in type hierarchy
-        TypeMethod *method = nullptr;
+        // Encontrar metodo en la jerarquia de tipos
+        type_method *method = nullptr;
         std::string currType = *parentType;
         while (!currType.empty() && !method)
         {
-            method = context.typeSystem.findMethod(currType, name);
+            method = context.typeSystem.find_method(currType, name);
             if (!method)
             {
-                currType = context.typeSystem.getParentType(currType).value_or("");
+                currType = context.typeSystem.get_parent_type(currType).value_or("");
             }
         }
 
@@ -1338,7 +1338,7 @@ void IRGenerator::visit(BaseCall &node)
                                      *parentType + "' en linea " + std::to_string(node.line()));
         }
 
-        // 4.6 Process method arguments and parameters
+        // Procesar argumentos y parametros
         std::vector<llvm::Value *> args;
         for (ASTNode *arg : node.args)
         {
@@ -1347,7 +1347,7 @@ void IRGenerator::visit(BaseCall &node)
             context.valueStack.pop_back();
         }
 
-        // Associate parameters with argument values
+        // Asociar valores de argumentos a parametros
         if (method->params)
         {
             for (size_t i = 0; i < method->params->size() && i < args.size(); ++i)
@@ -1357,12 +1357,12 @@ void IRGenerator::visit(BaseCall &node)
             }
         }
 
-        // 4.7 Evaluate method body
+        // Evaluar cuerpo
         method->body->accept(*this);
 
-        // 4.8 Clean up
-        context.typeSystem.setCurrentType(currentType); // Restore original type
-        context.typeSystem.popPlaceholder();
+        // Limpiar
+        context.typeSystem.set_current_type(currentType); // Restaurar tipo original
+        context.typeSystem.pop_placeholder();
         context.PopVar();
 
         std::cout << "  - Resultado del metodo de origen enviado a la pila - T-PILA: " << context.valueStack.size() << std::endl;

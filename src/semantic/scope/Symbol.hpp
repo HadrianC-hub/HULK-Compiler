@@ -65,8 +65,8 @@ public:
     const TypeSymbol *lookupType(const std::string &name) const;
     TypeSymbol *lookupType(const std::string &name);
 
-    bool addTypeAttribute(const std::string &typeName, const std::string &attrName, const std::string &attrType);
-    bool addTypeMethod(
+    bool addtype_attribute(const std::string &typeName, const std::string &attrName, const std::string &attrType);
+    bool addtype_method(
         const std::string &typeName,
         const std::string &methodName,
         const std::string &returnType,

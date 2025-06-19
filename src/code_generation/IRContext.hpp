@@ -15,10 +15,13 @@ class Context
 {
 public:
     llvm::LLVMContext context;
+    
     llvm::IRBuilder<> builder;
+
     llvm::Module module;
 
     std::map<std::string, llvm::Value *> locals;
+
     std::vector<llvm::Value *> valueStack;
 
     TypeSystem typeSystem;
@@ -26,9 +29,11 @@ public:
     Context();
 
     void Generate(std::vector<ASTNode *> &root);
+
     void WriteDownCode(const std::string &filename = "hulk.ll");
 
     std::vector<std::map<std::string, llvm::Value *>> localScopes;
+
     std::vector<std::map<std::string, FuncDeclaration *>> functionScopes;
 
     void PushVar(bool inherit = true)
@@ -44,7 +49,9 @@ public:
             localScopes.emplace_back();
         }
     }
+
     void PopVar() { localScopes.pop_back(); }
+
     void addLocal(const std::string &name, llvm::Value *val)
     {
         if (!localScopes.empty()) {
@@ -53,6 +60,7 @@ public:
             localScopes.back()[name] = val;
         }
     }
+
     llvm::Value *lookupLocal(const std::string &name) const
     {
         for (auto it = localScopes.rbegin(); it != localScopes.rend(); ++it)
@@ -75,12 +83,15 @@ public:
             functionScopes.push_back(functionScopes.back());
         }
     }
+
     void PopFunc() { functionScopes.pop_back(); }
+
     void addFuncDecl(const std::string &name, FuncDeclaration *decl)
     {
         if (!functionScopes.empty())
             functionScopes.back()[name] = decl;
     }
+
     FuncDeclaration *lookupFuncDecl(const std::string &name) const
     {
         for (auto it = functionScopes.rbegin(); it != functionScopes.rend(); ++it)

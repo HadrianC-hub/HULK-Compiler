@@ -1,27 +1,23 @@
+print("Test 1: Trivialidades");
+print("Simplemente 42:");
 42;
 
-
-
+print("Ejecutando print(42)");
 print(42);
 
-
-
+print("Imprimiendo resultado de ((((1 + 2) ^ 3) * 4) / 5)");
 print((((1 + 2) ^ 3) * 4) / 5);
 
-
-
+print("Imprimiendo 2 formas de decir hola (con escape y sin escape de caracteres)");
 print("Hello World");
-
-
-
 print("The message is \"Hello World\"");
 
 
-
+print("Imprimiendo el sentido de la vida");
 print("The meaning of life is " @ 42);
 
 
-
+print("Test 2: Funciones");
 print(sin(2 * PI) ^ 2 + cos(3 * PI / log(4, 64)));
 
 
@@ -94,11 +90,6 @@ let a = 0 in
     let b = a := 1 in print(a @@ b);
 
 
-
-let a = 42 in if (a % 2 == 0) print("Even") else print("odd");
-
-
-
 let a = 42 in print(if (a % 2 == 0) "even" else "odd");
 
 
@@ -152,9 +143,6 @@ type Point (x,y) {
 let pt = new Point(3,4) in
 {
     print("x: " @ pt.getX() @ "; y: " @ pt.getY());
-    pt.setX(5);
-    print("x: " @ pt.getX());
-    print("hi");
 }
     
     
@@ -235,3 +223,5 @@ let x = 10 in {
     print(sin(PI/2));
     print("Hello World");
 }
+
+factorial(5);

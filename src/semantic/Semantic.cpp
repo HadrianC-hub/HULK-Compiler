@@ -888,6 +888,19 @@ void SemanticValidation::visit(FuncDeclaration &node)
         symbolTable.updateSymbolType(param.name, inferredType);
     }
 
+    // Actualizar parámetros en el símbolo de la función (¡CRUCIAL!)
+    Symbol* funcSym = symbolTable.lookup(node.name);
+    if (funcSym && funcSym->kind == "function") {
+        funcSym->params.clear();
+        for (const auto& param : *node.params) {
+            funcSym->params.push_back(param.type);
+        }
+        // Depuración: ver tipos actualizados
+        std::cout << "Parametros actualizados de " << node.name << ": ";
+        for (const auto& t : funcSym->params) std::cout << t << " ";
+        std::cout << "\n";
+    }
+
     std::cout << "Paso 4: Verificando tipo de retorno\n";
     if (!node.returnType.empty() && !conformsTo(bodyType, node.returnType))
     {
@@ -898,7 +911,7 @@ void SemanticValidation::visit(FuncDeclaration &node)
     node._type = node.returnType.empty() ? bodyType : node.returnType;
     std::cout << "  - Tipo final de la funcion: " << node._type << "\n";
 
-    Symbol *funcSym = symbolTable.lookup(node.name);
+    //Symbol *funcSym = symbolTable.lookup(node.name);
     if (funcSym)
     {
         funcSym->type = node._type;
@@ -983,18 +996,18 @@ void SemanticValidation::visit(FuncCall &node)
         }
 
         // Si ambos tipos son Unknown, intentar inferir del uso en el cuerpo
-        if (argType == "Unknown" && expectedType == "Unknown" && symbol->body)
-        {
-            std::set<std::string> paramTypes;
-            collectParamUsages(symbol->body, symbol->params[i], paramTypes);
-            if (!paramTypes.empty())
-            {
-                expectedType = *paramTypes.begin();
-                symbol->params[i] = expectedType;
-                argType = expectedType;
-                node.args[i]->type() = expectedType;
-            }
-        }
+        // if (argType == "Unknown" && expectedType == "Unknown" && symbol->body)
+        // {
+        //     std::set<std::string> paramTypes;
+        //     collectParamUsages(symbol->body, symbol->params[i], paramTypes);
+        //     if (!paramTypes.empty())
+        //     {
+        //         expectedType = *paramTypes.begin();
+        //         symbol->params[i] = expectedType;
+        //         argType = expectedType;
+        //         node.args[i]->type() = expectedType;
+        //     }
+        // }
 
         // Verificar compatibilidad de tipos
         if (!conformsTo(argType, expectedType))
@@ -1565,7 +1578,7 @@ void SemanticValidation::visit(TypeDeclaration &node)
         }
         else
         {
-            symbolTable.addTypeAttribute(node.name, attr.name, attrType);
+            symbolTable.addtype_attribute(node.name, attr.name, attrType);
         }
     }
 
@@ -1603,7 +1616,7 @@ void SemanticValidation::visit(TypeDeclaration &node)
             paramTypes.push_back(param.type);
         }
 
-        symbolTable.addTypeMethod(node.name, method.name, method.returnType, paramTypes);
+        symbolTable.addtype_method(node.name, method.name, method.returnType, paramTypes);
 
         // - Verificacion de firma heredada si aplica
         if (!typeSym->parentType.empty())

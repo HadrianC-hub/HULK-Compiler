@@ -100,7 +100,7 @@ const TypeSymbol *SymbolTable::lookupType(const std::string &name) const
 }
 
 // Agregar atributo de un tipo definido por el usuario a la tabla
-bool SymbolTable::addTypeAttribute(const std::string &typeName, const std::string &attrName, const std::string &attrType)
+bool SymbolTable::addtype_attribute(const std::string &typeName, const std::string &attrName, const std::string &attrType)
 {
     TypeSymbol *type = lookupType(typeName);
     if (!type)
@@ -112,7 +112,7 @@ bool SymbolTable::addTypeAttribute(const std::string &typeName, const std::strin
 }
 
 // Agregar método de un tipo definido por el usuario a la tabla
-bool SymbolTable::addTypeMethod(const std::string &typeName, const std::string &methodName, const std::string &returnType, const std::vector<std::string> &params)
+bool SymbolTable::addtype_method(const std::string &typeName, const std::string &methodName, const std::string &returnType, const std::vector<std::string> &params)
 {
     TypeSymbol *type = lookupType(typeName);
     if (!type)
