@@ -140,7 +140,7 @@ type Point (x,y) {
 let pt = new Point(3,4) in
 {
     print("x: " @ pt.getX() @ "; y: " @ pt.getY());
-    pt.setX(8);
+    pt.setX(15);
     print("x: " @ pt.getX());
 }
 print("\n");

@@ -501,7 +501,6 @@ void IRGenerator::visit(Block &node)
         lastValidResult = llvm::ConstantInt::get(context.builder.getInt32Ty(), 0);
     }
 
-
     std::cout << "[EMITIDO] Bloque completado - T-PILA: " << context.valueStack.size() << "\n";
 }
 
@@ -659,40 +658,75 @@ void IRGenerator::visit(Assignment &node)
         context.valueStack.push_back(newValue);
         std::cout << "[CHECK] Variable '" << varName << "' asignada en scopes relevantes - Tamaño de pila: " << context.valueStack.size() << std::endl;
     }
+    // else
+    // {
+    //     // Handle instance variable assignment
+    //     std::string varName;
+
+    //     // 1. Get the variable name
+    //     if (auto* idNode = dynamic_cast<VarFuncName*>(node.name)) {
+    //         varName = idNode->name;
+    //     } else if (auto* selfNode = dynamic_cast<SelfCall*>(node.name)) {
+    //         varName = selfNode->varName;
+    //     } else {
+    //         throw std::runtime_error("[ERROR] El miembro izquierdo de la asignación debe ser un asignador o un acceso a self el linea " +
+    //                                std::to_string(node.line()));
+    //     }
+
+    //     // 2. Look for the variable in currentInstanceVars
+    //     if (!context.typeSystem.is_instance_vars_stack_empty()) {
+    //         // 3. Change its value for newValue
+    //         context.typeSystem.set_current_instance_var(varName, "var", newValue);
+    //         // llvm::Value* addr = context.typeSystem.get_current_instance_var(varName, "var");
+    //         // if (!addr) {
+    //         //     throw std::runtime_error("Variable de instancia '" + varName + "' no encontrada en objeto actual.");
+    //         // }
+
+    //         // // Escribe en la posición de memoria del atributo:
+    //         // context.builder.CreateStore(newValue, addr);
+    //         std::cout << "  [CHECK] Variable de instancia '" << varName << "' asignada - T-PILA: " << context.valueStack.size() << std::endl;
+    //     } else {
+    //         throw std::runtime_error("[ERROR] No se puede asignar a una variable de instancia fuera del contexto del tipo en linea " +
+    //                                std::to_string(node.line()));
+    //     }
+
+    //     // Push the assigned value onto the stack
+    //     context.valueStack.push_back(newValue);
+    // }
+    else if (auto *selfNode = dynamic_cast<SelfCall *>(node.name))
+    {
+        const std::string &varName = selfNode->varName;
+
+        if (!context.typeSystem.is_instance_vars_stack_empty())
+        {
+            // Obtener el tipo actual y buscar el tipo real del atributo
+            std::string currentType = context.typeSystem.get_current_type();
+            type_attribute *attr = context.typeSystem.find_attribute(currentType, varName);
+
+            if (!attr)
+            {
+                throw std::runtime_error("[ERROR] Atributo '" + varName +
+                                         "' no encontrado en tipo '" + currentType +
+                                         "' en línea " + std::to_string(node.line()));
+            }
+
+            // Usar el tipo real del atributo como clave
+            context.typeSystem.set_current_instance_var(varName, attr->TypeName, newValue);
+
+            context.valueStack.push_back(newValue);
+            std::cout << "  [ASSIGN] Atributo '" << varName << "' (tipo: " << attr->TypeName
+                      << ") actualizado" << std::endl;
+        }
+        else
+        {
+            throw std::runtime_error("[ERROR] Contexto de instancia no disponible en línea " +
+                                     std::to_string(node.line()));
+        }
+    }
     else
     {
-        // Handle instance variable assignment
-        std::string varName;
-        
-        // 1. Get the variable name
-        if (auto* idNode = dynamic_cast<VarFuncName*>(node.name)) {
-            varName = idNode->name;
-        } else if (auto* selfNode = dynamic_cast<SelfCall*>(node.name)) {
-            varName = selfNode->varName;
-        } else {
-            throw std::runtime_error("[ERROR] El miembro izquierdo de la asignación debe ser un asignador o un acceso a self el linea " + 
-                                   std::to_string(node.line()));
-        }
-
-        // 2. Look for the variable in currentInstanceVars
-        if (!context.typeSystem.is_instance_vars_stack_empty()) {
-            // 3. Change its value for newValue
-            context.typeSystem.set_current_instance_var(varName, "var", newValue);
-            // llvm::Value* addr = context.typeSystem.get_current_instance_var(varName, "var");
-            // if (!addr) {
-            //     throw std::runtime_error("Variable de instancia '" + varName + "' no encontrada en objeto actual.");
-            // }
-
-            // // Escribe en la posición de memoria del atributo:
-            // context.builder.CreateStore(newValue, addr);
-            std::cout << "  [CHECK] Variable de instancia '" << varName << "' asignada - T-PILA: " << context.valueStack.size() << std::endl;
-        } else {
-            throw std::runtime_error("[ERROR] No se puede asignar a una variable de instancia fuera del contexto del tipo en linea " + 
-                                   std::to_string(node.line()));
-        }
-
-        // Push the assigned value onto the stack
-        context.valueStack.push_back(newValue);
+        throw std::runtime_error("[ERROR] Target de asignación inválido en línea " +
+                                 std::to_string(node.line()));
     }
 }
 
@@ -1097,13 +1131,13 @@ void IRGenerator::visit(InitInstance &node)
             if (attr.initializer)
             {
                 attr.initializer->accept(*this);
-                if (context.valueStack.empty())
+                if (!context.valueStack.empty())
                 {
-                    break;
+                    // Usar el tipo real del atributo como clave
+                    instanceVars[{attrName, attr.TypeName}] = context.valueStack.back();
+                    context.valueStack.pop_back();
+                    std::cout << "    - Agregado atributo: " << attrName << " de tipo " << attr.TypeName << std::endl;
                 }
-                instanceVars[{attrName, attr.TypeName}] = context.valueStack.back();
-                context.valueStack.pop_back();
-                std::cout << "    - Agregado atributo: " << attrName << " de tipo " << attr.TypeName << std::endl;
             }
         }
 
@@ -1134,38 +1168,45 @@ void IRGenerator::visit(MethodCall &node)
     std::cout << "- Llamada a metodo: " << node.instanceName << "." << node.methodName << std::endl;
 
     std::string instanceName = node.instanceName;
+    std::string realInstanceName = instanceName;  // Usar el nombre real por defecto
+    std::map<std::pair<std::string, std::string>, llvm::Value *> *instanceVarsMap = nullptr;
 
-    // Obtener tipo de instancia y definir como tipo actual
     if (instanceName == "self")
     {
         // Obtener todos los nombres de instancia y usar el último
         auto instanceNames = context.typeSystem.get_all_instances_names();
         if (!instanceNames.empty())
         {
-            std::string lastInstanceName = instanceNames.back();
-            instanceName = lastInstanceName;
-            // Enviar la ultima variable de instancia como actual
-            context.typeSystem.push_current_instance_vars(context.typeSystem.get_instance_vars(lastInstanceName));
-            std::cout << "[CHECK] Variables agregadas." << std::endl;
+            realInstanceName = instanceNames.back();  // Actualizar nombre real
+            instanceVarsMap = context.typeSystem.get_instance_vars_mutable(realInstanceName);
+            std::cout << "[SELF] Usando instancia real: " << realInstanceName << std::endl;
+        }
+        else
+        {
+            throw std::runtime_error("[ERROR] No hay instancias disponibles para 'self' en linea " + 
+                                     std::to_string(node.line()));
         }
     }
     else
     {
-        // Enviar variables de instancia al stack
-        try
-        {
-            context.typeSystem.push_current_instance_vars(context.typeSystem.get_instance_vars(node.instanceName));
-        }
-        catch (const std::runtime_error &e)
-        {
-            throw std::runtime_error("[ERROR] " + std::string(e.what()) + " en linea " + std::to_string(node.line()));
-        }
+        instanceVarsMap = context.typeSystem.get_instance_vars_mutable(instanceName);
     }
-    std::string typeName = context.typeSystem.get_instance_type(instanceName);
 
+    if (!instanceVarsMap)
+    {
+        throw std::runtime_error("[ERROR] Variables de instancia no encontradas para '" + realInstanceName + 
+                                 "' en linea " + std::to_string(node.line()));
+    }
+
+    // Apilar PUNTERO al mapa global de variables
+    context.typeSystem.push_current_instance_vars(instanceVarsMap);
+    
+    // OBTENER EL TIPO USANDO EL NOMBRE REAL DE LA INSTANCIA
+    std::string typeName = context.typeSystem.get_instance_type(realInstanceName);
     if (typeName.empty())
     {
-        throw std::runtime_error("[ERROR] Instancia '" + instanceName + "' no encontrada en linea " + std::to_string(node.line()));
+        throw std::runtime_error("[ERROR] Instancia '" + realInstanceName + "' no encontrada en linea " + 
+                                 std::to_string(node.line()));
     }
 
     context.typeSystem.set_current_type(typeName);
@@ -1233,34 +1274,29 @@ void IRGenerator::visit(SelfCall &node)
     std::string currentType = context.typeSystem.get_current_type();
     if (currentType.empty())
     {
-        throw std::runtime_error("[ERROR] Acceso a 'self' fuera del contexto del tipo en linea " + std::to_string(node.line()));
+        throw std::runtime_error("[ERROR] Acceso a 'self' fuera del contexto del tipo en linea " +
+                                 std::to_string(node.line()));
     }
 
-    // Buscar variable en jerarquia de tipos
-    std::string currType = currentType;
-    llvm::Value* val = nullptr;
+    // Buscar el atributo en la jerarquía de tipos
+    type_attribute *attr = context.typeSystem.find_attribute(currentType, node.varName);
+    if (!attr)
+    {
+        throw std::runtime_error("[ERROR] Atributo '" + node.varName +
+                                 "' no encontrado en tipo '" + currentType +
+                                 "' en línea " + std::to_string(node.line()));
+    }
 
-    while (!currType.empty() && !val) {
-        // Intentar obtener la variable del tipo actual
-        val = context.typeSystem.get_current_instance_var(node.varName, currType);
-        
-        // No encontrada, pero tiene un padre, intentar en el padre
-        if (!val) {
-            currType = context.typeSystem.get_parent_type(currType).value_or("");
-            if (currType.empty()) {
-                throw std::runtime_error("[ERROR] Variable indefinida '" + node.varName + 
-                                        "' en jerarquia de tipos empezando en '" + currentType + 
-                                        "' en linea " + std::to_string(node.line()));   
-                break;
-            }
-        }
-        else break;
+    // Obtener el valor usando el tipo real del atributo
+    llvm::Value *val = context.typeSystem.get_current_instance_var(node.varName, attr->TypeName);
+    if (!val)
+    {
+        throw std::runtime_error("[ERROR] Valor no encontrado para atributo '" + node.varName +
+                                 "' en línea " + std::to_string(node.line()));
     }
 
     context.valueStack.push_back(val);
-
     std::cout << "  - Valor self enviado a la pila - T-PILA: " << context.valueStack.size() << std::endl;
-    std::cout << "[CHECK] Acceso a self procesado" << std::endl;
 }
 
 void IRGenerator::visit(BaseCall &node)

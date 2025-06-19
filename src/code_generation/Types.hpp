@@ -72,11 +72,11 @@ private:
     // Tipo actual siendo procesado (para llamadas a self y base)
     std::string currentType;
 
-    // Pila para rastrear variables siendo procesadas con sus tipos 
+    // Pila para rastrear variables siendo procesadas con sus tipos
     std::vector<placeholder> placeholderStack;
 
     // Pila para rastrear la instancia actual de variable con su información de tipo
-    std::vector<std::map<std::pair<std::string, std::string>, llvm::Value *>> currentInstanceVarsStack;
+    std::vector<std::map<std::pair<std::string, std::string>, llvm::Value *> *> currentInstanceVarsStack;
 
 public:
     // Registra la nueva definición de un tipo
@@ -200,7 +200,7 @@ public:
     }
 
     // Envía un nuevo mapa de variables de instancia a la pila
-    void push_current_instance_vars(const std::map<std::pair<std::string, std::string>, llvm::Value *> &vars)
+    void push_current_instance_vars(std::map<std::pair<std::string, std::string>, llvm::Value *> *vars)
     {
         currentInstanceVarsStack.push_back(vars);
     }
@@ -219,7 +219,7 @@ public:
     {
         if (!currentInstanceVarsStack.empty())
         {
-            currentInstanceVarsStack.back()[{varName, varType}] = value;
+            (*currentInstanceVarsStack.back())[{varName, varType}] = value;
         }
     }
 
@@ -227,10 +227,8 @@ public:
     llvm::Value *get_current_instance_var(const std::string &varName, const std::string &varType) const
     {
         if (currentInstanceVarsStack.empty())
-        {
             return nullptr;
-        }
-        auto &currentVars = currentInstanceVarsStack.back();
+        auto &currentVars = *currentInstanceVarsStack.back();
         auto it = currentVars.find({varName, varType});
         return it != currentVars.end() ? it->second : nullptr;
     }
@@ -250,5 +248,11 @@ public:
     bool is_instance_vars_stack_empty() const
     {
         return currentInstanceVarsStack.empty();
+    }
+
+    std::map<std::pair<std::string, std::string>, llvm::Value *> *get_instance_vars_mutable(const std::string &instanceName)
+    {
+        auto it = instanceVars.find(instanceName);
+        return it != instanceVars.end() ? &it->second : nullptr;
     }
 };
