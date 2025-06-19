@@ -162,7 +162,7 @@ program:
 
 statement:
     ';'                                                 {$$ = NULL;}
-    |expression ';'                                     {$$ = $1;}
+    | expression ';'                                     {$$ = $1;}
     | PRINT '(' expression ')' ';'                      {std::vector<ASTNode*> args = vectorize($3, nullptr, 1); $$ = new BuiltInFunc("print", args, yylloc.first_line); }
     | type_decl                                         {$$ = $1;}
     | block_expr                                        {$$ = $1;}

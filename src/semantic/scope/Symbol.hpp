@@ -5,6 +5,7 @@
 #include <string>
 #include <stdexcept>
 #include <set>
+#include <algorithm>
 #include "../../ast/AST.hpp"
 
 const std::set<std::string> BUILTIN_TYPES = {"Object", "Number", "String", "Boolean", "Null"};

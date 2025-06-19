@@ -1379,49 +1379,48 @@ void SemanticValidation::visit(Assignment &node)
 
 void SemanticValidation::visit(IfExpression &node)
 {
-
     std::vector<std::string> branchTypes;
     bool hasErrors = false;
 
-    for (auto &branch : *node.branches)
-    {
+    // Evaluar condiciones
+    for (auto &branch : *node.branches) {
         branch.condition->accept(*this);
-        std::string condType = branch.condition->type();
-        if (condType != "Boolean")
-        {
-            errors.emplace_back("Condicion debe ser booleana", branch.condition->line());
+        if (branch.condition->type() != "Boolean") {
+            errors.emplace_back("Condición debe ser booleana", branch.condition->line());
             hasErrors = true;
         }
+    }
 
+    // Evaluar cuerpos
+    for (auto &branch : *node.branches) {
         branch.body->accept(*this);
+        if (branch.body->type() == "Error") hasErrors = true;
         branchTypes.push_back(branch.body->type());
     }
 
-    if (node.elseBody)
-    {
+    if (node.elseBody) {
         node.elseBody->accept(*this);
+        if (node.elseBody->type() == "Error") hasErrors = true;
         branchTypes.push_back(node.elseBody->type());
     }
 
-    if (hasErrors)
-    {
+    if (hasErrors) {
         node._type = "Error";
         return;
     }
 
-    const std::string &commonType = branchTypes.front();
-    for (const auto &t : branchTypes)
-    {
-        if (t != commonType)
-        {
-            errors.emplace_back("Tipos incompatibles en ramas del 'if'", node.line());
-            node._type = "Error";
-
-            return;
-        }
+    // Verificar compatibilidad usando ancestro común
+    std::string commonType = symbolTable.lowestCommonAncestor(branchTypes);
+    
+    // Validar que el tipo común sea válido
+    if (commonType == "Error" || !symbolTable.lookupType(commonType)) {
+        errors.emplace_back("Tipos incompatibles en ramas del 'if'", node.line());
+        node._type = "Error";
+        return;
     }
 
     node._type = commonType;
+    std::cout << "Tipo unificado: " << node._type << "\n";
 }
 
 void SemanticValidation::visit(WhileLoop &node)

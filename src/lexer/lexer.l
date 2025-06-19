@@ -19,8 +19,8 @@ int lexical_error = 0;
 
 %%
 
-[_]+[a-zA-Z0-9_]+       { lexical_error = 1; fprintf(stderr, "Error lexico. Variable invalida: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); }
-[0-9]+[a-zA-Z_]+        { lexical_error = 1; fprintf(stderr, "Error lexico. Variable invalida: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); }
+[_]+[a-zA-Z0-9_]+       { lexical_error = 1; fprintf(stderr, "Error lexico. Token invalido: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); }
+[0-9]+[a-zA-Z_]+        { lexical_error = 1; fprintf(stderr, "Error lexico. Token invalido: '%s' en %d:%d\n", yytext, yylineno, yylloc.first_column); }
 
 [0-9]+(\.[0-9]+)?       { 
                             yylval.num = atof(yytext); 
