@@ -888,6 +888,22 @@ void SemanticValidation::visit(FuncDeclaration &node)
         symbolTable.updateSymbolType(param.name, inferredType);
     }
 
+    // DESPUÉS DE INFERIR LOS PARÁMETROS
+    std::cout << "Paso 3: Re-analizando cuerpo con tipos inferidos\n";
+    symbolTable.enterScope();  // Re-abrir el mismo ámbito
+
+    // Volver a registrar parámetros con tipos actualizados
+    for (const auto &param : *node.params) {
+        symbolTable.addSymbol(param.name, param.type, false);
+    }
+
+    // Re-analizar el cuerpo
+    node.body->accept(*this);
+    bodyType = node.body->type();
+    std::cout << "  - Tipo del cuerpo (actualizado): " << bodyType << "\n";
+
+    symbolTable.exitScope();
+
     // Actualizar parámetros en el símbolo de la función (¡CRUCIAL!)
     Symbol* funcSym = symbolTable.lookup(node.name);
     if (funcSym && funcSym->kind == "function") {
