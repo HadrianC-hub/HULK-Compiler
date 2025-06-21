@@ -259,3 +259,6 @@ function test (x)
 
 let i = test(1) in print(i.move());
 print("\n");
+
+print("Probando chequeo de tipos");
+let car : Vehicle = new Car() in print(car.move());

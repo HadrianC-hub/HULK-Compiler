@@ -45,10 +45,12 @@ struct TypeBody
 struct AttributeDeclaration
 {
     std::string name;
+    std::string declaredType;  // Nuevo campo para el tipo
     ASTNode *initializer;
 
-    AttributeDeclaration(std::string name, ASTNode *init)
-        : name(std::move(name)), initializer(init) {}
+    // Constructor modificado para incluir el tipo
+    AttributeDeclaration(std::string name, std::string type, ASTNode *init)
+        : name(std::move(name)), declaredType(std::move(type)), initializer(init) {}
 };
 
 struct MethodDeclaration
@@ -228,7 +230,7 @@ class FuncDeclaration : public ASTNode
 {
 public:
     std::string name;
-    std::string returnType = "";
+    std::string returnType;
     std::vector<Parameter> *params;
     ASTNode *body;
     bool isInline;
@@ -236,10 +238,18 @@ public:
     std::string _type;
 
     FuncDeclaration(std::string name,
-                    std::vector<Parameter> *params, ASTNode *body,
-                    bool isInline, int ln)
-        : name(name), params(params),
-          body(body), isInline(isInline), _line(ln), _type("") {}
+                std::vector<Parameter> *params, 
+                ASTNode *body,
+                bool isInline, 
+                int ln,
+                std::string returnType = "")
+    : name(name), 
+      returnType(returnType),  // Mover arriba
+      params(params),
+      body(body), 
+      isInline(isInline), 
+      _line(ln), 
+      _type("") {}
 
     void accept(NodeVisitor &visitor) override
     {

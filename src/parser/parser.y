@@ -168,12 +168,12 @@ statement:
     | block_expr                                        {$$ = $1;}
     | FUNC ID '(' params ')' LAMBDA body ';'            {$$ = new FuncDeclaration(*$2, $4, $7, true, yylloc.first_line);}
     | FUNC ID '(' params ')' block_expr ';'             {$$ = new FuncDeclaration(*$2, $4, $6, false, yylloc.first_line);}
-    | FUNC ID '(' params ')' COLON ID LAMBDA body ';'   {$$ = new FuncDeclaration(*$2, $4, $9, true, yylloc.first_line);}
-    | FUNC ID '(' params ')' COLON ID block_expr ';'    {$$ = new FuncDeclaration(*$2, $4, $8, false, yylloc.first_line);}
+    | FUNC ID '(' params ')' COLON ID LAMBDA body ';'   {$$ = new FuncDeclaration(*$2, $4, $9, true, yylloc.first_line, *$7);}
+    | FUNC ID '(' params ')' COLON ID block_expr ';'    {$$ = new FuncDeclaration(*$2, $4, $8, false, yylloc.first_line, *$7);}
     | FUNC ID '(' params ')' LAMBDA body                {$$ = new FuncDeclaration(*$2, $4, $7, true, yylloc.first_line);}
     | FUNC ID '(' params ')' block_expr                 {$$ = new FuncDeclaration(*$2, $4, $6, false, yylloc.first_line);}
-    | FUNC ID '(' params ')' COLON ID LAMBDA body       {$$ = new FuncDeclaration(*$2, $4, $9, true, yylloc.first_line);}
-    | FUNC ID '(' params ')' COLON ID block_expr        {$$ = new FuncDeclaration(*$2, $4, $8, false, yylloc.first_line);}
+    | FUNC ID '(' params ')' COLON ID LAMBDA body       {$$ = new FuncDeclaration(*$2, $4, $9, true, yylloc.first_line, *$7);}
+    | FUNC ID '(' params ')' COLON ID block_expr        {$$ = new FuncDeclaration(*$2, $4, $8, false, yylloc.first_line, *$7);}
     | let_expr                                          {$$ = $1;}
     | while_expr                                        {$$ = $1;}
     | for_expr                                          {$$ = $1;}
@@ -247,10 +247,10 @@ block_body:
 
 params: 
     /* nada */                          {$$ = new std::vector<Parameter>();}
-    | ID                                {Parameter p; p.name = *$1; $$ = new std::vector<Parameter>(); $$->push_back(p);}
-    | ID COLON ID                       {Parameter p; p.name = *$1; $$ = new std::vector<Parameter>(); $$->push_back(p);}
-    | params ',' ID                     {Parameter p; p.name = *$3; $1->push_back(p); $$ = $1;}
-    | params ',' ID COLON ID            {Parameter p; p.name = *$3; $1->push_back(p); $$ = $1;}
+    | ID                                {Parameter p; p.name = *$1; p.type = ""; $$ = new std::vector<Parameter>(); $$->push_back(p);}
+    | ID COLON ID                       {Parameter p; p.name = *$1; p.type = *$3; $$ = new std::vector<Parameter>(); $$->push_back(p);}
+    | params ',' ID                     {Parameter p; p.name = *$3; p.type = ""; $1->push_back(p); $$ = $1;}
+    | params ',' ID COLON ID            {Parameter p; p.name = *$3; p.type = *$5; $1->push_back(p); $$ = $1;}
 ;   
 
 func_call_expr: 
@@ -277,10 +277,10 @@ let_expr:
 ;
 
 decl:
-    ID '=' expression                       {LetDeclaration d; d.name = *$1; d.initializer = $3; $$ = new std::vector<LetDeclaration>(); $$->push_back(d);}
-    | ID COLON ID '=' expression            {LetDeclaration d; d.name = *$1; d.initializer = $5; $$ = new std::vector<LetDeclaration>(); $$->push_back(d);}
-    | decl ',' ID '=' expression            {LetDeclaration d; d.name = *$3; d.initializer = $5; $1->push_back(d); $$ = $1;}
-    | decl ',' ID COLON ID '=' expression   {LetDeclaration d; d.name = *$3; d.initializer = $7; $1->push_back(d); $$ = $1;}
+    ID '=' expression                       {LetDeclaration d; d.name = *$1; d.declaredType = ""; d.initializer = $3; $$ = new std::vector<LetDeclaration>(); $$->push_back(d);}
+    | ID COLON ID '=' expression            {LetDeclaration d; d.name = *$1; d.declaredType = *$3; d.initializer = $5; $$ = new std::vector<LetDeclaration>(); $$->push_back(d);}
+    | decl ',' ID '=' expression            {LetDeclaration d; d.name = *$3; d.declaredType = ""; d.initializer = $5; $1->push_back(d); $$ = $1;}
+    | decl ',' ID COLON ID '=' expression   {LetDeclaration d; d.name = *$3; d.declaredType = *$5; d.initializer = $7; $1->push_back(d); $$ = $1;}
 ;
 
 body:
@@ -323,21 +323,21 @@ type_body
 ;
 
 attribute_decl:
-    ID '=' expression ';'                           {$$ = new std::vector<AttributeDeclaration>(); $$->push_back(AttributeDeclaration(*$1, $3));}
-    | ID COLON ID '=' expression ';'                {$$ = new std::vector<AttributeDeclaration>(); $$->push_back(AttributeDeclaration(*$1, $5));}
-    | attribute_decl ID '=' expression ';'          {$1->push_back(AttributeDeclaration(*$2, $4)); $$ = $1;}
-    | attribute_decl ID COLON ID '=' expression ';' {$1->push_back(AttributeDeclaration(*$2, $6)); $$ = $1;}
+    ID '=' expression ';'                           {$$ = new std::vector<AttributeDeclaration>(); $$->push_back(AttributeDeclaration(*$1, "", $3));}
+    | ID COLON ID '=' expression ';'                {$$ = new std::vector<AttributeDeclaration>(); $$->push_back(AttributeDeclaration(*$1, *$3, $5));}
+    | attribute_decl ID '=' expression ';'          {$1->push_back(AttributeDeclaration(*$2, "", $4)); $$ = $1;}
+    | attribute_decl ID COLON ID '=' expression ';' {$1->push_back(AttributeDeclaration(*$2, *$4, $6)); $$ = $1;}
 ;
 
 method_decl:
-    ID '(' params ')' LAMBDA expression ';'                         {$$ = new std::vector<MethodDeclaration>(); $$->push_back(MethodDeclaration(*$1, $3, $6));}
-    | ID '(' params ')' block_expr ';'                              {$$ = new std::vector<MethodDeclaration>(); $$->push_back(MethodDeclaration(*$1, $3, $5));}
-    | method_decl ID '(' params ')' LAMBDA expression ';'           {$1->push_back(MethodDeclaration(*$2, $4, $7)); $$ = $1;}
-    | method_decl ID '(' params ')' block_expr ';'                  {$1->push_back(MethodDeclaration(*$2, $4, $6)); $$ = $1;}
-    | ID '(' params ')' COLON ID LAMBDA expression ';'              {$$ = new std::vector<MethodDeclaration>(); $$->push_back(MethodDeclaration(*$1, $3, $8));}
-    | ID '(' params ')' COLON ID block_expr ';'                     {$$ = new std::vector<MethodDeclaration>(); $$->push_back(MethodDeclaration(*$1, $3, $7));}
-    | method_decl ID '(' params ')' COLON ID LAMBDA expression ';'  {$1->push_back(MethodDeclaration(*$2, $4, $9)); $$ = $1;}
-    | method_decl ID '(' params ')' COLON ID block_expr ';'         {$1->push_back(MethodDeclaration(*$2, $4, $8)); $$ = $1;}
+    ID '(' params ')' LAMBDA expression ';'                         {$$ = new std::vector<MethodDeclaration>(); $$->push_back(MethodDeclaration(*$1, $3, $6, ""));}
+    | ID '(' params ')' block_expr ';'                              {$$ = new std::vector<MethodDeclaration>(); $$->push_back(MethodDeclaration(*$1, $3, $5, ""));}
+    | method_decl ID '(' params ')' LAMBDA expression ';'           {$1->push_back(MethodDeclaration(*$2, $4, $7, "")); $$ = $1;}
+    | method_decl ID '(' params ')' block_expr ';'                  {$1->push_back(MethodDeclaration(*$2, $4, $6, "")); $$ = $1;}
+    | ID '(' params ')' COLON ID LAMBDA expression ';'              {$$ = new std::vector<MethodDeclaration>(); $$->push_back(MethodDeclaration(*$1, $3, $8, *$6));}
+    | ID '(' params ')' COLON ID block_expr ';'                     {$$ = new std::vector<MethodDeclaration>(); $$->push_back(MethodDeclaration(*$1, $3, $7, *$6));}
+    | method_decl ID '(' params ')' COLON ID LAMBDA expression ';'  {$1->push_back(MethodDeclaration(*$2, $4, $9, *$7)); $$ = $1;}
+    | method_decl ID '(' params ')' COLON ID block_expr ';'         {$1->push_back(MethodDeclaration(*$2, $4, $8, *$7)); $$ = $1;}
 ;
 
 self_call:
