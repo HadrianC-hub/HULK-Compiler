@@ -30,7 +30,7 @@ std::string SemanticValidation::inferParamUsageType(const std::string &paramName
     // Si hay multiples tipos, necesitamos encontrar el mas especifico comun
     std::vector<std::string> types(usageTypes.begin(), usageTypes.end());
 
-    // Si todos los tipos son Unknown, asumimos Number
+    // Si todos los tipos son Unknown, asumimos Object
     bool allUnknown = true;
     for (const auto &type : types)
     {
@@ -42,7 +42,7 @@ std::string SemanticValidation::inferParamUsageType(const std::string &paramName
     }
     if (allUnknown)
     {
-        return "Number";
+        return "Object";
     }
 
     // Filtrar tipos Unknown
@@ -55,7 +55,7 @@ std::string SemanticValidation::inferParamUsageType(const std::string &paramName
     // Si despues de filtrar Unknown no quedan tipos, asumimos Number
     if (types.empty())
     {
-        return "Number";
+        return "Object";
     }
 
     std::string commonType = symbolTable.lowestCommonAncestor(types);
@@ -74,21 +74,6 @@ std::string SemanticValidation::inferParamUsageType(const std::string &paramName
     // Si hay ambigüedad, intentamos ser mas especificos
     if (hasAmbiguity)
     {
-        // Si hay Number entre los tipos, preferimos Number
-        if (std::find(types.begin(), types.end(), std::string("Number")) != types.end())
-        {
-            return "Number";
-        }
-        // Si hay String entre los tipos, preferimos String
-        if (std::find(types.begin(), types.end(), std::string("String")) != types.end())
-        {
-            return "String";
-        }
-        // Si hay Boolean entre los tipos, preferimos Boolean
-        if (std::find(types.begin(), types.end(), std::string("Boolean")) != types.end())
-        {
-            return "Boolean";
-        }
         return "Object"; // Si no podemos ser mas especificos, usamos Object
     }
 
@@ -260,6 +245,16 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
     // Built-in function call
     else if (auto *builtin = dynamic_cast<BuiltInFunc *>(node))
     {
+        if (builtin->name == "print") {
+            // print acepta cualquier tipo, así que agregamos Object
+            for (auto *arg : builtin->args) {
+                if (auto *id = dynamic_cast<VarFuncName *>(arg)) {
+                    if (id->name == paramName) {
+                        types.insert("Object");
+                    }
+                }
+            }
+        }
         for (auto *arg : builtin->args)
         {
             collectParamUsages(arg, paramName, types);
@@ -870,18 +865,19 @@ void SemanticValidation::visit(FuncDeclaration &node)
 
         if (inferredType == "Unknown")
         {
-            // Si no se pudo inferir, intentar inferir del tipo de retorno
-            if (bodyType != "Unknown" && bodyType != "Error")
-            {
-                inferredType = bodyType;
-                std::cout << "    - Usando tipo de retorno como tipo inferido: " << inferredType << "\n";
-            }
-            else
-            {
-                errors.emplace_back("No se pudo inferir el tipo del parametro '" + param.name + "'", node.line());
-                node._type = "Error";
-                continue;
-            }
+            // // Si no se pudo inferir, intentar inferir del tipo de retorno
+            // if (bodyType != "Unknown" && bodyType != "Error")
+            // {
+            //     inferredType = bodyType;
+            //     std::cout << "    - Usando tipo de retorno como tipo inferido: " << inferredType << "\n";
+            // }
+            // else
+            // {
+            //     errors.emplace_back("No se pudo inferir el tipo del parametro '" + param.name + "'", node.line());
+            //     node._type = "Error";
+            //     continue;
+            // }
+            inferredType = "Object";
         }
 
         param.type = inferredType;

@@ -180,38 +180,50 @@ std::string SymbolTable::lowestCommonAncestor(const std::vector<std::string> &ty
     if (types.size() == 1)
         return types[0];
 
-    std::string candidate = types[0];
-
-    for (size_t i = 1; i < types.size(); ++i)
-    {
-        std::string other = types[i];
-
-        if (isSubtype(candidate, other))
-        {
+    // Paso 1: Recolectar todos los ancestros para cada tipo
+    std::vector<std::set<std::string>> allAncestors;
+    for (const auto& typeName : types) {
+        std::set<std::string> ancestors;
+        std::string current = typeName;
+        
+        while (!current.empty()) {
+            ancestors.insert(current);
+            TypeSymbol* typeSym = lookupType(current);
+            current = typeSym ? typeSym->parentType : "";
         }
-        else if (isSubtype(other, candidate))
-        {
-            candidate = other;
-        }
-        else
-        {
-            TypeSymbol *type = lookupType(candidate);
-            while (type && type->name != "Object")
-            {
-                type = lookupType(type->parentType);
-                if (type && isSubtype(other, type->name))
-                {
-                    candidate = type->name;
+        allAncestors.push_back(ancestors);
+    }
+
+    // Paso 2: Encontrar intersección de ancestros
+    std::set<std::string> commonAncestors = allAncestors[0];
+    for (size_t i = 1; i < allAncestors.size(); ++i) {
+        std::set<std::string> intersection;
+        std::set_intersection(
+            commonAncestors.begin(), commonAncestors.end(),
+            allAncestors[i].begin(), allAncestors[i].end(),
+            std::inserter(intersection, intersection.begin())
+        );
+        commonAncestors = intersection;
+    }
+
+    // Paso 3: Encontrar el ancestro más específico (más bajo en jerarquía)
+    std::string lca = "Object";
+    for (const auto& candidate : commonAncestors) {
+        // Verificar si es más específico que el LCA actual
+        if (lca == "Object" || isSubtype(candidate, lca)) {
+            // Asegurar que candidate es ancestro de todos
+            bool valid = true;
+            for (const auto& typeName : types) {
+                if (!isSubtype(typeName, candidate)) {
+                    valid = false;
                     break;
                 }
             }
-
-            if (!type)
-                return "Object";
+            if (valid) lca = candidate;
         }
     }
 
-    return candidate;
+    return lca;
 }
 
 // Actualizar los parámetros de un tipo definido por el usuario.

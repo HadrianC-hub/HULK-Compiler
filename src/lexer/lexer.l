@@ -13,9 +13,9 @@ int lexical_error = 0;
     yycolumn += yyleng;  // Actualizar despues de registrar la posicion
 %}
 
-%option noyywrap         
-%option yylineno   
-%option nounput       
+%option noyywrap
+%option yylineno
+%option nounput
 
 %%
 
@@ -34,11 +34,11 @@ int lexical_error = 0;
                         
 "True"                  {
                             yylval.boolean = true;
-                            return BOOL;
+                            return BOOLEAN;
                         }
 "False"                 {
                             yylval.boolean = false;
-                            return BOOL;
+                            return BOOLEAN;
                         }
 "Null"                  { 
                             return NULL_VAL; 
@@ -50,17 +50,17 @@ int lexical_error = 0;
 [%]                     { return MOD; }
 [\^]                    { return POW; }
 [*][*]                  { return POW; }
-[<]                     { return LT; }
-[>]                     { return GT; }
-"<="                    { return LE; }
-">="                    { return GE; }
-"=="                    { return EQ; }
-"!="                    { return NE; }
+[<]                     { return LTH; }
+[>]                     { return GTH; }
+"<="                    { return LEQ; }
+">="                    { return GEQ; }
+"=="                    { return EQU; }
+"!="                    { return NEQ; }
 "&"                     { return AND; }
 "!"                     { return NOT; }
 [|]                     { return OR; }
-"@"                     { return CONCAT; }
-"@@"                    { return CONCAT_SPACE; }
+"@"                     { return CON; }
+"@@"                    { return CSP; }
 "sin"                   { return SIN; }
 "cos"                   { return COS; }
 "max"                   { return MAX; }
@@ -73,11 +73,11 @@ int lexical_error = 0;
 "print"                 { return PRINT; }
 "PI"                    { return PI; }
 "E"                     { return E; }
-"function"              { return FUNC; }
-"=>"                    { return LAMBDA; }
+"function"              { return FUN; }
+"=>"                    { return INLINE; }
 "let"                   { return LET; }
 "in"                    { return IN; }
-"="                     { return '='; }
+"="                     { return ASSIGN; }
 ":="                    { return REASSIGN; }
 "if"                    { return IF; }
 "else"                  { return ELSE; }
@@ -90,13 +90,13 @@ int lexical_error = 0;
 "self"                  { return SELF; }
 "inherits"              { return INHERITS; }
 "base"                  { return BASE; }
-"."                     { return '.'; }      
+"."                     { return DOT; }      
 "("                     { return '('; }
 ")"                     { return ')'; }
 "{"                     { return '{'; }
 "}"                     { return '}'; }
 ","                     { return ','; }
-[a-zA-Z_][a-zA-Z0-9_]*  {
+[a-zA-Z][a-zA-Z0-9_]*  {
                             yylval.str = new std::string(yytext);
                             return ID;
                         }

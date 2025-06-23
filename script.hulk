@@ -240,8 +240,7 @@ factorial(5);
 print("\n");
 
 
-print("Test de ramas if-elif-else con chequeo de tipos");
-function test (x)
+function test(x)
 {
     if (x == 0) 
     {
@@ -255,10 +254,31 @@ function test (x)
     {
         new Car();
     };
-}
+};
 
-let i = test(1) in print(i.move());
+print("Probando ramas if-elif-else con chequeo de tipos");
+{
+    print(" ");
+    let j = test(1) in print(j.move());
+}
 print("\n");
 
 print("Probando chequeo de tipos");
 let car : Vehicle = new Car() in print(car.move());
+print("\n");
+
+print("Probando orden de prioridad de operaciones matematicas");
+print(3*4^2/2-1);
+print("\n");
+
+print("Probando multiples impresiones");
+function candela(a, b, c, d, f)
+{
+    print(a);
+    print(b);
+    print(c);
+    print(d);
+    print(f);
+};
+
+candela(1 , { let z = 10 in z * 2; }, "Soy el 3er argumento", 25 , True);

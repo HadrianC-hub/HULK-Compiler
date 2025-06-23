@@ -51,11 +51,11 @@ int main(int argc, char **argv)
 
     std::cout << "[DONE] AST terminado." << std::endl;
 
-    for (auto node : root)
-    {
-        std::cout << "Tipo de nodo raiz: " << node->type()
-                  << " | Linea: " << node->line() << "\n";
-    }
+    // for (auto node : root)
+    // {
+    //     std::cout << "Tipo de nodo raiz: " << node->type()
+    //               << " | Linea: " << node->line() << "\n";
+    // }
 
     SemanticValidation semantic;
     semantic.validate(root);

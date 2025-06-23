@@ -45,7 +45,7 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 34 "src/parser/parser.y"
+#line 33 "src/parser/parser.y"
 
     #include <string>
     #include <iostream>
@@ -66,54 +66,56 @@ extern int yydebug;
     YYUNDEF = 257,                 /* "invalid token"  */
     NUMBER = 258,                  /* NUMBER  */
     STRING = 259,                  /* STRING  */
-    BOOL = 260,                    /* BOOL  */
+    BOOLEAN = 260,                 /* BOOLEAN  */
     NULL_VAL = 261,                /* NULL_VAL  */
     ID = 262,                      /* ID  */
-    LAMBDA = 263,                  /* LAMBDA  */
-    REASSIGN = 264,                /* REASSIGN  */
-    ADD = 265,                     /* ADD  */
-    SUB = 266,                     /* SUB  */
-    MUL = 267,                     /* MUL  */
-    DIV = 268,                     /* DIV  */
-    MOD = 269,                     /* MOD  */
-    POW = 270,                     /* POW  */
-    LT = 271,                      /* LT  */
-    GT = 272,                      /* GT  */
-    LE = 273,                      /* LE  */
-    GE = 274,                      /* GE  */
-    EQ = 275,                      /* EQ  */
-    NE = 276,                      /* NE  */
-    AND = 277,                     /* AND  */
-    OR = 278,                      /* OR  */
-    NOT = 279,                     /* NOT  */
-    CONCAT = 280,                  /* CONCAT  */
-    CONCAT_SPACE = 281,            /* CONCAT_SPACE  */
-    SIN = 282,                     /* SIN  */
-    COS = 283,                     /* COS  */
-    MAX = 284,                     /* MAX  */
-    MIN = 285,                     /* MIN  */
-    SQRT = 286,                    /* SQRT  */
-    EXP = 287,                     /* EXP  */
-    LOG = 288,                     /* LOG  */
-    RANDOM = 289,                  /* RANDOM  */
-    PRINT = 290,                   /* PRINT  */
-    PI = 291,                      /* PI  */
-    E = 292,                       /* E  */
-    FUNC = 293,                    /* FUNC  */
-    LET = 294,                     /* LET  */
-    IN = 295,                      /* IN  */
-    IF = 296,                      /* IF  */
-    ELIF = 297,                    /* ELIF  */
-    ELSE = 298,                    /* ELSE  */
-    FOR = 299,                     /* FOR  */
-    WHILE = 300,                   /* WHILE  */
-    RANGE = 301,                   /* RANGE  */
-    TYPE = 302,                    /* TYPE  */
-    NEW = 303,                     /* NEW  */
-    SELF = 304,                    /* SELF  */
-    INHERITS = 305,                /* INHERITS  */
-    BASE = 306,                    /* BASE  */
-    COLON = 307                    /* COLON  */
+    DOT = 263,                     /* DOT  */
+    INLINE = 264,                  /* INLINE  */
+    ASSIGN = 265,                  /* ASSIGN  */
+    REASSIGN = 266,                /* REASSIGN  */
+    ADD = 267,                     /* ADD  */
+    SUB = 268,                     /* SUB  */
+    MUL = 269,                     /* MUL  */
+    DIV = 270,                     /* DIV  */
+    MOD = 271,                     /* MOD  */
+    POW = 272,                     /* POW  */
+    LTH = 273,                     /* LTH  */
+    GTH = 274,                     /* GTH  */
+    LEQ = 275,                     /* LEQ  */
+    GEQ = 276,                     /* GEQ  */
+    EQU = 277,                     /* EQU  */
+    NEQ = 278,                     /* NEQ  */
+    AND = 279,                     /* AND  */
+    OR = 280,                      /* OR  */
+    NOT = 281,                     /* NOT  */
+    CON = 282,                     /* CON  */
+    CSP = 283,                     /* CSP  */
+    SIN = 284,                     /* SIN  */
+    COS = 285,                     /* COS  */
+    MAX = 286,                     /* MAX  */
+    MIN = 287,                     /* MIN  */
+    SQRT = 288,                    /* SQRT  */
+    EXP = 289,                     /* EXP  */
+    LOG = 290,                     /* LOG  */
+    RANDOM = 291,                  /* RANDOM  */
+    PRINT = 292,                   /* PRINT  */
+    PI = 293,                      /* PI  */
+    E = 294,                       /* E  */
+    FUN = 295,                     /* FUN  */
+    LET = 296,                     /* LET  */
+    IN = 297,                      /* IN  */
+    IF = 298,                      /* IF  */
+    ELIF = 299,                    /* ELIF  */
+    ELSE = 300,                    /* ELSE  */
+    FOR = 301,                     /* FOR  */
+    WHILE = 302,                   /* WHILE  */
+    RANGE = 303,                   /* RANGE  */
+    TYPE = 304,                    /* TYPE  */
+    NEW = 305,                     /* NEW  */
+    SELF = 306,                    /* SELF  */
+    INHERITS = 307,                /* INHERITS  */
+    BASE = 308,                    /* BASE  */
+    COLON = 309                    /* COLON  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -122,7 +124,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 45 "src/parser/parser.y"
+#line 44 "src/parser/parser.y"
 
     double num;
     std::string* str; 
@@ -136,7 +138,7 @@ union YYSTYPE
     std::vector<MethodDeclaration>* method_decl;
     TypeBody* type_body;
 
-#line 140 ".build/parser.tab.hpp"
+#line 142 ".build/parser.tab.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;
