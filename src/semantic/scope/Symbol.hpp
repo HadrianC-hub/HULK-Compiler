@@ -27,11 +27,11 @@ struct Symbol
     Symbol() = default;
 };
 
-struct TypeSymbol   // Usado para representar tipos declarados por el usuario (cada parametro es una tabla)
-{
+struct TypeSymbol {
     std::string name;
     std::string parentType;
-    std::vector<std::string> typeParams;
+    std::vector<std::string> typeParamNames;   // Nombres de parámetros
+    std::unordered_map<std::string, std::string> paramTypes; // Tipos de parámetros (nombre -> tipo)
     std::unordered_map<std::string, Symbol> attributes;
     std::unordered_map<std::string, Symbol> methods;
 };

@@ -73,11 +73,14 @@ bool SymbolTable::addFunction(const std::string &name, const std::string &return
 }
 
 // Agregar tipo definido por el usuario a la tabla de símbolos
-bool SymbolTable::addType(const std::string &name, const std::string &parentType, const std::vector<std::string> &typeParams)
+bool SymbolTable::addType(
+    const std::string &name,
+    const std::string &parentType,
+    const std::vector<std::string> &typeParams)
 {
     if (types.find(name) != types.end())
         return false;
-    types[name] = TypeSymbol{name, parentType, typeParams, {}, {}};
+    types[name] = TypeSymbol{name, parentType, typeParams, {}, {}, {}};
     return true;
 }
 
@@ -100,14 +103,23 @@ const TypeSymbol *SymbolTable::lookupType(const std::string &name) const
 }
 
 // Agregar atributo de un tipo definido por el usuario a la tabla
-bool SymbolTable::addtype_attribute(const std::string &typeName, const std::string &attrName, const std::string &attrType)
+bool SymbolTable::addtype_attribute(
+    const std::string &typeName,
+    const std::string &attrName,
+    const std::string &attrType)
 {
     TypeSymbol *type = lookupType(typeName);
-    if (!type)
+    if (!type) return false;
+    if (type->attributes.find(attrName) != type->attributes.end()) 
         return false;
-    if (type->attributes.find(attrName) != type->attributes.end())
-        return false;
-    type->attributes[attrName] = Symbol{"attribute", attrType, true, {}};
+    
+    // Usar el tipo del parámetro si existe
+    std::string finalType = attrType;
+    if (type->paramTypes.find(attrName) != type->paramTypes.end()) {
+        finalType = type->paramTypes[attrName];
+    }
+    
+    type->attributes[attrName] = Symbol{"attribute", finalType, true, {}};
     return true;
 }
 
@@ -232,6 +244,6 @@ void SymbolTable::updateTypeParams(const std::string &typeName, const std::vecto
     auto it = types.find(typeName);
     if (it != types.end())
     {
-        it->second.typeParams = params;
+        it->second.typeParamNames = params;
     }
 }
