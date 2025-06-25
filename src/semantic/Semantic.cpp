@@ -1878,6 +1878,11 @@ void SemanticValidation::visit(MethodCall &node)
 
     else
     {
+        if (instanceType == "Null") {
+            node._type = "Null";
+            return;
+        }
+        
         // Buscar atributo en jerarquía
         Symbol *attr = nullptr;
         while (typeSym)

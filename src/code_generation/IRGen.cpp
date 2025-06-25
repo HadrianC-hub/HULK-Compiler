@@ -1312,6 +1312,9 @@ void IRGenerator::visit(MethodCall &node)
     context.typeSystem.push_current_instance_vars(instanceVarsMap);
     context.typeSystem.set_current_type(typeName);
     context.PushVar(false);
+
+    context.addLocal("self", instanceVal);  // Añadir 'self' al scope
+
     context.typeSystem.push_placeholder(node.methodName, "method");
 
     type_method *method = nullptr;
