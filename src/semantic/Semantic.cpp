@@ -1700,49 +1700,66 @@ void SemanticValidation::visit(MethodCall &node)
         return;
     }
 
-    // Busqueda jerarquica del metodo en la cadena de herencia
-    const Symbol *method = nullptr;
-    while (typeSym)
+    if (node.isMethod)
     {
-        auto it = typeSym->methods.find(node.methodName);
-        if (it != typeSym->methods.end())
+        // Busqueda jerarquica del metodo en la cadena de herencia
+        const Symbol *method = nullptr;
+        while (typeSym)
         {
-            method = &it->second;
-            break;
+            auto it = typeSym->methods.find(node.methodName);
+            if (it != typeSym->methods.end())
+            {
+                method = &it->second;
+                break;
+            }
+            if (typeSym->parentType.empty())
+                break;
+            typeSym = symbolTable.lookupType(typeSym->parentType);
         }
-        if (typeSym->parentType.empty())
-            break;
-        typeSym = symbolTable.lookupType(typeSym->parentType);
-    }
 
-    if (!method)
-    {
-        errors.emplace_back("Metodo '" + node.methodName + "' no existe en tipo '" + instSym->type + "'", node.line());
-        node._type = "Error";
-        return;
-    }
-
-    // Validar cantidad de argumentos
-    if (node.args.size() != method->params.size())
-    {
-        errors.emplace_back("Cantidad incorrecta de argumentos en metodo '" + node.methodName + "'", node.line());
-        node._type = "Error";
-        return;
-    }
-
-    // Verificar tipos de argumentos
-    for (size_t i = 0; i < node.args.size(); ++i)
-    {
-        node.args[i]->accept(*this);
-        if (!conformsTo(node.args[i]->type(), method->params[i]))
+        if (!method)
         {
-            errors.emplace_back("Tipo incorrecto para argumento " + std::to_string(i + 1) +
-                                    " en llamada a '" + node.methodName + "'",
-                                node.line());
+            errors.emplace_back("Metodo '" + node.methodName + "' no existe en tipo '" + instSym->type + "'", node.line());
+            node._type = "Error";
+            return;
         }
+
+        // Validar cantidad de argumentos
+        if (node.args.size() != method->params.size())
+        {
+            errors.emplace_back("Cantidad incorrecta de argumentos en metodo '" + node.methodName + "'", node.line());
+            node._type = "Error";
+            return;
+        }
+
+        // Verificar tipos de argumentos
+        for (size_t i = 0; i < node.args.size(); ++i)
+        {
+            node.args[i]->accept(*this);
+            if (!conformsTo(node.args[i]->type(), method->params[i]))
+            {
+                errors.emplace_back("Tipo incorrecto para argumento " + std::to_string(i + 1) +
+                                        " en llamada a '" + node.methodName + "'",
+                                    node.line());
+            }
+        }
+
+        node._type = method->type;
     }
 
-    node._type = method->type;
+    else
+    {
+        // Lógica para atributos
+        auto attrIt = typeSym->attributes.find(node.methodName);
+        if (attrIt == typeSym->attributes.end()) {
+            errors.emplace_back("Atributo '" + node.methodName + "' no existe", node.line());
+            node._type = "Error";
+            return;
+        }
+        node._type = attrIt->second.type;
+    }
+
+    
 }
 
 void SemanticValidation::visit(AttributeDeclaration &node)

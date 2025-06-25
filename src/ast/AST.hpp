@@ -411,11 +411,12 @@ public:
     std::string instanceName;
     std::string methodName;
     std::vector<ASTNode *> args;
+    bool isMethod;
     int _line;
     std::string _type;
 
-    MethodCall(std::string instanceName, std::string methodName, std::vector<ASTNode *> args, int line)
-        : instanceName(instanceName), methodName(std::move(methodName)), args(std::move(args)), _line(line), _type("") {}
+    MethodCall(std::string instanceName, std::string methodName, std::vector<ASTNode *> args, bool isMethod, int line)
+        : instanceName(instanceName), methodName(std::move(methodName)), args(std::move(args)), isMethod(isMethod), _line(line), _type("") {}
 
     void accept(NodeVisitor &v) override { v.visit(*this); }
     int line() const override { return _line; }

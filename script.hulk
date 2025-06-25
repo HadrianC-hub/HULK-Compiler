@@ -179,18 +179,18 @@ print("\n");
 
 print("Probando chequeo de tipos");
 type Vehicle {
-    move() => "Moving generically";
+    move(x) => "Moving generically" @@ x;
 }
 
 type Car inherits Vehicle {
-    move() => base() @@ " with wheels";
+    move(x) => base(x) @@ " with wheels";
 }
 
 type Bike inherits Vehicle {
-    move() => base() @@ " with two wheels";
+    move(x) => base(x) @@ " with two wheels";
 }
 
-let c = new Car() in print(c.move());
+let c = new Car() in print(c.move(5));
 print("\n");
 
 
@@ -259,12 +259,12 @@ function test(x)
 print("Probando ramas if-elif-else con chequeo de tipos");
 {
     print(" ");
-    let j = test(1) in print(j.move());
+    let j = test(1) in print(j.move(5));
 }
 print("\n");
 
 print("Probando chequeo de tipos");
-let car : Vehicle = new Car() in print(car.move());
+let car : Vehicle = new Car() in print(car.move(5));
 print("\n");
 
 print("Probando orden de prioridad de operaciones matematicas");
@@ -282,3 +282,15 @@ function candela(a, b, c, d, f)
 };
 
 candela(1 , { let z = 10 in z * 2; }, "Soy el 3er argumento", 25 , True);
+
+
+print("Probando impresión de atributos y métodos");
+type Node (value, secval)
+{
+    value = value;
+    secval = secval;
+    getV() => self.value;
+}
+
+let y = new Node (5,3) in print (y.secval @ y.getV());
+print("\n");

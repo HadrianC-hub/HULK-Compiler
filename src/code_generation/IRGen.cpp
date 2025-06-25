@@ -1165,19 +1165,19 @@ void IRGenerator::visit(InitInstance &node)
 
 void IRGenerator::visit(MethodCall &node)
 {
-    std::cout << "- Llamada a metodo: " << node.instanceName << "." << node.methodName << std::endl;
+    std::cout << "- Llamada a miembro: " << node.instanceName << "." << node.methodName 
+              << " (" << (node.isMethod ? "método" : "atributo") << ")" << std::endl;
 
-    std::string instanceName = node.instanceName;
-    std::string realInstanceName = instanceName;  // Usar el nombre real por defecto
+    // 1. Resolver instancia real (manejar 'self')
+    std::string realInstanceName = node.instanceName;
     std::map<std::pair<std::string, std::string>, llvm::Value *> *instanceVarsMap = nullptr;
 
-    if (instanceName == "self")
+    if (node.instanceName == "self")
     {
-        // Obtener todos los nombres de instancia y usar el último
         auto instanceNames = context.typeSystem.get_all_instances_names();
         if (!instanceNames.empty())
         {
-            realInstanceName = instanceNames.back();  // Actualizar nombre real
+            realInstanceName = instanceNames.back();
             instanceVarsMap = context.typeSystem.get_instance_vars_mutable(realInstanceName);
             std::cout << "[SELF] Usando instancia real: " << realInstanceName << std::endl;
         }
@@ -1189,7 +1189,7 @@ void IRGenerator::visit(MethodCall &node)
     }
     else
     {
-        instanceVarsMap = context.typeSystem.get_instance_vars_mutable(instanceName);
+        instanceVarsMap = context.typeSystem.get_instance_vars_mutable(node.instanceName);
     }
 
     if (!instanceVarsMap)
@@ -1198,10 +1198,7 @@ void IRGenerator::visit(MethodCall &node)
                                  "' en linea " + std::to_string(node.line()));
     }
 
-    // Apilar PUNTERO al mapa global de variables
-    context.typeSystem.push_current_instance_vars(instanceVarsMap);
-    
-    // OBTENER EL TIPO USANDO EL NOMBRE REAL DE LA INSTANCIA
+    // 2. Obtener tipo de la instancia
     std::string typeName = context.typeSystem.get_instance_type(realInstanceName);
     if (typeName.empty())
     {
@@ -1209,15 +1206,35 @@ void IRGenerator::visit(MethodCall &node)
                                  std::to_string(node.line()));
     }
 
+    // 3. Manejar atributos
+    if (!node.isMethod)
+    {
+        type_attribute* attr = context.typeSystem.find_attribute(typeName, node.methodName);
+        if (!attr)
+        {
+            throw std::runtime_error("[ERROR] Atributo '" + node.methodName + 
+                                     "' no encontrado en tipo '" + typeName + 
+                                     "' en línea " + std::to_string(node.line()));
+        }
+
+        llvm::Value* val = context.typeSystem.get_instance_var(realInstanceName, node.methodName, attr->TypeName);
+        if (!val)
+        {
+            throw std::runtime_error("[ERROR] Valor no encontrado para atributo '" + 
+                                     node.methodName + "'");
+        }
+
+        context.valueStack.push_back(val);
+        std::cout << "  [CHECK] Acceso a atributo '" << node.methodName << "' completado" << std::endl;
+        return;
+    }
+
+    // 4. Lógica para métodos (existente)
+    context.typeSystem.push_current_instance_vars(instanceVarsMap);
     context.typeSystem.set_current_type(typeName);
-
-    // Crear un nuevo scope de variables sin herencia
     context.PushVar(false);
-
-    // Establecer el nombre del metodo en la memoria reservada
     context.typeSystem.push_placeholder(node.methodName, "method");
 
-    // Encontrar método en la jerarquía
     type_method *method = nullptr;
     std::string currType = typeName;
     while (!currType.empty() && !method)
@@ -1231,11 +1248,15 @@ void IRGenerator::visit(MethodCall &node)
 
     if (!method)
     {
+        context.typeSystem.pop_placeholder();
+        context.PopVar();
+        context.typeSystem.set_current_type("");
+        context.typeSystem.pop_current_instance_vars();
         throw std::runtime_error("[ERROR] Metodo '" + node.methodName + "' no encontrado en la jerarquia de tipos empezando por '" +
                                  typeName + "' en linea " + std::to_string(node.line()));
     }
 
-    // Procesar argumentos y parametros
+    // Procesar argumentos
     std::vector<llvm::Value *> args;
     for (ASTNode *arg : node.args)
     {
@@ -1244,26 +1265,26 @@ void IRGenerator::visit(MethodCall &node)
         context.valueStack.pop_back();
     }
 
-    // Asociar parametros con valores de argumentos
+    // Asociar parámetros
     if (method->params)
     {
         for (size_t i = 0; i < method->params->size() && i < args.size(); ++i)
         {
             context.addLocal((*method->params)[i].name, args[i]);
-            std::cout << "  - Vinculando parametros a valores " << (*method->params)[i].name << std::endl;
+            std::cout << "  - Vinculando parametro: " << (*method->params)[i].name << std::endl;
         }
     }
 
-    // Evaluar cuerpo de metodo
+    // Evaluar cuerpo
     method->body->accept(*this);
 
     // Limpiar
-    context.typeSystem.set_current_type("");
     context.typeSystem.pop_placeholder();
     context.PopVar();
+    context.typeSystem.set_current_type("");
     context.typeSystem.pop_current_instance_vars();
 
-    std::cout << "[CHECK] Llamada al metodo procesada" << std::endl;
+    std::cout << "[CHECK] Llamada a metodo '" << node.methodName << "' completada" << std::endl;
 }
 
 void IRGenerator::visit(SelfCall &node)
