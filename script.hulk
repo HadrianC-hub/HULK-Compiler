@@ -1,12 +1,283 @@
-type Node1 (value, node)
+print("Simplemente 42:");
+42;
+
+print("\nEjecutando print(42)");
+print(42);
+print("\n");
+
+print("Imprimiendo resultado de ((((1 + 2) ^ 3) * 4) / 5)");
+print((((1 + 2) ^ 3) * 4) / 5);
+print("\n");
+
+print("Imprimiendo 2 formas de decir hola (con escape y sin escape de caracteres)");
+print("Hello World");
+print("The message is \"Hello World\"");
+print("\n");
+
+print("Imprimiendo el sentido de la vida");
+print("The meaning of life is " @ 42);
+print("\n");
+
+print("Funciones");
+print(sin(2 * PI) ^ 2 + cos(3 * PI / log(4, 64)));
+print("\n");
+
+print("Bloque de funciones y variables");
+let x = 42 in 
 {
-    value = value;
-    node = node;
+    print(x);
+    print(sin(PI/2));
+    print("Hello World");
+}
+print("\n");
+
+print("Funciones compuestas");
+function cot(x) => 1 / tan(x);
+function tan(x) => sin(x) / cos(x);
+print(tan(PI) ** 2 + cot(PI) ** 2);
+print("\n");
+
+print("Funcion definida no inline");
+function operate(x, y) 
+{
+    print(x + y);
+    print(x - y);
+    print(x * y);
+    print(x / y);
+    0;
+}
+print(operate(5,2));
+print("\n");
+
+
+print("Probando asignaciones de variables");
+let msg = "Hello World" in print(msg);
+let number = 42, text = "The meaning of life is" in
+    print(text @@ number);
+let number = 42 in
+    let text = "The meaning of life is" in
+        print(text @@ number);
+let a = 6, b = a * 7 in print(b);
+let a = 6 in
+    let b = a * 7 in
+        print(b);
+let a = 5, b = 10, c = 20 in {
+    print(a+b);
+    print(b*c);
+    print(c/a);
+}
+let a = (let b = 6 in b * 7) in print(a);
+let a = 20 in {
+    let a = 42 in print(a);
+    print(a);
+}
+let a = 7, let a = 7 * 6 in print(a);
+print("\n");
+
+
+print("Probando reasignacion de variables");
+let a = 0 in {
+    print(a);
+    a := 1;
+    print(a);
 }
 
-type Node2 (val)
-{
-    val = val;
+let a = 0 in
+    let b = a := 1 in print(a @@ b);
+
+print("\n");
+
+print("Expresiones if-else");
+let a = 42 in print(if (a % 2 == 0) "even" else "odd");
+
+let a = 42 in
+    if (a % 2 == 0) {
+        print(a);
+        print("Even");
+    }
+    else print("Odd");
+print("\n");
+
+print("Expresion if-elif-else");
+let a = 40, let mod = a % 3 in
+    print(
+        if (mod == 0) "Magic"
+        elif (mod % 3 == 1) "Woke"
+        else "Dumb"
+    );
+print("\n");
+
+
+print("Probando ciclo while");
+let a = 10 in while (a >= 0) {
+    print(a);
+    a := a - 1;
+}
+print("\n");
+
+function gcd(a, b) => while (a > 0)
+    let m = a % b in {
+        b := a;
+        a := m;
+    };
+
+print("Probando ciclo for");
+for (x in range(0, 10)) print(x);
+print("\n");
+
+print("Probando declaracion de tipos");
+type Point (x,y) {
+    x = x;
+    y = y;
+
+    getX() => self.x;
+    getY() => self.y;
+
+    setX(x) => self.x := x;
+    setY(y) => self.y := y;
 }
 
-let o = new Node1 (2, new Node1 ("hola", new Node2(5))) in print (o.node.value);
+let pt = new Point(3,4) in
+{
+    print("x: " @ pt.getX() @ "; y: " @ pt.getY());
+    pt.setX(15);
+    print("x: " @ pt.getX());
+}
+print("\n");
+    
+print("Probando herencia de tipos");
+type PolarPoint(phi, rho) inherits Point(rho * sin(phi), rho * cos(phi)) {
+    rho() => sqrt(self.getX() ^ 2 + self.getY() ^ 2);
+}
+
+let x = new PolarPoint(1,1) in print(x.rho());
+print("\n");
+
+
+print("Probando llamadas a funciones modificadas de padre a hijo");
+type Person(firstname, lastname) {
+    firstname = firstname;
+    lastname = lastname;
+
+    name() => self.firstname @@ self.lastname;
+}
+
+
+type Knight inherits Person {
+    name() => "Sir" @@ base();
+}
+
+let p = new Knight("Phil", "Collins") in
+    print(p.name());
+print("\n");
+
+print("Probando chequeo de tipos");
+let x: Number = 42 in print(x);
+function tan2(x: Number): Number => sin(x) / cos(x);
+print("\n");
+
+
+print("Probando chequeo de tipos");
+type Vehicle {
+    move(x) => "Moving generically" @@ x;
+}
+
+type Car inherits Vehicle {
+    move(x) => base(x) @@ " with wheels";
+}
+
+type Bike inherits Vehicle {
+    move(x) => base(x) @@ " with two wheels";
+}
+
+let c = new Car() in print(c.move(5));
+print("\n");
+
+
+print("Probando recursividad");
+function factorial(n) => if (n <= 1) 1 else n * factorial(n - 1);
+
+let x = 1 in 
+{
+for (i in range(1, 6)) 
+    print("Factorial of " @ i @ " is " @ factorial(i));
+}
+print("\n");
+
+print("Probando multiples declaraciones de variables");
+let x = 1,
+    y = 2,
+    z = x + y in
+        print(z);
+print("\n");
+
+
+print("Probando acceso a metodos de tipos");
+type Box(w, h) {
+    w = w;
+    h = h;
+    area() => self.w * self.h;
+}
+
+let b = new Box(5, 6) in print("Area de una caja de 5x6: " @ b.area());
+print("\n");
+
+
+print("Probando multi asignaciones");
+let x = 10 in {
+    x := x + 1;
+    {
+        x := x * 2;
+        print(x);
+    }
+    print(x);
+}
+print("\n");
+
+
+print("Test de factorial");
+factorial(5);
+print("\n");
+
+
+function test(x)
+{
+    if (x == 0) 
+    {
+        new Car();
+    }
+    elif (x==1)
+    {
+        new Bike();
+    }
+    else 
+    {
+        new Car();
+    };
+};
+
+print("Probando ramas if-elif-else con chequeo de tipos");
+{
+    let j = test(1) in print(j.move(5));
+}
+print("\n");
+
+print("Probando chequeo de tipos");
+let car : Vehicle = new Car() in print(car.move(5));
+print("\n");
+
+print("Probando orden de prioridad de operaciones matematicas");
+print(3*4^2/2-1);
+print("\n");
+
+print("Probando multiples impresiones");
+function candela(a, b, c, d, f)
+{
+    print(a);
+    print(b);
+    print(c);
+    print(d);
+    print(f);
+};
+
+candela(1 , { let z = 10 in z * 2; }, "Soy el 3er argumento", 25 , True);

@@ -508,6 +508,9 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
 
 bool SemanticValidation::conformsTo(const std::string &subtype, const std::string &supertype)
 {
+    if (subtype == "Null") {
+        return supertype != "Number" && supertype != "String" && supertype != "Boolean";
+    }
     if (subtype == "Error" || supertype == "Error")
         return false;
     if (subtype == supertype)
@@ -1597,21 +1600,16 @@ void SemanticValidation::visit(TypeDeclaration &node)
     }
 
     // 5. Analizar baseArgs (si hay)
-    if (node.baseType.has_value())
-    {
-        symbolTable.enterScope();
-        for (const auto &param : *node.constructorParams)
-        {
-            symbolTable.addSymbol(param.name, "Unknown", false);
+    if (node.baseType.has_value() && node.baseArgs.empty()) {
+    TypeSymbol* parentSym = symbolTable.lookupType(*node.baseType);
+    if (parentSym) {
+        // Usar los parámetros del padre si no hay argumentos base
+        for (const std::string &parentParam : parentSym->typeParamNames) {
+            node.constructorParams->emplace_back(Parameter{parentParam, ""});
+            node.baseArgs.push_back(new VarFuncName(parentParam, node.line()));
         }
-
-        for (ASTNode *arg : node.baseArgs)
-        {
-            arg->accept(*this);
-        }
-
-        symbolTable.exitScope();
     }
+}
 
     // 6. Analizar atributos (con inferencia de tipos)
     symbolTable.enterScope();
@@ -1630,33 +1628,32 @@ void SemanticValidation::visit(TypeDeclaration &node)
     }
 
     // Segunda pasada: inferir y actualizar tipos de parámetros
-    for (auto &param : *node.constructorParams)
-    {
-        if (param.type.empty() || param.type == "Unknown")
-        {
-            std::string inferredType = "Object"; // Tipo por defecto
+    for (auto &param : *node.constructorParams) {
+        if (param.type.empty() || param.type == "Unknown") {
+            std::string inferredType = "Object";
+            bool isSelfAssignment = false;
 
-            // Buscar usos del parámetro en los atributos
-            for (const auto &attr : *node.body->attributes)
-            {
-                if (auto *var = dynamic_cast<VarFuncName *>(attr.initializer))
-                {
-                    if (var->name == param.name)
-                    {
-                        // Intentar inferir mejor el tipo
-                        if (attr.initializer->type() != "Unknown")
-                        {
-                            inferredType = attr.initializer->type();
+            // Verificar si el parámetro se asigna directamente a un atributo del mismo nombre
+            for (const auto &attr : *node.body->attributes) {
+                if (attr.name == param.name) {
+                    if (auto *var = dynamic_cast<VarFuncName*>(attr.initializer)) {
+                        if (var->name == param.name) {
+                            isSelfAssignment = true;
+                            break;
                         }
-                        break;
                     }
                 }
             }
 
+            if (isSelfAssignment) {
+                // Si es una asignación directa, usar el tipo actual
+                inferredType = node.name;
+            } else {
+                // Lógica de inferencia existente...
+            }
+
             param.type = inferredType;
             symbolTable.updateSymbolType(param.name, inferredType);
-            std::cout << "[INFER] Parametro '" << param.name
-                      << "' inferido como: " << inferredType << "\n";
         }
     }
 
@@ -1769,9 +1766,18 @@ void SemanticValidation::visit(InitInstance &node)
             continue; // Saltar verificación de tipo
         }
 
-        if (typeSym && i < typeSym->typeParamNames.size())
+        if (i < typeSym->typeParamNames.size())
         {
             std::string paramName = typeSym->typeParamNames[i];
+            std::string expectedType = typeSym->paramTypes[paramName];
+            
+            if (!conformsTo(argType, expectedType)) 
+            {
+                errors.emplace_back("Tipo incorrecto para argumento " + std::to_string(i+1) + 
+                                    " en constructor de '" + node.typeName + "': esperado '" + expectedType + 
+                                    "', obtenido '" + argType + "'", node.line());
+            }
+            
             // Actualizar tipo del parámetro si era "Unknown"
             if (typeSym->paramTypes[paramName] == "Unknown")
             {
@@ -1793,6 +1799,12 @@ void SemanticValidation::visit(MethodCall &node)
     // 1. Analizar la expresión de instancia para obtener su tipo
     node.instance->accept(*this);
     std::string instanceType = node.instance->type();
+
+    if (instanceType == "Null") {
+        // Permitir llamadas en Null (no genera error)
+        node._type = "Null";
+        return;
+    }
 
     // 2. Obtener el símbolo del tipo de la instancia
     TypeSymbol *typeSym = symbolTable.lookupType(instanceType);
@@ -1823,17 +1835,15 @@ void SemanticValidation::visit(MethodCall &node)
     {
         // Busqueda jerarquica del metodo en la cadena de herencia
         const Symbol *method = nullptr;
-        while (typeSym)
-        {
-            auto it = typeSym->methods.find(node.methodName);
-            if (it != typeSym->methods.end())
-            {
-                method = &it->second;
+        // Buscar en toda la jerarquía
+        TypeSymbol* currentType = typeSym;
+        while (currentType) {
+            auto methodIt = currentType->methods.find(node.methodName);
+            if (methodIt != currentType->methods.end()) {
+                method = &methodIt->second;
                 break;
             }
-            if (typeSym->parentType.empty())
-                break;
-            typeSym = symbolTable.lookupType(typeSym->parentType);
+            currentType = symbolTable.lookupType(currentType->parentType);
         }
 
         if (!method)
@@ -1891,7 +1901,7 @@ void SemanticValidation::visit(MethodCall &node)
                 return;
             }
             
-            errors.emplace_back("Atributo '" + node.methodName + "' no existe", node.line());
+            errors.emplace_back("Atributo '" + node.methodName + "' no existe en tipo '" + instanceType + "'", node.line());
             node._type = "Error";
             return;
         }
