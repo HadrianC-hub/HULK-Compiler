@@ -516,6 +516,12 @@ bool SemanticValidation::conformsTo(const std::string &subtype, const std::strin
         return true;
     }
 
+    // Permitir asignar Null a cualquier tipo de objeto
+    if (subtype == "Null")
+    {
+        return true;
+    }
+
     // Manejar referencias a tipos no declarados aún
     if (!symbolTable.lookupType(subtype) || !symbolTable.lookupType(supertype))
     {
@@ -1530,9 +1536,11 @@ void SemanticValidation::visit(TypeDeclaration &node)
 
     // Después de registrar el tipo
     TypeSymbol *typeSym = symbolTable.lookupType(node.name);
-    if (typeSym) {
+    if (typeSym)
+    {
         // Registrar tipos de parámetros (declarados o inferidos)
-        for (const auto &param : *node.constructorParams) {
+        for (const auto &param : *node.constructorParams)
+        {
             std::string paramType = param.type.empty() ? "Unknown" : param.type;
             typeSym->paramTypes[param.name] = paramType;
         }
@@ -1748,17 +1756,26 @@ void SemanticValidation::visit(InitInstance &node)
         return;
     }
 
-    for (size_t i = 0; i < node.args.size(); ++i) {
+    for (size_t i = 0; i < node.args.size(); ++i)
+    {
         node.args[i]->accept(*this);
         std::string argType = node.args[i]->type();
 
-        if (typeSym && i < typeSym->typeParamNames.size()) {
+        // Permitir Null como argumento para cualquier parámetro
+        if (argType == "Null") {
+            continue; // Saltar verificación de tipo
+        }
+
+        if (typeSym && i < typeSym->typeParamNames.size())
+        {
             std::string paramName = typeSym->typeParamNames[i];
             // Actualizar tipo del parámetro si era "Unknown"
-            if (typeSym->paramTypes[paramName] == "Unknown") {
+            if (typeSym->paramTypes[paramName] == "Unknown")
+            {
                 typeSym->paramTypes[paramName] = argType;
                 // Actualizar atributo correspondiente
-                if (typeSym->attributes.find(paramName) != typeSym->attributes.end()) {
+                if (typeSym->attributes.find(paramName) != typeSym->attributes.end())
+                {
                     typeSym->attributes[paramName].type = argType;
                 }
             }
@@ -1852,6 +1869,12 @@ void SemanticValidation::visit(MethodCall &node)
 
         if (!attr)
         {
+            // Permitir acceso a atributos cuando el valor es Null
+            if (instSym->type == "Null") {
+                node._type = "Null";
+                return;
+            }
+            
             errors.emplace_back("Atributo '" + node.methodName + "' no existe", node.line());
             node._type = "Error";
             return;
