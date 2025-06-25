@@ -408,19 +408,28 @@ public:
 class MethodCall : public ASTNode
 {
 public:
-    std::string instanceName;
+    ASTNode* instance;  // Cambiar de std::string a ASTNode*
     std::string methodName;
-    std::vector<ASTNode *> args;
+    std::vector<ASTNode*> args;
     bool isMethod;
     int _line;
     std::string _type;
 
-    MethodCall(std::string instanceName, std::string methodName, std::vector<ASTNode *> args, bool isMethod, int line)
-        : instanceName(instanceName), methodName(std::move(methodName)), args(std::move(args)), isMethod(isMethod), _line(line), _type("") {}
+    // Constructor actualizado
+    MethodCall(ASTNode* instance, std::string methodName, std::vector<ASTNode*> args, bool isMethod, int line)
+        : instance(instance), methodName(std::move(methodName)), args(std::move(args)), isMethod(isMethod), _line(line), _type("") {}
 
     void accept(NodeVisitor &v) override { v.visit(*this); }
     int line() const override { return _line; }
     std::string type() const override { return _type; }
+    
+    // Añadir destructor para liberar memoria
+    ~MethodCall() override {
+        delete instance;
+        for (auto* arg : args) {
+            delete arg;
+        }
+    }
 };
 
 class BaseCall : public ASTNode

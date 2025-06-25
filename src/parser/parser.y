@@ -344,10 +344,30 @@ self_call:
 ;
 
 method_call: 
-    ID DOT ID '(' args ')'      { $$ = new MethodCall(*$1, *$3, *$5, true, yylloc.first_line); }  // Método
-    | ID DOT ID                 { $$ = new MethodCall(*$1, *$3, std::vector<ASTNode*>(), false, yylloc.first_line); }  // Atributo
-    | SELF DOT ID '(' args ')'  { $$ = new MethodCall("self", *$3, *$5, true, yylloc.first_line); }
-    | SELF DOT ID               { $$ = new MethodCall("self", *$3, std::vector<ASTNode*>(), false, yylloc.first_line); }
+    ID DOT ID 
+    { 
+            $$ = new MethodCall(new VarFuncName(*$1, yylloc.first_line), *$3, std::vector<ASTNode*>(), false, yylloc.first_line); 
+    }
+    | ID DOT ID '(' args ')' 
+        { 
+            $$ = new MethodCall(new VarFuncName(*$1, yylloc.first_line), *$3, *$5, true, yylloc.first_line); 
+        }
+    | SELF DOT ID 
+        { 
+            $$ = new MethodCall(new VarFuncName("self", yylloc.first_line), *$3, std::vector<ASTNode*>(), false, yylloc.first_line); 
+        }
+    | SELF DOT ID '(' args ')' 
+        { 
+            $$ = new MethodCall(new VarFuncName("self", yylloc.first_line), *$3, *$5, true, yylloc.first_line); 
+        }
+    | method_call DOT ID 
+        { 
+            $$ = new MethodCall($1, *$3, std::vector<ASTNode*>(), false, yylloc.first_line); 
+        }
+    | method_call DOT ID '(' args ')' 
+        { 
+            $$ = new MethodCall($1, *$3, *$5, true, yylloc.first_line); 
+        }
 ;
 
 base_call:

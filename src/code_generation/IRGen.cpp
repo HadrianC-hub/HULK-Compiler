@@ -1205,6 +1205,7 @@ void IRGenerator::visit(InitInstance &node)
     context.typeSystem.register_value_type(dummy, node.typeName);
     context.typeSystem.valueToInstanceNameMap[dummy] = varName;
 
+    context.addLocal(varName, dummy);
     // Añadir el valor dummy a la pila
     context.valueStack.push_back(dummy);
 
@@ -1215,15 +1216,26 @@ void IRGenerator::visit(InitInstance &node)
 
 void IRGenerator::visit(MethodCall &node)
 {
-    std::cout << "- Llamada a miembro: " << node.instanceName << "." << node.methodName 
+    // 1. Evaluar la expresión de instancia
+    node.instance->accept(*this);
+    llvm::Value* instanceVal = context.valueStack.back();
+    context.valueStack.pop_back();
+
+    // 2. Buscar nombre real de la instancia usando el valor
+    auto it_name = context.typeSystem.valueToInstanceNameMap.find(instanceVal);
+    if (it_name == context.typeSystem.valueToInstanceNameMap.end()) {
+        throw std::runtime_error("[ERROR] La expresión de instancia no es válida en línea " + std::to_string(node.line()));
+    }
+    std::string realInstanceName = it_name->second;
+    
+    std::cout << "- Llamada a miembro: " << realInstanceName << "." << node.methodName 
               << " (" << (node.isMethod ? "método" : "atributo") << ")" << std::endl;
 
     // 1. Resolver instancia real (manejar 'self')
-    std::string realInstanceName;
     std::map<std::pair<std::string, std::string>, llvm::Value *> *instanceVarsMap = nullptr;
     llvm::Value* instanceValue = nullptr; // Nuevo: valor de la instancia
 
-    if (node.instanceName == "self")
+    if (realInstanceName == "self")
     {
         auto instanceNames = context.typeSystem.get_all_instances_names();
         if (!instanceNames.empty())
@@ -1238,20 +1250,24 @@ void IRGenerator::visit(MethodCall &node)
                                      std::to_string(node.line()));
         }
     }
+    // else
+    // {
+    //     // OBTENER EL VALOR REAL DE LA INSTANCIA
+    //     instanceValue = context.lookupLocal(realInstanceName);
+    //     if (!instanceValue) {
+    //         throw std::runtime_error("[ERROR] Variable '" + realInstanceName + "' no definida");
+    //     }
+        
+    //     // Buscar el nombre de la instancia usando el valor
+    //     auto it_name = context.typeSystem.valueToInstanceNameMap.find(instanceValue);
+    //     if (it_name == context.typeSystem.valueToInstanceNameMap.end()) {
+    //         throw std::runtime_error("[ERROR] La variable '" + realInstanceName + "' no es una instancia");
+    //     }
+    //     realInstanceName = it_name->second;
+    //     instanceVarsMap = context.typeSystem.get_instance_vars_mutable(realInstanceName);
+    // }
     else
     {
-        // OBTENER EL VALOR REAL DE LA INSTANCIA
-        instanceValue = context.lookupLocal(node.instanceName);
-        if (!instanceValue) {
-            throw std::runtime_error("[ERROR] Variable '" + node.instanceName + "' no definida");
-        }
-        
-        // Buscar el nombre de la instancia usando el valor
-        auto it_name = context.typeSystem.valueToInstanceNameMap.find(instanceValue);
-        if (it_name == context.typeSystem.valueToInstanceNameMap.end()) {
-            throw std::runtime_error("[ERROR] La variable '" + node.instanceName + "' no es una instancia");
-        }
-        realInstanceName = it_name->second;
         instanceVarsMap = context.typeSystem.get_instance_vars_mutable(realInstanceName);
     }
 

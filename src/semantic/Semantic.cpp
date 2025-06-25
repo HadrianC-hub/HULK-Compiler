@@ -282,49 +282,52 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
     // Method call
     else if (auto *method = dynamic_cast<MethodCall *>(node))
     {
+        // Analizar la expresión de instancia
+        collectParamUsages(method->instance, paramName, types);
+        
         // Analizar todos los argumentos de la llamada al metodo
         for (auto *arg : method->args)
         {
             collectParamUsages(arg, paramName, types);
         }
 
-        // Obtener el tipo del objeto (instanceName se refiere al nombre de la instancia)
-        std::string objType;
+        // // Obtener el tipo del objeto (instanceName se refiere al nombre de la instancia)
+        // std::string objType;
 
-        // Buscamos el simbolo de la instancia para obtener su tipo
-        Symbol *instanceSym = symbolTable.lookup(method->instanceName);
-        if (!instanceSym)
-            return; // si no se encuentra, abortamos esta rama
+        // // Buscamos el simbolo de la instancia para obtener su tipo
+        // Symbol *instanceSym = symbolTable.lookup(method->instanceName);
+        // if (!instanceSym)
+        //     return; // si no se encuentra, abortamos esta rama
 
-        objType = instanceSym->type;
-        TypeSymbol *typeSym = symbolTable.lookupType(objType);
+        // objType = instanceSym->type;
+        // TypeSymbol *typeSym = symbolTable.lookupType(objType);
 
-        // Verificar herencia si es necesario
-        while (typeSym)
-        {
-            auto it = typeSym->methods.find(method->methodName);
-            if (it != typeSym->methods.end())
-            {
-                const Symbol &methodSym = it->second;
+        // // Verificar herencia si es necesario
+        // while (typeSym)
+        // {
+        //     auto it = typeSym->methods.find(method->methodName);
+        //     if (it != typeSym->methods.end())
+        //     {
+        //         const Symbol &methodSym = it->second;
 
-                for (size_t i = 0; i < method->args.size(); ++i)
-                {
-                    if (auto *id = dynamic_cast<VarFuncName *>(method->args[i]))
-                    {
-                        if (id->name == paramName && i < methodSym.params.size())
-                        {
-                            types.insert(methodSym.params[i]);
-                        }
-                    }
-                }
+        //         for (size_t i = 0; i < method->args.size(); ++i)
+        //         {
+        //             if (auto *id = dynamic_cast<VarFuncName *>(method->args[i]))
+        //             {
+        //                 if (id->name == paramName && i < methodSym.params.size())
+        //                 {
+        //                     types.insert(methodSym.params[i]);
+        //                 }
+        //             }
+        //         }
 
-                break; // metodo encontrado, no seguimos subiendo en herencia
-            }
+        //         break; // metodo encontrado, no seguimos subiendo en herencia
+        //     }
 
-            if (typeSym->parentType.empty())
-                break;
-            typeSym = symbolTable.lookupType(typeSym->parentType);
-        }
+        //     if (typeSym->parentType.empty())
+        //         break;
+        //     typeSym = symbolTable.lookupType(typeSym->parentType);
+        // }
     }
 
     // Let expression
@@ -1787,21 +1790,34 @@ void SemanticValidation::visit(InitInstance &node)
 
 void SemanticValidation::visit(MethodCall &node)
 {
-    Symbol *instSym = symbolTable.lookup(node.instanceName);
-    if (!instSym)
+    // 1. Analizar la expresión de instancia para obtener su tipo
+    node.instance->accept(*this);
+    std::string instanceType = node.instance->type();
+
+    // 2. Obtener el símbolo del tipo de la instancia
+    TypeSymbol *typeSym = symbolTable.lookupType(instanceType);
+    if (!typeSym)
     {
-        errors.emplace_back("Variable '" + node.instanceName + "' no declarada", node.line());
+        errors.emplace_back("Tipo '" + instanceType + "' no definido", node.line());
         node._type = "Error";
         return;
     }
 
-    TypeSymbol *typeSym = symbolTable.lookupType(instSym->type);
-    if (!typeSym)
-    {
-        errors.emplace_back("Tipo '" + instSym->type + "' no definido", node.line());
-        node._type = "Error";
-        return;
-    }
+    // Symbol *instSym = symbolTable.lookup(node.instanceName);
+    // if (!instSym)
+    // {
+    //     errors.emplace_back("Variable '" + node.instanceName + "' no declarada", node.line());
+    //     node._type = "Error";
+    //     return;
+    // }
+
+    // TypeSymbol *typeSym = symbolTable.lookupType(instSym->type);
+    // if (!typeSym)
+    // {
+    //     errors.emplace_back("Tipo '" + instSym->type + "' no definido", node.line());
+    //     node._type = "Error";
+    //     return;
+    // }
 
     if (node.isMethod)
     {
@@ -1822,7 +1838,7 @@ void SemanticValidation::visit(MethodCall &node)
 
         if (!method)
         {
-            errors.emplace_back("Metodo '" + node.methodName + "' no existe en tipo '" + instSym->type + "'", node.line());
+            errors.emplace_back("Metodo '" + node.methodName + "' no existe en tipo '" + typeSym->name + "'", node.line());
             node._type = "Error";
             return;
         }
@@ -1870,7 +1886,7 @@ void SemanticValidation::visit(MethodCall &node)
         if (!attr)
         {
             // Permitir acceso a atributos cuando el valor es Null
-            if (instSym->type == "Null") {
+            if (typeSym->name == "Null") {
                 node._type = "Null";
                 return;
             }
@@ -1882,7 +1898,7 @@ void SemanticValidation::visit(MethodCall &node)
 
         node._type = attr->type;
         std::cout << "[ATTR] Acceso a atributo '" << node.methodName
-                  << "' en tipo: " << instSym->type
+                  << "' en tipo: " << typeSym->name 
                   << " -> Tipo: " << node._type << "\n";
     }
 }
