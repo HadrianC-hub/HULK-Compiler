@@ -584,37 +584,49 @@ void IRGenerator::visit(FuncCall &node)
 
 void IRGenerator::visit(LetExpression &node)
 {
-    // Inicializar nuevo scope de variables con herencia
     context.PushVar(true);
 
-    // Procesar declaraciones
     for (const LetDeclaration &decl : *node.declarations)
     {
-        // Enviar el nombre y tipo de variable al reservado de memoria en pila antes de procesar su valor
         context.typeSystem.push_placeholder(decl.name, "var");
-        std::cout << "  - Agregada reservacion: " << decl.name << " de tipo variable" << std::endl;
-
-        // Procesar el inicializador
         decl.initializer->accept(*this);
-        if (auto *newInstance = dynamic_cast<InitInstance *>(decl.initializer))
-        {
-            context.typeSystem.pop_placeholder();
-            continue;
+        
+        if (!context.valueStack.empty()) {
+            llvm::Value *initValue = context.valueStack.back();
+            context.valueStack.pop_back();
+            context.addLocal(decl.name, initValue);
+
+            // Registrar explícitamente si es una instancia
+            auto it = context.typeSystem.valueToTypeMap.find(initValue);
+            auto it_name = context.typeSystem.valueToInstanceNameMap.find(initValue);
+            
+            // SOLO REGISTRAR SI ES UNA INSTANCIA NUEVA
+            if (it != context.typeSystem.valueToTypeMap.end() && 
+                it_name != context.typeSystem.valueToInstanceNameMap.end() &&
+                it_name->second != decl.name) 
+            {
+                std::string originalName = it_name->second;
+                std::string typeName = it->second;
+
+                // Registrar el mismo valor LLVM para el alias
+                context.typeSystem.valueToTypeMap[initValue] = typeName;
+                context.typeSystem.valueToInstanceNameMap[initValue] = decl.name;
+                
+                // También registrar en instanceTable
+                context.typeSystem.new_instance(
+                    decl.name, 
+                    typeName, 
+                    context.typeSystem.get_instance_vars(originalName)
+                );
+
+                std::cout << "[ALIAS] Creado alias '" << decl.name 
+                          << "' para instancia '" << originalName << "'\n";
+            }
         }
-        llvm::Value *initValue = context.valueStack.back();
-        context.valueStack.pop_back();
-
-        // Agregar variables al scope
-        context.addLocal(decl.name, initValue);
-
-        // Pop the placeholder after processing
         context.typeSystem.pop_placeholder();
     }
 
-    // Procesar el cuerpo
     node.body->accept(*this);
-
-    // Limpiar el scope
     context.PopVar();
 }
 
@@ -1050,8 +1062,19 @@ void IRGenerator::visit(InitInstance &node)
 {
     std::cout << "- Nueva instancia: " << node.typeName << std::endl;
 
-    // Comprueba si estamos dentro de una declaración let
-    std::string varName = context.typeSystem.get_current_placeholder().name;
+    // Guardar el placeholder actual
+    placeholder currentPlaceholder = context.typeSystem.get_current_placeholder();
+    
+    // Generar nombre único para instancias anidadas
+    static int tempCounter = 0;
+    std::string varName = currentPlaceholder.name;
+    if (varName.empty()) {
+        varName = "__temp_instance_" + std::to_string(tempCounter++);
+    }
+
+    // Temporariamente limpiar el placeholder para instancias anidadas
+    context.typeSystem.push_placeholder("", "");
+
     if (!varName.empty())
     {
         std::cout << "  - Usando variable reservada: " << varName << std::endl;
@@ -1130,13 +1153,20 @@ void IRGenerator::visit(InitInstance &node)
         {
             if (attr.initializer)
             {
+                // Limpiar placeholder antes de procesar inicializadores anidados
+                placeholder backup = context.typeSystem.get_current_placeholder();
+                context.typeSystem.push_placeholder("", "");
+                
                 attr.initializer->accept(*this);
+                
+                // Restaurar placeholder
+                context.typeSystem.pop_placeholder();
+                context.typeSystem.push_placeholder(backup.name, backup.type);
+                
                 if (!context.valueStack.empty())
                 {
-                    // Usar el tipo real del atributo como clave
                     instanceVars[{attrName, attr.TypeName}] = context.valueStack.back();
                     context.valueStack.pop_back();
-                    std::cout << "    - Agregado atributo: " << attrName << " de tipo " << attr.TypeName << std::endl;
                 }
             }
         }
@@ -1153,13 +1183,33 @@ void IRGenerator::visit(InitInstance &node)
         }
     }
 
+    // Restaurar el placeholder original
+    context.typeSystem.pop_placeholder();
+    context.typeSystem.push_placeholder(currentPlaceholder.name, currentPlaceholder.type);
+
+    // Registrar la instancia en el sistema de tipos
+    context.typeSystem.new_instance(varName, node.typeName, instanceVars);
+    std::cout << "[REGISTRO] Instancia registrada: " << varName << std::endl;
+
     // Limpiar scope
     context.PopVar();
     context.typeSystem.set_current_type("");
 
-    // Crear la instancia con sus variables
-    context.typeSystem.new_instance(varName, node.typeName, instanceVars);
+    llvm::Value* dummy = context.builder.CreateAlloca(
+        llvm::Type::getInt8Ty(context.context), 
+        nullptr, 
+        "instance_ptr"
+    );
 
+    // Registrar el tipo y el nombre de la instancia
+    context.typeSystem.register_value_type(dummy, node.typeName);
+    context.typeSystem.valueToInstanceNameMap[dummy] = varName;
+
+    // Añadir el valor dummy a la pila
+    context.valueStack.push_back(dummy);
+
+    std::cout << "[REGISTRO] Valor de instancia: " << node.typeName 
+              << " registrado para: " << varName << std::endl;
     std::cout << "[CHECK] Instancia creada: " << varName << std::endl;
 }
 
@@ -1169,8 +1219,9 @@ void IRGenerator::visit(MethodCall &node)
               << " (" << (node.isMethod ? "método" : "atributo") << ")" << std::endl;
 
     // 1. Resolver instancia real (manejar 'self')
-    std::string realInstanceName = node.instanceName;
+    std::string realInstanceName;
     std::map<std::pair<std::string, std::string>, llvm::Value *> *instanceVarsMap = nullptr;
+    llvm::Value* instanceValue = nullptr; // Nuevo: valor de la instancia
 
     if (node.instanceName == "self")
     {
@@ -1189,7 +1240,19 @@ void IRGenerator::visit(MethodCall &node)
     }
     else
     {
-        instanceVarsMap = context.typeSystem.get_instance_vars_mutable(node.instanceName);
+        // OBTENER EL VALOR REAL DE LA INSTANCIA
+        instanceValue = context.lookupLocal(node.instanceName);
+        if (!instanceValue) {
+            throw std::runtime_error("[ERROR] Variable '" + node.instanceName + "' no definida");
+        }
+        
+        // Buscar el nombre de la instancia usando el valor
+        auto it_name = context.typeSystem.valueToInstanceNameMap.find(instanceValue);
+        if (it_name == context.typeSystem.valueToInstanceNameMap.end()) {
+            throw std::runtime_error("[ERROR] La variable '" + node.instanceName + "' no es una instancia");
+        }
+        realInstanceName = it_name->second;
+        instanceVarsMap = context.typeSystem.get_instance_vars_mutable(realInstanceName);
     }
 
     if (!instanceVarsMap)

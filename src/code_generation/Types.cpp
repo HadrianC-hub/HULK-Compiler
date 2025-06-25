@@ -57,18 +57,7 @@ void TypeSystem::add_method(const std::string &typeName, const std::string &meth
 }
 
 void TypeSystem::new_instance(const std::string &varName, const std::string &typeName, const std::map<std::pair<std::string, std::string>, llvm::Value *> &vars)
-{
-    if (!type_exists(typeName))
-    {
-        throw std::runtime_error("Tipo '" + typeName + "' no encontrado");
-    }
-
-    // Comprobar si la instancia ya existe
-    if (instanceTable.find(varName) != instanceTable.end())
-    {
-        throw std::runtime_error("Instancia '" + varName + "' ya existe");
-    }
-
+{   
     instanceTable[varName] = typeName;
     instanceVars[varName] = vars;
 }

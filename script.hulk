@@ -4,9 +4,10 @@ type Node1 (value, node)
     node = node;
 }
 
-type Node2 (value)
+type Node2 (val, node)
 {
-    value = value;
+    val = val;
+    node = node;
 }
 
-let o = new Node1 (2, new Node2 (3)), z = o.node in print (z.value);
+let o = new Node1 (2, new Node2 (10, new Node1(5, Null))), z = o.node in print (z.node);

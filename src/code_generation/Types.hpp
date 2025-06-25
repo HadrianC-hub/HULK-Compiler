@@ -79,6 +79,22 @@ private:
     std::vector<std::map<std::pair<std::string, std::string>, llvm::Value *> *> currentInstanceVarsStack;
 
 public:
+
+    // Nuevo mapa para rastrear valores de instancias
+    std::map<llvm::Value*, std::string> valueToTypeMap;
+
+    // Mapa para rastrear nombres de instancias por valor
+    std::map<llvm::Value*, std::string> valueToInstanceNameMap;
+
+    bool instance_exists(const std::string& name) const {
+        return instanceTable.find(name) != instanceTable.end();
+    }
+
+    // Registrar tipo por valor LLVM
+    void register_value_type(llvm::Value* val, const std::string& typeName) {
+        valueToTypeMap[val] = typeName;
+    }
+
     // Registra la nueva definición de un tipo
     type_definition &reg_type(const std::string &name, std::optional<std::string> parent = std::nullopt);
 
