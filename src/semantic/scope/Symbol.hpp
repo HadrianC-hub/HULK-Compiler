@@ -1,7 +1,7 @@
 // SymbolTable.hpp
 #pragma once
 #include <vector>
-#include <unordered_map>
+#include <map>
 #include <string>
 #include <stdexcept>
 #include <set>
@@ -31,19 +31,20 @@ struct TypeSymbol {
     std::string name;
     std::string parentType;
     std::vector<std::string> typeParamNames;   // Nombres de parámetros
-    std::unordered_map<std::string, std::string> paramTypes; // Tipos de parámetros (nombre -> tipo)
-    std::unordered_map<std::string, Symbol> attributes;
-    std::unordered_map<std::string, Symbol> methods;
+    std::map<std::string, std::string> paramTypes; // Tipos de parámetros (nombre -> tipo)
+    std::map<std::string, Symbol> attributes;
+    std::map<std::string, Symbol> methods;
+    int line;
 };
 
 class SymbolTable   // Tabla de símbolos que se usará durante el análisis semántico para llevar registros
 {
-private:
-    std::vector<std::unordered_map<std::string, Symbol>> scopes;
-
-    std::unordered_map<std::string, TypeSymbol> types;
-
 public:
+
+    std::vector<std::map<std::string, Symbol>> scopes;
+
+    std::map<std::string, TypeSymbol> types;
+
     SymbolTable();
     void enterScope();
     void exitScope();
@@ -62,7 +63,9 @@ public:
     bool addType(
         const std::string &name,
         const std::string &parentType,
-        const std::vector<std::string> &typeParams = {});
+        const std::vector<std::string> &typeParams = {},
+        int line = 0);
+        
     const TypeSymbol *lookupType(const std::string &name) const;
     TypeSymbol *lookupType(const std::string &name);
 

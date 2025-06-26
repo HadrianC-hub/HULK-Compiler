@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <vector>
 #include <algorithm>
+#include <map>
 
 SymbolTable &SemanticValidation::getSymbolTable()
 {
@@ -285,7 +286,7 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
     {
         // Analizar la expresión de instancia
         collectParamUsages(method->instance, paramName, types);
-        
+
         // Analizar todos los argumentos de la llamada al metodo
         for (auto *arg : method->args)
         {
@@ -509,7 +510,8 @@ void SemanticValidation::collectParamUsages(ASTNode *node, const std::string &pa
 
 bool SemanticValidation::conformsTo(const std::string &subtype, const std::string &supertype)
 {
-    if (subtype == "Null") {
+    if (subtype == "Null")
+    {
         return supertype != "Number" && supertype != "String" && supertype != "Boolean";
     }
     if (subtype == "Error" || supertype == "Error")
@@ -546,6 +548,104 @@ bool SemanticValidation::conformsTo(const std::string &subtype, const std::strin
     return false;
 }
 
+bool SemanticValidation::checkInheritanceCycles()
+{
+    bool hasCycle = false;
+    std::cout << "=== Iniciando verificacion de ciclos de herencia ===\n";
+    std::map<std::string, int> color;   // 0=blanco, 1=gris, 2=negro
+    std::map<std::string, int> lineMap; // Mapa de tipo -> línea
+
+    // Inicializar colores y recolectar líneas
+    for (auto &[name, type] : symbolTable.types)
+    {
+        color[name] = 0;
+        lineMap[name] = type.line;
+        std::cout << "Tipo registrado: " << name << " (padre: " << type.parentType << ") en linea " << type.line << "\n";
+    }
+
+    for (auto &[name, type] : symbolTable.types)
+    {
+        if (color[name] == 0)
+        {
+            std::cout << "Iniciando DFS para tipo: " << name << "\n";
+            std::vector<std::string> path;
+            if (dfsInheritance(name, color, path, lineMap))
+            {
+                std::cout << "Ciclo detectado comenzando desde: " << name << "\n";
+                hasCycle = true;
+            }
+        }
+    }
+    std::cout << "=== Finalizada verificacion de ciclos de herencia ===\n";
+    return hasCycle;
+}
+
+bool SemanticValidation::dfsInheritance(const std::string &typeName,
+                                        std::map<std::string, int> &color,
+                                        std::vector<std::string> &path,
+                                        std::map<std::string, int> &lineMap)
+{
+    std::cout << "  Visitando: " << typeName << " (color: " << color[typeName] << ")\n";
+
+    // Si encontramos un nodo gris, está en el camino actual -> ciclo
+    if (color[typeName] == 1)
+    {
+        // Construir la ruta del ciclo
+        std::string cyclePath;
+        bool inCycle = false;
+        for (const auto &t : path)
+        {
+            if (t == typeName)
+                inCycle = true;
+            if (inCycle)
+            {
+                cyclePath += t + " -> ";
+            }
+        }
+        cyclePath += typeName; // Completar el ciclo
+
+        int line = lineMap[typeName];
+        errors.emplace_back("Ciclo de herencia detectado: " + cyclePath, line);
+        std::cerr << "[ERROR] Ciclo de herencia: " << cyclePath << " en linea " << line << "\n";
+        return true;
+    }
+
+    color[typeName] = 1; // Gris (en proceso)
+    path.push_back(typeName);
+
+    TypeSymbol *type = symbolTable.lookupType(typeName);
+    if (!type)
+    {
+        std::cerr << "  [ERROR] Tipo no encontrado en DFS: " << typeName << "\n";
+        path.pop_back();
+        color[typeName] = 0; // Restaurar a blanco
+        errors.emplace_back("Tipo '" + typeName + "' no encontrado durante verificacion de herencia", lineMap[typeName]);
+        return false;
+    }
+
+    bool cycleFound = false;
+    if (!type->parentType.empty())
+    {
+        std::cout << "  " << typeName << " tiene padre: " << type->parentType << "\n";
+
+        // Verificar si el padre existe
+        if (!symbolTable.lookupType(type->parentType))
+        {
+            std::cerr << "  [ERROR] Padre no encontrado: " << type->parentType << "\n";
+            errors.emplace_back("Tipo padre '" + type->parentType + "' no encontrado para '" + typeName + "'", type->line);
+        }
+        else
+        {
+            cycleFound = dfsInheritance(type->parentType, color, path, lineMap);
+        }
+    }
+
+    path.pop_back();
+    color[typeName] = 2; // Negro (completado)
+
+    return cycleFound;
+}
+
 void SemanticValidation::validate(const std::vector<ASTNode *> &nodes)
 {
     std::cout << "Entra en analyze." << std::endl;
@@ -557,10 +657,20 @@ void SemanticValidation::validate(const std::vector<ASTNode *> &nodes)
 
     // Recolectar tipos primero
     TypeCollector tcollector(symbolTable, errors);
-    for (ASTNode *node : nodes) {
-        if (auto *typeDecl = dynamic_cast<TypeDeclaration*>(node)) {
+    for (ASTNode *node : nodes)
+    {
+        if (auto *typeDecl = dynamic_cast<TypeDeclaration *>(node))
+        {
             typeDecl->accept(tcollector);
         }
+    }
+
+    // Verificar ciclos de herencia (agrega errores si hay)
+    checkInheritanceCycles();
+
+    // Si hay errores, saltar el resto del análisis
+    if (!errors.empty()) {
+        goto report_errors; // Saltar directamente a reporte de errores
     }
 
     // Echar a andar un recolector de funciones
@@ -596,6 +706,7 @@ void SemanticValidation::validate(const std::vector<ASTNode *> &nodes)
     // Mostrar errores encontrados
     if (!errors.empty())
     {
+        report_errors:
         std::cerr << "Errores semanticos encontrados:\n";
         for (const auto &e : errors)
         {
@@ -782,7 +893,7 @@ void SemanticValidation::visit(FuncDeclaration &node)
 
     symbolTable.enterScope();
 
-    std::unordered_map<std::string, bool> paramSeen;
+    std::map<std::string, bool> paramSeen;
 
     std::cout << "Paso 1: Registrando parametros\n";
     for (const auto &param : *node.params)
@@ -1521,18 +1632,22 @@ void SemanticValidation::visit(TypeDeclaration &node)
 
     // Verificar si el tipo ya está registrado
     TypeSymbol *typeSym = symbolTable.lookupType(node.name);
-    if (!typeSym) {
+    if (!typeSym)
+    {
         errors.emplace_back("Tipo '" + node.name + "' no registrado", node.line());
         return;
     }
 
     // Verificar herencia solo ahora (cuando todos los tipos están registrados)
-    if (!typeSym->parentType.empty()) {
+    if (!typeSym->parentType.empty())
+    {
         const std::set<std::string> builtinTypes = {"Number", "String", "Boolean"};
-        if (builtinTypes.count(typeSym->parentType)) {
+        if (builtinTypes.count(typeSym->parentType))
+        {
             errors.emplace_back("No se puede heredar de tipo básico", node.line());
         }
-        else if (!symbolTable.lookupType(typeSym->parentType)) {
+        else if (!symbolTable.lookupType(typeSym->parentType))
+        {
             errors.emplace_back("Tipo padre no encontrado: " + typeSym->parentType, node.line());
         }
     }
@@ -1545,12 +1660,6 @@ void SemanticValidation::visit(TypeDeclaration &node)
     {
         paramNames.push_back(param.name);
     }
-
-    // if (!symbolTable.addType(node.name, parent, paramNames))
-    // {
-    //     errors.emplace_back("No se pudo registrar el tipo '" + node.name + "'", node.line());
-    //     return;
-    // }
 
     // Después de registrar el tipo
     // TypeSymbol *typeSym = symbolTable.lookupType(node.name);
@@ -1612,16 +1721,19 @@ void SemanticValidation::visit(TypeDeclaration &node)
     }
 
     // 5. Analizar baseArgs (si hay)
-    if (node.baseType.has_value() && node.baseArgs.empty()) {
-    TypeSymbol* parentSym = symbolTable.lookupType(*node.baseType);
-    if (parentSym) {
-        // Usar los parámetros del padre si no hay argumentos base
-        for (const std::string &parentParam : parentSym->typeParamNames) {
-            node.constructorParams->emplace_back(Parameter{parentParam, ""});
-            node.baseArgs.push_back(new VarFuncName(parentParam, node.line()));
+    if (node.baseType.has_value() && node.baseArgs.empty())
+    {
+        TypeSymbol *parentSym = symbolTable.lookupType(*node.baseType);
+        if (parentSym)
+        {
+            // Usar los parámetros del padre si no hay argumentos base
+            for (const std::string &parentParam : parentSym->typeParamNames)
+            {
+                node.constructorParams->emplace_back(Parameter{parentParam, ""});
+                node.baseArgs.push_back(new VarFuncName(parentParam, node.line()));
+            }
         }
     }
-}
 
     // 6. Analizar atributos (con inferencia de tipos)
     symbolTable.enterScope();
@@ -1640,16 +1752,22 @@ void SemanticValidation::visit(TypeDeclaration &node)
     }
 
     // Segunda pasada: inferir y actualizar tipos de parámetros
-    for (auto &param : *node.constructorParams) {
-        if (param.type.empty() || param.type == "Unknown") {
+    for (auto &param : *node.constructorParams)
+    {
+        if (param.type.empty() || param.type == "Unknown")
+        {
             std::string inferredType = "Object";
             bool isSelfAssignment = false;
 
             // Verificar si el parámetro se asigna directamente a un atributo del mismo nombre
-            for (const auto &attr : *node.body->attributes) {
-                if (attr.name == param.name) {
-                    if (auto *var = dynamic_cast<VarFuncName*>(attr.initializer)) {
-                        if (var->name == param.name) {
+            for (const auto &attr : *node.body->attributes)
+            {
+                if (attr.name == param.name)
+                {
+                    if (auto *var = dynamic_cast<VarFuncName *>(attr.initializer))
+                    {
+                        if (var->name == param.name)
+                        {
                             isSelfAssignment = true;
                             break;
                         }
@@ -1657,10 +1775,13 @@ void SemanticValidation::visit(TypeDeclaration &node)
                 }
             }
 
-            if (isSelfAssignment) {
+            if (isSelfAssignment)
+            {
                 // Si es una asignación directa, usar el tipo actual
                 inferredType = node.name;
-            } else {
+            }
+            else
+            {
                 // Lógica de inferencia existente...
             }
 
@@ -1774,7 +1895,8 @@ void SemanticValidation::visit(InitInstance &node)
         std::string argType = node.args[i]->type();
 
         // Permitir Null como argumento para cualquier parámetro
-        if (argType == "Null") {
+        if (argType == "Null")
+        {
             continue; // Saltar verificación de tipo
         }
 
@@ -1782,14 +1904,15 @@ void SemanticValidation::visit(InitInstance &node)
         {
             std::string paramName = typeSym->typeParamNames[i];
             std::string expectedType = typeSym->paramTypes[paramName];
-            
-            if (!conformsTo(argType, expectedType)) 
+
+            if (!conformsTo(argType, expectedType))
             {
-                errors.emplace_back("Tipo incorrecto para argumento " + std::to_string(i+1) + 
-                                    " en constructor de '" + node.typeName + "': esperado '" + expectedType + 
-                                    "', obtenido '" + argType + "'", node.line());
+                errors.emplace_back("Tipo incorrecto para argumento " + std::to_string(i + 1) +
+                                        " en constructor de '" + node.typeName + "': esperado '" + expectedType +
+                                        "', obtenido '" + argType + "'",
+                                    node.line());
             }
-            
+
             // Actualizar tipo del parámetro si era "Unknown"
             if (typeSym->paramTypes[paramName] == "Unknown")
             {
@@ -1812,7 +1935,8 @@ void SemanticValidation::visit(MethodCall &node)
     node.instance->accept(*this);
     std::string instanceType = node.instance->type();
 
-    if (instanceType == "Null") {
+    if (instanceType == "Null")
+    {
         // Permitir llamadas en Null (no genera error)
         node._type = "Null";
         return;
@@ -1848,10 +1972,12 @@ void SemanticValidation::visit(MethodCall &node)
         // Busqueda jerarquica del metodo en la cadena de herencia
         const Symbol *method = nullptr;
         // Buscar en toda la jerarquía
-        TypeSymbol* currentType = typeSym;
-        while (currentType) {
+        TypeSymbol *currentType = typeSym;
+        while (currentType)
+        {
             auto methodIt = currentType->methods.find(node.methodName);
-            if (methodIt != currentType->methods.end()) {
+            if (methodIt != currentType->methods.end())
+            {
                 method = &methodIt->second;
                 break;
             }
@@ -1890,11 +2016,12 @@ void SemanticValidation::visit(MethodCall &node)
 
     else
     {
-        if (instanceType == "Null") {
+        if (instanceType == "Null")
+        {
             node._type = "Null";
             return;
         }
-        
+
         // Buscar atributo en jerarquía
         Symbol *attr = nullptr;
         while (typeSym)
@@ -1913,11 +2040,12 @@ void SemanticValidation::visit(MethodCall &node)
         if (!attr)
         {
             // Permitir acceso a atributos cuando el valor es Null
-            if (typeSym->name == "Null") {
+            if (typeSym->name == "Null")
+            {
                 node._type = "Null";
                 return;
             }
-            
+
             errors.emplace_back("Atributo '" + node.methodName + "' no existe en tipo '" + instanceType + "'", node.line());
             node._type = "Error";
             return;
@@ -1925,7 +2053,7 @@ void SemanticValidation::visit(MethodCall &node)
 
         node._type = attr->type;
         std::cout << "[ATTR] Acceso a atributo '" << node.methodName
-                  << "' en tipo: " << typeSym->name 
+                  << "' en tipo: " << typeSym->name
                   << " -> Tipo: " << node._type << "\n";
     }
 }

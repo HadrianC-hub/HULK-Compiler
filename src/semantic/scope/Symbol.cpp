@@ -1,4 +1,5 @@
 #include "Symbol.hpp"
+#include <iostream>
 
 // Agregados tipos de hulk
 SymbolTable::SymbolTable()
@@ -74,13 +75,19 @@ bool SymbolTable::addFunction(const std::string &name, const std::string &return
 
 // Agregar tipo definido por el usuario a la tabla de símbolos
 bool SymbolTable::addType(
-    const std::string &name,
-    const std::string &parentType,
-    const std::vector<std::string> &typeParams)
+        const std::string &name,
+        const std::string &parentType,
+        const std::vector<std::string> &typeParams,
+        int line)
 {
     if (types.find(name) != types.end())
         return false;
-    types[name] = TypeSymbol{name, parentType, typeParams, {}, {}, {}};
+    
+    // Registrar línea para reportar errores
+    types[name] = TypeSymbol{name, parentType, typeParams, {}, {}, {}, line};
+    std::cout << "[TABLA] Tipo agregado: " << name 
+              << " (padre: " << (parentType.empty() ? "ninguno" : parentType)
+              << ") en linea " << line << "\n";
     return true;
 }
 

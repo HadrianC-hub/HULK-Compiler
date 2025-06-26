@@ -3,6 +3,7 @@
 #include "scope/Symbol.hpp"
 #include <vector>
 #include <string>
+#include <map>
 
 struct SemanticError {
     std::string message;
@@ -20,6 +21,15 @@ private:
     bool isValidIdentifier(const std::string &name);
 
     bool conformsTo(const std::string &subtype, const std::string &supertype);
+
+    bool checkInheritanceCycles();
+
+    std::map<std::string, int> lineMap; // Mapa de tipo -> línea
+
+    bool dfsInheritance(const std::string &typeName, 
+                        std::map<std::string, int> &color,
+                        std::vector<std::string> &path,
+                        std::map<std::string, int> &lineMap); // Cambio en la firma
 
     std::vector<SemanticError> errors;
     std::string currentMethodContext;
