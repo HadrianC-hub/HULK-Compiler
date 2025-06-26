@@ -1,6 +1,7 @@
 #include "Semantic.hpp"
 #include "../ast/AST.hpp"
 #include "scope/Function.hpp"
+#include "scope/TypeCollector.hpp"
 #include <cctype>
 #include <set>
 #include <iostream>
@@ -553,6 +554,14 @@ void SemanticValidation::validate(const std::vector<ASTNode *> &nodes)
     FunctionCollector collector(symbolTable, errors);
     collector.addBuiltins();
     std::cout << "Builtins agregados." << std::endl;
+
+    // Recolectar tipos primero
+    TypeCollector tcollector(symbolTable, errors);
+    for (ASTNode *node : nodes) {
+        if (auto *typeDecl = dynamic_cast<TypeDeclaration*>(node)) {
+            typeDecl->accept(tcollector);
+        }
+    }
 
     // Echar a andar un recolector de funciones
     for (ASTNode *node : nodes)
@@ -1510,19 +1519,22 @@ void SemanticValidation::visit(TypeDeclaration &node)
 {
     std::cout << "Analizando tipo: " << node.name << "\n";
 
-    // 1. Verificar redefinicion
-    if (symbolTable.lookupType(node.name))
-    {
-        errors.emplace_back("Tipo '" + node.name + "' ya esta definido", node.line());
+    // Verificar si el tipo ya está registrado
+    TypeSymbol *typeSym = symbolTable.lookupType(node.name);
+    if (!typeSym) {
+        errors.emplace_back("Tipo '" + node.name + "' no registrado", node.line());
         return;
     }
 
-    // 2. Validar que no hereda de tipos prohibidos
-    const std::set<std::string> builtinTypes = {"Number", "String", "Boolean"};
-    if (node.baseType.has_value() && builtinTypes.count(*node.baseType))
-    {
-        errors.emplace_back("No se puede heredar de tipo basico '" + *node.baseType + "'", node.line());
-        return;
+    // Verificar herencia solo ahora (cuando todos los tipos están registrados)
+    if (!typeSym->parentType.empty()) {
+        const std::set<std::string> builtinTypes = {"Number", "String", "Boolean"};
+        if (builtinTypes.count(typeSym->parentType)) {
+            errors.emplace_back("No se puede heredar de tipo básico", node.line());
+        }
+        else if (!symbolTable.lookupType(typeSym->parentType)) {
+            errors.emplace_back("Tipo padre no encontrado: " + typeSym->parentType, node.line());
+        }
     }
 
     std::string parent = node.baseType.value_or("Object");
@@ -1534,14 +1546,14 @@ void SemanticValidation::visit(TypeDeclaration &node)
         paramNames.push_back(param.name);
     }
 
-    if (!symbolTable.addType(node.name, parent, paramNames))
-    {
-        errors.emplace_back("No se pudo registrar el tipo '" + node.name + "'", node.line());
-        return;
-    }
+    // if (!symbolTable.addType(node.name, parent, paramNames))
+    // {
+    //     errors.emplace_back("No se pudo registrar el tipo '" + node.name + "'", node.line());
+    //     return;
+    // }
 
     // Después de registrar el tipo
-    TypeSymbol *typeSym = symbolTable.lookupType(node.name);
+    // TypeSymbol *typeSym = symbolTable.lookupType(node.name);
     if (typeSym)
     {
         // Registrar tipos de parámetros (declarados o inferidos)

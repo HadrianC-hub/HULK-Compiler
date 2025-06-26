@@ -1,13 +1,9 @@
-type Node (value)
-{
-    value = value;
-    getValue() => self.value;
-}
-
-type Node1 (value, node) inherits Node (value)
+type Node_Son (value, node) inherits Node_Father (value)
 {
     node = node;
-    getF() => "This is Node1: " @ self.getValue();
 }
 
-let nodo_a = new Node1(1, new Node1(2, new Node1(3, Null))) in print(nodo_a.value @@ nodo_a.node.value @@ nodo_a.node.node.value);
+type Node_Father (value)
+{
+    value = value;
+}
