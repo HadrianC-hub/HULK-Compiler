@@ -4,6 +4,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Value.h"
 #include "Types.hpp"
+#include "IRGen.hpp"
 #include <string>
 #include <map>
 #include <vector>
@@ -102,4 +103,8 @@ public:
         }
         return nullptr;
     }
+
+    void buildTypeGraph(std::vector<ASTNode*>& typeDecls);
+
+    void processTypeNodes(IRGenerator& generator, std::vector<ASTNode*>& typeDecls);
 };

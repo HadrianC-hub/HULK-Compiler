@@ -1,9 +1,9 @@
-type Node_Son (value, node) inherits Node_Father (value)
+type Node_Son(value) inherits Node_Father
 {
-    node = node;
+    value=value;
 }
 
-type Node_Father (value)
+type Node_Father(value) inherits  Node_Son
 {
-    value = value;
+   value=value;
 }

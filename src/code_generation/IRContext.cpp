@@ -1,4 +1,7 @@
 #include <cstdio>
+#include <set>
+#include <string>
+#include <stack>
 #include <iostream>
 #include "../ast/AST.hpp"
 #include "IRContext.hpp"
@@ -39,10 +42,15 @@ void Context::Generate(std::vector<ASTNode *> &root)
     PushFunc(); // Función de registrar globalmente
 
     IRGenerator generator(*this);
-    for (ASTNode *node : typeDecls)
-    {
-        node->accept(generator);
-    }
+
+    buildTypeGraph(typeDecls);
+    
+    processTypeNodes(generator, typeDecls);
+
+    // for (ASTNode *node : typeDecls)
+    // {
+    //     node->accept(generator);
+    // }
 
     // Procesando luego declaraciones de funciones
     for (ASTNode *node : funcDecls)
@@ -107,6 +115,46 @@ void Context::Generate(std::vector<ASTNode *> &root)
 
     builder.CreateRet(llvm::ConstantInt::get(context, llvm::APInt(32, 0)));
     llvm::verifyFunction(*mainFunc);
+}
+
+void Context::buildTypeGraph(std::vector<ASTNode*>& typeDecls) {
+    std::set<std::string> unprocessedTypes;
+    for (ASTNode* node : typeDecls) {
+        if (auto* typeDecl = dynamic_cast<TypeDeclaration*>(node)) {
+            unprocessedTypes.insert(typeDecl->name);
+        }
+    }
+}
+
+void Context::processTypeNodes(IRGenerator& generator, std::vector<ASTNode*>& typeDecls) {
+    std::set<std::string> processedTypes;
+    std::stack<TypeDeclaration*> typeStack;
+
+    // Primera pasada: procesar tipos sin dependencias
+    for (ASTNode* node : typeDecls) {
+        if (auto* typeDecl = dynamic_cast<TypeDeclaration*>(node)) {
+            if (!typeDecl->baseType || processedTypes.count(*typeDecl->baseType)) {
+                typeDecl->accept(generator);
+                processedTypes.insert(typeDecl->name);
+            } else {
+                typeStack.push(typeDecl);
+            }
+        }
+    }
+
+    // Procesar tipos restantes en orden de dependencias
+    while (!typeStack.empty()) {
+        TypeDeclaration* typeDecl = typeStack.top();
+        typeStack.pop();
+
+        if (processedTypes.count(*typeDecl->baseType)) {
+            typeDecl->accept(generator);
+            processedTypes.insert(typeDecl->name);
+        } else {
+            // Reintentar más tarde si la dependencia aún no está lista
+            typeStack.push(typeDecl);
+        }
+    }
 }
 
 // Funcion para escribir el código de la representación intermedia
